@@ -1,0 +1,12 @@
+module Applib.Resource.Standards.Ownership;
+
+import Anoma.Identity open;
+import Applib.Resource.Standards.ValueMap open;
+
+ownershipStandardKey : ValueMapKey := toValueMapKey "owner";
+
+ownershipValueMapEntry (owner : ExternalIdentity) : ValueMapEntry :=
+  mkValueMapEntry@{
+    key := ownershipStandardKey;
+    value := toValueMapValue owner
+  };

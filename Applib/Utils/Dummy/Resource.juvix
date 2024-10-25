@@ -1,6 +1,8 @@
 module Applib.Utils.Dummy.Resource;
 
 import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open;
+
 import Anoma.Resource open;
 import Anoma.Identity open;
 import Anoma.Utils open;
@@ -8,6 +10,8 @@ import Anoma.Builtin.System open;
 import Anoma.Proving.Types open;
 
 import Applib.Random open;
+import Applib.Resource.Standards.ValueMap open;
+import Applib.Resource.Standards.Ownership open;
 import Applib.Authorization.Identities open;
 
 alwaysValidLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
@@ -15,17 +19,19 @@ alwaysValidLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness)
 
 emptyLabel : Label := mkLabel 0;
 
+dummyValueMapKey : ValueMapKey := toValueMapKey "dummyKey";
+
 alwaysValidResource
   (quantity : Quantity)
   (identity : ExternalIdentity)
-  {valueContent : String := "DUMMY"}
+  {dummyValue : String := "dummyValue"}
   {ephemeral : Bool := false}
   : Resource :=
   "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidResource`"
     >-> mkResource@{
       logicRef := Reference.to alwaysValidLogic;
       labelRef := Reference.to emptyLabel;
-      valueRef := Reference.to (mkValue (anomaEncode valueContent));
+      valueRef := Reference.to (mkValue (anomaEncode dummyValue));
       quantity;
       ephemeral;
       nullifierKeyCommitment := ExternalIdentity.toNullifierKeyCommitment identity;

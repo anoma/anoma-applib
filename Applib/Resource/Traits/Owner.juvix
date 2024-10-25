@@ -1,13 +1,15 @@
 module Applib.Resource.Traits.Owner;
 
 import Stdlib.Prelude open;
-import Stdlib.Data.Map as Map open using {Map; empty; insert};
+import Stdlib.Data.Set as Set open;
 
 import Anoma.Resource open;
 import Anoma.Identity.External open;
 import Anoma.Builtin.System open;
 
 import Applib.Authorization.Identities open;
+import Applib.Resource.Standards.ValueMap open;
+import Applib.Resource.Standards.Ownership open;
 
 trait
 type HasOwner ResourceT :=
@@ -16,21 +18,22 @@ type HasOwner ResourceT :=
     set : ExternalIdentity -> ResourceT -> ResourceT
   };
 
---- The expected position of ownership information in the ;Value; map.
-ownershipStandardMapKey : Nat := anomaEncode "Owner";
-
 instance
 Resource-HasOwner : HasOwner Resource :=
   mkHasOwner@{
-
     --- Returns the owner ;ExternalIdentity; of the resource or the zero ;ExternalIdentity;.
     --- @param resource The ;Resource; to return the owner of.
     --- @return The owner ;ExternalIdentity;.
     get (resource : Resource) : ExternalIdentity :=
       let
-        valueMap : Map Nat Nat :=
+        valueMap : ValueMap :=
           resource |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
-      in case Map.lookup ownershipStandardMapKey valueMap of
+      in case
+           lookupValueMap@{
+             key := ownershipStandardKey;
+             valueMap
+           }
+         of
            | just value := anomaDecode value
            | nothing := Zero.externalIdentity;
 
@@ -40,9 +43,13 @@ Resource-HasOwner : HasOwner Resource :=
     --- @return The updated resource.
     set (owner : ExternalIdentity) (resource : Resource) : Resource :=
       let
-        oldValueMap : Map Nat Nat :=
+        oldValueMap : ValueMap :=
           resource |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
-        value := anomaEncode owner;
-        newValueMap := Map.insert ownershipStandardMapKey value oldValueMap;
+        entry :=
+          mkValueMapEntry@{
+            key := ownershipStandardKey;
+            value := toValueMapValue owner
+          };
+        newValueMap := Set.insert entry oldValueMap;
       in resource@Resource{valueRef := newValueMap |> anomaEncode |> mkValue |> Reference.to}
   };

@@ -22,11 +22,13 @@ import Anoma.Utils open;
 
 --- A message format specifiying resources that must be created and consumed within an ;Action;.
 --- @param origin The resource performing the check.
---- @mustBeCreated origin The resource performing the check.
---- @mustBeConsumed origin The resource performing the check.
+--- @param mustBeCreated The resource performing the check.
+--- @param mustBeConsumed The resource performing the check.
 type ResourceRelationship :=
   mkResourceRelationship@{
+    --- The ;Logic.Tag; of the resource performing the check.
     origin : Logic.Tag;
+    --- The  performing the check.
     mustBeConsumed : Set Nullifier;
     mustBeCreated : Set Commitment
   };

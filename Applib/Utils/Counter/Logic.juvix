@@ -6,11 +6,11 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma.Identity open;
 import Anoma.Resource open;
 import Anoma.Proving.Types open;
-import Applib.Helpers open;
 
+import Applib.Helpers open;
 import Applib.Utils.Counter.Count open;
 import Applib.Utils.Counter.Label open;
-
+import Applib.Utils.Counter.Projection open;
 import Applib.Resource.Traits open;
 import Applib.Authorization.Identities open;
 
@@ -45,11 +45,21 @@ initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
 
 incrementationLogic
   (self : Resource) (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
-  case privateInputs |> Logic.Witness.created |> Set.toList of
-    | [foundCounter] :=
-      kind self == kind foundCounter
-        && isIncremented@{
-          old := self;
-          new := foundCounter
-        }
-    | _ := false;
+  let
+    consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
+    created := privateInputs |> Logic.Witness.created |> Set.toList;
+  in case consumed, created of
+       | [currentCounter], [incrementedCounter] :=
+         self == currentCounter
+           && kind currentCounter == kind incrementedCounter
+           && isIncremented@{
+             old := currentCounter;
+             new := incrementedCounter
+           }
+       | _, _ := false;
+
+isIncremented (old new : Resource) : Bool :=
+  let
+    expected : Nat := getCount old + 1;
+    actual : Nat := getCount new;
+  in expected == actual;

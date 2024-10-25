@@ -27,9 +27,9 @@ createCounter
   (standardInputs : StandardInputs) (consumable : Resource) : Result StandardError Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
-    ephConsumable : Resource := consumable@Resource{ephemeral := true};
+    ephConsumable := consumable@Resource{ephemeral := true};
     uniqueLabel := createUniqueCounterLabel consumable;
-    ephCounter : Resource :=
+    ephCounter :=
       mkCounter@{
         identity;
         ephemeral := true;
@@ -73,6 +73,7 @@ createCounter
           }
     };
 
+-- TODO check kind
 incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
@@ -87,7 +88,6 @@ incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) :
       };
     consumed := Set.singleton currentCounter;
     created := Set.singleton updatedCounter;
-
   in mkTransactionHelper@{
     roots := Set.singleton (StandardInputs.currentRoot standardInputs);
     actions :=

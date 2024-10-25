@@ -7,7 +7,6 @@ import Anoma.Identity open;
 import Anoma.Proving.Types open;
 
 import Applib.Helpers open;
-
 import Applib.Resource.Traits open;
 import Applib.Authorization.Check open;
 import Applib.Authorization.Identities open;

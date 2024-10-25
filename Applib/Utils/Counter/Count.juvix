@@ -4,11 +4,10 @@ import Stdlib.Prelude open;
 import Anoma.Resource open;
 import Anoma.Builtin.System open;
 
+import Applib.Resource.Standards.ValueMap open;
+
 getCount (resource : Resource) : Nat :=
   resource |> Resource.valueRef |> ValueRef.unValueRef |> anomaEncode |> anomaDecode;
 
-isIncremented (old new : Resource) : Bool :=
-  let
-    expected : Nat := getCount old + 1;
-    actual : Nat := getCount new;
-  in expected == actual;
+--- The expected position of count information in the ;Value; map.
+countValueMapKey : ValueMapKey := toValueMapKey "count";

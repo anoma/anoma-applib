@@ -24,7 +24,6 @@ import Anoma.Builtin.ByteArray open;
 import Anoma.Proving.Types open;
 
 import Applib.Random open;
-import Applib.Utils.Dummy.Resource open;
 import Applib.Resource.Traits.Convertable open;
 
 module Set;
@@ -178,34 +177,8 @@ module ProvingHelpers;
       }
     of
       | just resource := Logic.mkProvingKey resource
+      -- TODO Refactor and use result + error.
       | nothing := failwith "this should never happen";
-
-  emptyResource : Resource :=
-    alwaysValidResource@{
-      quantity := 0;
-      identity := Universal.externalIdentity;
-      ephemeral := true
-    };
-
-  emptyLogicProofRecord : LogicProof.ProofRecord :=
-    let
-      verifyingKey := Logic.mkVerifyingKey unit;
-      provingKey := Logic.mkProvingKey emptyResource;
-      publicInputs :=
-        Logic.mkInstance@{
-          tag := Logic.Created (commitment emptyResource);
-          commitments := Set.empty;
-          nullifiers := Set.empty;
-          appData := Set.empty
-        };
-      privateInputs :=
-        Logic.mkWitness@{
-          created := Set.empty;
-          consumed := Set.empty;
-          customInputs := Set.empty
-        };
-      proof := LogicProof.prove provingKey publicInputs privateInputs;
-    in LogicProof.mkProofRecord proof verifyingKey publicInputs;
 
   createLogicProofRecord
     (tag : Logic.Tag)
