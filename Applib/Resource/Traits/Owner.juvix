@@ -22,6 +22,10 @@ ownershipStandardMapKey : Nat := anomaEncode "Owner";
 instance
 Resource-HasOwner : HasOwner Resource :=
   mkHasOwner@{
+
+    --- Returns the owner ;ExternalIdentity; of the resource or the zero ;ExternalIdentity;.
+    --- @param resource The ;Resource; to return the owner of.
+    --- @return The owner ;ExternalIdentity;.
     get (resource : Resource) : ExternalIdentity :=
       let
         valueMap : Map Nat Nat :=
@@ -30,6 +34,10 @@ Resource-HasOwner : HasOwner Resource :=
            | just value := anomaDecode value
            | nothing := Zero.externalIdentity;
 
+    --- Sets the owner ;ExternalIdentity; of a resource.
+    --- @param owner The owner to set.
+    --- @param resource The resource to set the owner for.
+    --- @return The updated resource.
     set (owner : ExternalIdentity) (resource : Resource) : Resource :=
       let
         oldValueMap : Map Nat Nat :=
