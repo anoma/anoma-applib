@@ -27,10 +27,7 @@ readValueField (dummyResources : Set Resource) : List String :=
   in "DEBUG: Evaluating `Applib.Utils.Dummy.Projection.readValueField`"
     >-> map (resource in Set.toList dummyResources)
           {let
-            currentKind :=
-              kind@{
-                resource
-              };
+            currentKind := kind resource;
           in fromResult
             case currentKind == expectedKind of {
               | true :=
