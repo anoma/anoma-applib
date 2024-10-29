@@ -1,8 +1,8 @@
 module Applib.Utils.Counter;
 
-import Applib.Utils.Counter.Count as Count open public;
-import Applib.Utils.Counter.Label as Label open public;
-import Applib.Utils.Counter.Logic as Logic open public;
-import Applib.Utils.Counter.Projection as Projection open public;
-import Applib.Utils.Counter.Resource as Resource open public;
-import Applib.Utils.Counter.Transaction as Transaction open public;
+import Applib.Utils.Counter.Unique.Count as Count open public;
+import Applib.Utils.Counter.Unique.Label as Label open public;
+import Applib.Utils.Counter.Unique.Logic as Logic open public;
+import Applib.Utils.Counter.Unique.Projection as Projection open public;
+import Applib.Utils.Counter.Unique.Resource as Resource open public;
+import Applib.Utils.Counter.Unique.Transaction as Transaction open public;
