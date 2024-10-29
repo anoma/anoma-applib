@@ -2,6 +2,7 @@ module Applib.Token.Resource;
 
 import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Stdlib.Data.Set as Set open using {Set};
 
 import Anoma.Resource open;
 import Anoma.Identity open;
@@ -15,6 +16,7 @@ import Anoma.Utils open;
 
 import Applib.Authorization.Identities open;
 import Applib.Random open;
+import Applib.Resource.Standards.Ownership open;
 
 module Token;
   type Token := mk@{resource : Resource};
@@ -31,7 +33,8 @@ module Token;
           Reference.to
             (tokenLogic (TokenLabel.supply tokenLabel) (TokenLabel.originator tokenLabel));
         labelRef := Reference.to (tokenLabel |> anomaEncode |> mkLabel);
-        valueRef := Reference.to (owner |> anomaEncode |> mkValue);
+        valueRef :=
+          Reference.to (owner |> ownershipValueMapEntry |> Set.singleton |> anomaEncode |> mkValue);
         quantity;
         ephemeral;
         nullifierKeyCommitment := ExternalIdentity.toNullifierKeyCommitment owner;

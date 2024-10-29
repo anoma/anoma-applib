@@ -3,7 +3,7 @@ module Applib.Resource.Traits.Kind;
 import Stdlib.Prelude open;
 import Anoma.Resource open;
 
-import Anoma.Resource.Computable.Kind open;
+import Anoma.Resource.Computable open;
 import Anoma.Transaction open;
 import Anoma.Builtin.System open;
 

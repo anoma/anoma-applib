@@ -1,6 +1,7 @@
 module Applib.Transaction.Initialize;
 
 import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open using {Set};
 import Anoma.Resource open;
 import Anoma.Transaction open;
 import Anoma.Identity open;

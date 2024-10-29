@@ -8,7 +8,7 @@ import Applib.Authorization.Identities open;
 import Stdlib.Data.Set as Set open using {Set; empty; size; insert; union; isMember};
 import Stdlib.Data.Map as Map open using {Map};
 import Anoma.Identity open;
-import Anoma.Resource as Resource open;
+import Anoma.Resource open;
 import Anoma.Transaction as Transaction open;
 import Anoma.State.CommitmentTree as CommitmentTree open;
 import Anoma.Proving.Types open;
@@ -24,23 +24,10 @@ import Anoma.Builtin.ByteArray open;
 import Anoma.Proving.Types open;
 
 import Applib.Random open;
-import Applib.Utils.Dummy.Resource open;
 import Applib.Resource.Traits.Convertable open;
 
 module Set;
-  singleton {A} {{Ord A}} (a : A) : Set A := Set.insert a Set.empty;
-
-  syntax iterator map {init := 0; range := 1};
-  map {A B} {{Ord A}} {{Ord B}} (f : A -> B) (s : Set A) : Set B :=
-    s |> Set.toList |> Functor.map f |> Set.fromList;
-
   isSubset {A} {{Ord A}} (sub sup : Set A) : Bool := all (x in Set.toList sub) Set.isMember x sup;
-end;
-
-module Map;
-  keys {A} {B} {{Ord A}} (m : Map A B) : Set A := Set.fromList (map fst (Map.toList m));
-
-  values {A} {B} {{Ord B}} (m : Map A B) : Set B := Set.fromList (map snd (Map.toList m));
 end;
 
 instance
@@ -69,8 +56,7 @@ isCreated (commitment : Commitment) (publicInputs : Logic.Instance) : Bool :=
 isConsumed (nullifier : Nullifier) (publicInputs : Logic.Instance) : Bool :=
   Set.isMember nullifier (Logic.Instance.nullifiers publicInputs);
 
-isNullifierPresent
-  (nullifier : Resource.Nullifier) (nullifierSet : Set Resource.Nullifier) : Bool :=
+isNullifierPresent (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
 
 isSublist {A} {{Ord A}} (sub sup : List A) : Bool :=
@@ -127,9 +113,10 @@ computableComponentToCustomInputs
       value := r |> anomaEncode |> mkAppDataValue
     }};
 
-extractKeys {A} {{Ord A}} (customInputs : Logic.CustomInputs) : Set A :=
-  Set.map (key in Map.keys (AppDataMap.fromSet customInputs))
-    {key |> AppDataKey.unAppDataKey |> anomaDecode};
+-- TODO
+-- extractKeys {A} {{Ord A}} (customInputs : Logic.CustomInputs) : Set A :=
+--   Set.map (key in Map.keys (AppDataMap.fromSet customInputs))
+--     {key |> AppDataKey.unAppDataKey |> anomaDecode};
 
 toMapEntry {A} (k : A) (v : Resource) : AppDataEntry :=
   mkAppDataEntry@{
@@ -178,37 +165,10 @@ module ProvingHelpers;
       }
     of
       | just resource := Logic.mkProvingKey resource
-      | nothing := failwith "this should never happen";
-
-  emptyResource : Resource :=
-    alwaysValidResource@{
-      quantity := 0;
-      identity := Universal.externalIdentity;
-      ephemeral := true
-    };
-
-  emptyLogicProofRecord : LogicProof.ProofRecord :=
-    let
-      verifyingKey := Logic.mkVerifyingKey unit;
-      provingKey := Logic.mkProvingKey emptyResource;
-      publicInputs :=
-        Logic.mkInstance@{
-          tag := Logic.Created (commitment emptyResource);
-          commitments := Set.empty;
-          nullifiers := Set.empty;
-          appData := Set.empty
-        };
-      privateInputs :=
-        Logic.mkWitness@{
-          created := Set.empty;
-          consumed := Set.empty;
-          customInputs := Set.empty
-        };
-      proof := LogicProof.prove provingKey publicInputs privateInputs;
-    in LogicProof.mkProofRecord proof verifyingKey publicInputs;
+      | nothing := failwith "Error. The proving key could not be found. This should never happen.";
 
   createLogicProofRecord
-    (tag : Logic.Tag)
+    (tag : Tag)
     (publicInputs : Logic.Instance)
     (privateInputs : Logic.Witness)
     : GenericProofRecord.ProofRecord :=
@@ -216,8 +176,8 @@ module ProvingHelpers;
       customInputs := Logic.Witness.customInputs privateInputs;
       provingKey :=
         case tag of
-          | Logic.Consumed nf := findProvingKey nf customInputs
-          | Logic.Created cm := findProvingKey cm customInputs;
+          | Consumed nf := findProvingKey nf customInputs
+          | Created cm := findProvingKey cm customInputs;
       proof : Logic.Proof :=
         LogicProof.prove@{
           provingKey;
@@ -259,7 +219,6 @@ module ProvingHelpers;
         };
     in DeltaProof.mkProofRecord proof verifyingKey publicInputs;
 
-  -- TODO should this be the generic ProofRecord?
   createDeltaProofRecord : GenericProofRecord.ProofRecord :=
     GenericProofRecord.Delta emptyDeltaProofRecord;
 end;
@@ -285,10 +244,10 @@ mkActionHelper
         | nothing := Set.map (r in created) {commitment r}
         | just commitments := commitments;
 
-    tags : Set Logic.Tag :=
+    tags : Set Tag :=
       Set.union
-        Set.map (nullifier in nullifiers) {Logic.Consumed nullifier}
-        Set.map (commitment in commitments) {Logic.Created commitment};
+        Set.map (nullifier in nullifiers) {Consumed nullifier}
+        Set.map (commitment in commitments) {Created commitment};
 
     logicProofs : Set GenericProofRecord.ProofRecord :=
       Set.map (tag in tags)

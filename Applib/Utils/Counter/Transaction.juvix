@@ -17,7 +17,11 @@ import Applib.Authorization.Message open;
 import Applib.Authorization.Identities open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Counter.Label open;
+import Applib.Utils.Counter.Logic open;
 import Applib.Utils.Counter.Resource open;
+import Applib.Utils.Counter.Count open;
+import Applib.Resource.Standards.ValueMap open;
+import Applib.Resource.Standards.Ownership open;
 
 import Applib.Helpers open;
 
@@ -27,9 +31,9 @@ createCounter
   (standardInputs : StandardInputs) (consumable : Resource) : Result StandardError Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
-    ephConsumable : Resource := consumable@Resource{ephemeral := true};
+    ephConsumable := consumable@Resource{ephemeral := true};
     uniqueLabel := createUniqueCounterLabel consumable;
-    ephCounter : Resource :=
+    ephCounter :=
       mkCounter@{
         identity;
         ephemeral := true;
@@ -73,21 +77,36 @@ createCounter
           }
     };
 
+-- TODO check kind
 incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
-    updatedCounter : Resource :=
-      mkCounter@{
-        identity;
-        ephemeral := false;
-        uniqueLabel := getCounterLabel currentCounter;
-        count :=
-          (currentCounter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode)
-            + 1
+    label := getCounterLabel currentCounter;
+    expectedKind :=
+      KindInternal.kind@{
+        logicRef := Reference.to counterLogic;
+        labelRef := Resource.labelRef currentCounter
       };
-    consumed := Set.singleton currentCounter;
-    created := Set.singleton updatedCounter;
 
+    updatedCounter : Resource :=
+      let
+        valueMap : ValueMap :=
+          currentCounter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
+        currentCount : Nat :=
+          lookupValueMap@{
+            key := countValueMapKey;
+            valueMap
+          };
+        updatedValueMap : ValueMap :=
+          insertValueMap@{
+            key := countValueMapKey;
+            value := toValueMapValue (currentCount + 1);
+            valueMap
+          };
+      in currentCounter@Resource{
+        ephemeral := false;
+        valueRef := Reference.to (updatedValueMap |> anomaEncode |> mkValue)
+      };
   in mkTransactionHelper@{
     roots := Set.singleton (StandardInputs.currentRoot standardInputs);
     actions :=
