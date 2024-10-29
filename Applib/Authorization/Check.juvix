@@ -11,8 +11,7 @@ import Anoma.Proving.Types open;
 
 import Applib.Helpers open;
 
-isAuthorizedBy
-  (signer : ExternalIdentity) (origin : Logic.Tag) (publicInputs : Logic.Instance) : Bool :=
+isAuthorizedBy (signer : ExternalIdentity) (origin : Tag) (publicInputs : Logic.Instance) : Bool :=
   case
     lookupAppData@{
       key := origin;

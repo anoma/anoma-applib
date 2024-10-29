@@ -7,8 +7,8 @@ package : Package :=
     name := "anoma-app-lib";
     version := mkVersion 0 5 0;
     dependencies :=
-      [ github "anoma" "juvix-stdlib" "ff351799c068e7b3e23dd903547d228dc30aff5e"
+      [ github "anoma" "juvix-stdlib" "37d3dd74b78f0ec0c48c8adc44f5b99c6d068464"
       ; github "anoma" "juvix-test" "v0.15.0"
-      ; github "anoma" "juvix-arm-transparent" "efb1be6b0448690fb4d0b95a58f88fb1d5c7cc3e"
+      ; github "anoma" "juvix-arm-specs" "origin/instantiation/transparent"
       ]
   };

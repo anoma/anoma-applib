@@ -32,7 +32,7 @@ unboundSupplyLogic
     tag := Logic.Instance.tag publicInputs;
     customInputs := Logic.Witness.customInputs privateInputs;
   in case tag of
-       | Logic.Consumed nullifier :=
+       | Consumed nullifier :=
          case lookupResource nullifier customInputs of {
            | nothing := false
            | just self :=
@@ -41,10 +41,10 @@ unboundSupplyLogic
                | NonEphemeral := transferLogic self tag publicInputs
              }
          }
-       | Logic.Created commitment := true;
+       | Created commitment := true;
 
 unboundSupplyInitializationLogic
-  (originator : ExternalIdentity) (tag : Logic.Tag) (publicInputs : Logic.Instance) : Bool :=
+  (originator : ExternalIdentity) (tag : Tag) (publicInputs : Logic.Instance) : Bool :=
   isAuthorizedBy@{
     signer := originator;
     origin := tag;
@@ -61,7 +61,7 @@ fixedSupplyLogic
     tag := Logic.Instance.tag publicInputs;
     customInputs := Logic.Witness.customInputs privateInputs;
   in case tag of
-       | Logic.Consumed nullifier :=
+       | Consumed nullifier :=
          case lookupResource nullifier customInputs of {
            | nothing := false
            | just self :=
@@ -71,7 +71,7 @@ fixedSupplyLogic
                | NonEphemeral := transferLogic self tag publicInputs
              }
          }
-       | Logic.Created commitment :=
+       | Created commitment :=
          case lookupResource commitment customInputs of
            | nothing := false
            | just self :=
@@ -82,7 +82,7 @@ fixedSupplyLogic
 fixedSupplyInitializationLogic
   (originator : ExternalIdentity)
   (nullifier : Nullifier)
-  (tag : Logic.Tag)
+  (tag : Tag)
   (publicInputs : Logic.Instance)
   : Bool :=
   isNullifierPresent@{
@@ -101,7 +101,7 @@ cappedSupplyLogic
   (privateInputs : Logic.Witness)
   : Bool := failwith "NOT IMPLEMENTED";
 
-transferLogic (self : Resource) (tag : Logic.Tag) (publicInputs : Logic.Instance) : Bool :=
+transferLogic (self : Resource) (tag : Tag) (publicInputs : Logic.Instance) : Bool :=
   isTransferable self
     && isAuthorizedBy@{
       signer := HasOwner.get self;

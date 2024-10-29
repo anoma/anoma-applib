@@ -2,6 +2,7 @@ module Applib.Token.Resource;
 
 import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Stdlib.Data.Set as Set open using {Set};
 
 import Anoma.Resource open;
 import Anoma.Identity open;

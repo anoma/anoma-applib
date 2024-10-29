@@ -19,7 +19,7 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
     tag := Logic.Instance.tag publicInputs;
     customInputs := Logic.Witness.customInputs privateInputs;
   in case tag of
-       | Logic.Consumed nullifier :=
+       | Consumed nullifier :=
          case lookupResource nullifier customInputs of {
            | nothing := false
            | just self :=
@@ -28,7 +28,7 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
                | NonEphemeral := incrementationLogic self publicInputs privateInputs
              }
          }
-       | Logic.Created commitment :=
+       | Created commitment :=
          case lookupResource commitment customInputs of
            | nothing := false
            | just self :=

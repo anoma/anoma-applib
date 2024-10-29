@@ -26,8 +26,8 @@ import Anoma.Utils open;
 --- @param mustBeConsumed The resource performing the check.
 type ResourceRelationship :=
   mkResourceRelationship@{
-    --- The ;Logic.Tag; of the resource performing the check.
-    origin : Logic.Tag;
+    --- The ;Tag; of the resource performing the check.
+    origin : Tag;
     --- The  performing the check.
     mustBeConsumed : Set Nullifier;
     mustBeCreated : Set Commitment
@@ -35,7 +35,7 @@ type ResourceRelationship :=
 
 mkResourceRelationshipAppDataEntry
   (identity : Identity)
-  (origin : Logic.Tag)
+  (origin : Tag)
   (mustBeConsumed : Set Nullifier)
   (mustBeCreated : Set Commitment)
   : AppDataEntry :=
@@ -48,12 +48,12 @@ mkResourceRelationshipAppDataEntry
       };
     sig : Signature := sign msg (Identity.internal identity);
   in case origin of
-       | Logic.Created commitment :=
+       | Created commitment :=
          mkAppDataEntry@{
            key := commitment |> anomaEncode |> mkAppDataKey;
            value := (msg, sig) |> anomaEncode |> mkAppDataValue
          }
-       | Logic.Consumed nullifier :=
+       | Consumed nullifier :=
          mkAppDataEntry@{
            key := nullifier |> anomaEncode |> mkAppDataKey;
            value := (msg, sig) |> anomaEncode |> mkAppDataValue
@@ -92,7 +92,7 @@ module ActionFromConvertable;
             Set.map (nullifier in nullifiers)
               {mkResourceRelationshipAppDataEntry@{
                 identity;
-                origin := Logic.Consumed nullifier;
+                origin := Consumed nullifier;
                 mustBeConsumed := Set.empty;
                 mustBeCreated := commitments
               }};
