@@ -1,13 +1,9 @@
 module Applib.Utils.Counter.Projection;
 
 import Stdlib.Prelude open;
-import Stdlib.Debug.Fail open;
 import Anoma.Resource open;
-import Anoma.Builtin.System open;
 
 import Applib.Helpers open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Utils.Counter.Label open;
 import Applib.Utils.Counter.Count open;
 
 --- A unique identifier (UID) characterized by a ;Nat; counter value
@@ -20,10 +16,7 @@ type UID :=
 
 --- Returns the current UID of a counter ;Resource;.
 getUID (counter : Resource) : UID :=
-  let
-    valueMap : ValueMap :=
-      counter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
-  in mkUID@{
-    id : Nat := lookupValueMap countValueMapKey valueMap;
+  mkUID@{
+    id : Nat := getCount counter;
     uniqueKind := kind counter
   };
