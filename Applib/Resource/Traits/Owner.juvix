@@ -8,6 +8,7 @@ import Anoma.Identity.External open;
 import Anoma.Builtin.System open;
 
 import Applib.Authorization.Identities open;
+import Applib.Resource.Traits.ValueMap open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
 
@@ -25,31 +26,28 @@ Resource-HasOwner : HasOwner Resource :=
     --- @param resource The ;Resource; to return the owner of.
     --- @return The owner ;ExternalIdentity;.
     get (resource : Resource) : ExternalIdentity :=
-      let
-        valueMap : ValueMap :=
-          resource |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
-      in case
-           lookupValueMap@{
-             key := ownershipStandardKey;
-             valueMap
-           }
-         of
-           | just value := anomaDecode value
-           | nothing := Zero.externalIdentity;
+      case
+        lookupValueMapMaybe@{
+          key := ownershipStandardKey;
+          valueMap := HasValueMap.get resource
+        }
+      of
+        | just value := anomaDecode value
+        | nothing := Zero.externalIdentity;
 
     --- Sets the owner ;ExternalIdentity; of a resource.
     --- @param owner The owner to set.
     --- @param resource The resource to set the owner for.
     --- @return The updated resource.
     set (owner : ExternalIdentity) (resource : Resource) : Resource :=
-      let
-        oldValueMap : ValueMap :=
-          resource |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
-        entry :=
-          mkValueMapEntry@{
-            key := ownershipStandardKey;
-            value := toValueMapValue owner
-          };
-        newValueMap := Set.insert entry oldValueMap;
-      in resource@Resource{valueRef := newValueMap |> anomaEncode |> mkValue |> Reference.to}
+      HasValueMap.set
+        Set.insert@{
+          elem :=
+            mkValueMapEntry@{
+              key := ownershipStandardKey;
+              value := toValueMapValue owner
+            };
+          set := HasValueMap.get resource
+        }
+        resource
   };

@@ -5,9 +5,10 @@ import Anoma.Resource open;
 import Anoma.Builtin.System open;
 
 import Applib.Resource.Standards.ValueMap open;
-
-getCount (resource : Resource) : Nat :=
-  resource |> Resource.valueRef |> ValueRef.unValueRef |> anomaEncode |> anomaDecode;
+import Applib.Resource.Traits.ValueMap open;
 
 --- The expected position of count information in the ;Value; map.
 countValueMapKey : ValueMapKey := toValueMapKey "count";
+
+getCount (resource : Resource) : Nat :=
+  resource |> HasValueMap.get |> lookupValueMap countValueMapKey;

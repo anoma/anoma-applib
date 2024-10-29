@@ -40,12 +40,21 @@ valueMapEntrytoPair {A} {B} (valueMapEntry : ValueMapEntry) : Pair A B :=
 
 ValueMap : Type := Set ValueMapEntry;
 
-lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : B :=
+lookupValueMapMaybe {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : Maybe B :=
   let
-    map' : Map A B := Map.fromList (map (entry in Set.toList valueMap) {valueMapEntrytoPair entry});
-  in case Map.lookup key map' of
-       | just value := value
-       | nothing := failwith "ValueMapKey not found";
+    converted : Map A B :=
+      Map.fromList (map (entry in Set.toList valueMap) {valueMapEntrytoPair entry});
+  in Map.lookup key converted;
+
+lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : B :=
+  case
+    lookupValueMapMaybe@{
+      key;
+      valueMap
+    }
+  of
+    | just value := value
+    | nothing := failwith "ValueMapKey not found";
 
 --- A module implementing traits for ;ValueMapKey;.
 module ValueMapKeyInternal;
