@@ -11,7 +11,7 @@ import Applib.Resource.Error open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
 import Applib.Utils.Dummy.Transaction as Dummy open using {finalize};
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 
 --- Initializes a ;Convertable; typed ;Resource;.
 --- For tokens with fixed supply, a dummy is required.

@@ -5,7 +5,7 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma.Resource open;
 import Anoma.Identity.External open;
 import Applib.Helpers open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 
 type Asset :=
   mkAsset@{

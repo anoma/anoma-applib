@@ -4,7 +4,7 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
 import Stdlib.Data.Set as Set open using {Set; empty; size; insert; union};
 import Applib.Helpers open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 
 import Anoma.Resource as Resource open;
 import Anoma.Transaction as Transaction open;

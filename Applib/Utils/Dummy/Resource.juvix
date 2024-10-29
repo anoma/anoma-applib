@@ -12,7 +12,7 @@ import Anoma.Proving.Types open;
 import Applib.Random open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 
 alwaysValidLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidLogic`" >-> true;

@@ -9,7 +9,7 @@ import Anoma.Transaction open;
 import Anoma.State.CommitmentTree open;
 
 import Applib.Helpers open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
 
 import Applib.Utils.Dummy.Transaction.Finalize open;

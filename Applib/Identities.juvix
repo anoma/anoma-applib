@@ -1,4 +1,4 @@
-module Applib.Authorization.Identities;
+module Applib.Identities;
 
 import Stdlib.Prelude open;
 

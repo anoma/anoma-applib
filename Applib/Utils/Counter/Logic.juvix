@@ -12,7 +12,7 @@ import Applib.Utils.Counter.Count open;
 import Applib.Utils.Counter.Label open;
 import Applib.Utils.Counter.Projection open;
 import Applib.Resource.Traits open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 
 counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   let

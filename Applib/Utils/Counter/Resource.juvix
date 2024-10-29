@@ -12,7 +12,7 @@ import Applib.Helpers open;
 import Applib.Utils.Counter.Count open;
 import Applib.Utils.Counter.Logic open;
 import Applib.Utils.Counter.Label open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
 import Applib.Random open;

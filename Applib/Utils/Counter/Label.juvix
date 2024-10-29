@@ -3,7 +3,7 @@ module Applib.Utils.Counter.Label;
 import Stdlib.Prelude open;
 import Anoma.Resource open;
 import Anoma.Builtin.System open;
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 
 -- TODO Make an unique trait that requires the label to contain an nullifier.
 type CounterLabel := mkCounterLabel@{nullifier : Nullifier};

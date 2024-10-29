@@ -14,7 +14,7 @@ import Applib.Token.Logic open;
 import Anoma.Builtin.System open;
 import Anoma.Utils open;
 
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 import Applib.Random open;
 import Applib.Resource.Standards.Ownership open;
 

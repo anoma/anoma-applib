@@ -8,7 +8,7 @@ import Anoma.Resource open;
 import Anoma.Transaction open;
 import Anoma.Identity open;
 
-import Applib.Authorization.Identities open;
+import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Resource.Error open;
 import Applib.Helpers open;

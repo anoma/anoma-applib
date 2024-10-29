@@ -3,6 +3,7 @@ module Applib;
 import Applib.Helpers as Helpers open public;
 import Applib.Random as Random open public;
 
+import Applib.Identities as Identities open public;
 import Applib.Authorization as Authorization open public;
 import Applib.Intent as Intent open public;
 import Applib.Resource as Resource open public;
