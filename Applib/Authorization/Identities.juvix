@@ -1,7 +1,6 @@
 module Applib.Authorization.Identities;
 
 import Stdlib.Prelude open;
-import Stdlib.Debug.Fail open using {failwith};
 
 import Anoma.Resource open;
 import Anoma.Identity.Object open;
@@ -10,27 +9,11 @@ import Anoma.Identity.Internal open;
 import Anoma.Builtin.ByteArray as ByteArray open;
 import Anoma.Utils open;
 
-salt (salt : String) (secret : ByteArray) : ByteArray :=
-  let
-    saltAsNat : Nat := stringToNat salt;
-    secretAsNat : Nat := ByteArray.toAnomaContents secret;
-  in ByteArray.fromAnomaContents (ByteArray.length secret) (saltAsNat + secretAsNat);
-
-sha256 (value : ByteArray) : ByteArray := STILL_MISSING_JUVIX_IMPLEMENTATION;
-
 toNullifierKey (identity : Identity) : NullifierKey :=
   identity |> Identity.internal |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
 
--- TODO remove
--- |> Identity.internal
--- |> InternalIdentity.unInternalIdentity
--- |> salt "NullifierKey"
--- |> mkNullifierKey;
-
 toNullifierKeyCommitment (identity : Identity) : NullifierKeyCommitment :=
   identity |> Identity.external |> ExternalIdentity.unExternalIdentity |> mkNullifierKeyCommitment;
--- TODO remove
--- identity |> toNullifierKey |> NullifierKey.unNullifierKey |> sha256 |> mkNullifierKeyCommitment;
 
 --- The ;Identity; generated from the seed `0x0000000000000000000000000000000000000000000000000000000000000000`
 --- (see, e.g., https://cyphr.me/ed25519_tool/ed.html) in little-endian byte order.
