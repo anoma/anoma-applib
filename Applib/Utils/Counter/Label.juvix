@@ -18,7 +18,7 @@ CounterLabel-Eq : Eq CounterLabel :=
   };
 
 getCounterLabel (resource : Resource) : CounterLabel :=
-  resource |> Resource.labelRef |> LabelRef.unLabelRef |> anomaEncode |> anomaDecode;
+  resource |> Resource.labelRef |> Reference.from |> Label.unLabel |> anomaDecode;
 
 getNullifierfFromLabel (resource : Resource) : Nullifier :=
   resource |> getCounterLabel |> CounterLabel.nullifier;
