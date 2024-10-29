@@ -1,0 +1,31 @@
+module Applib.Utils.Counter.Simple.Resource;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open;
+
+import Anoma.Resource open;
+import Anoma.Utils open;
+import Anoma.Builtin.System open;
+import Anoma.Identity open;
+
+import Applib.Helpers open;
+import Applib.Utils.Counter.Simple.Count open;
+import Applib.Utils.Counter.Simple.Label open;
+import Applib.Utils.Counter.Simple.Logic open;
+import Applib.Identities open;
+import Applib.Resource.Standards.ValueMap open;
+import Applib.Resource.Standards.Ownership open;
+import Applib.Random open;
+
+-- Can be incremented by everyone
+mkCounter (identity : Identity) (ephemeral : Bool) (count : Nat) : Resource :=
+  mkResource@{
+    logicRef := Reference.to (counterLogic);
+    labelRef := Reference.to (counterLabel);
+    valueRef := Reference.to (count |> mkValue);
+    quantity := 1;
+    ephemeral;
+    nullifierKeyCommitment := toNullifierKeyCommitment Universal.identity;
+    nonce := mkNonce rand;
+    randSeed := mkRandSeed rand
+  };

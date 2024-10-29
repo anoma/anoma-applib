@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Unique.Logic;
+module Applib.Utils.Counter.Simple.Logic;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
@@ -8,8 +8,7 @@ import Anoma.Resource open;
 import Anoma.Proving.Types open;
 
 import Applib.Helpers open;
-import Applib.Utils.Counter.Unique.Count open;
-import Applib.Utils.Counter.Unique.Label open;
+import Applib.Utils.Counter.Simple.Count open;
 import Applib.Resource.Traits open;
 import Applib.Identities open;
 
@@ -36,11 +35,7 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
                | NonEphemeral := true;
 
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
-  HasQuantity.get self == 1
-    && isNullifierPresent@{
-      nullifier := getNullifierfFromLabel self;
-      nullifierSet := Logic.Instance.nullifiers publicInputs
-    };
+  getCount self == 0 && HasQuantity.get self == 1;
 
 incrementationLogic
   (self : Resource) (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
