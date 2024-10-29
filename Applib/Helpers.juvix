@@ -165,8 +165,7 @@ module ProvingHelpers;
       }
     of
       | just resource := Logic.mkProvingKey resource
-      -- TODO Refactor and use result + error.
-      | nothing := failwith "this should never happen";
+      | nothing := failwith "Error. The proving key could not be found. This should never happen.";
 
   createLogicProofRecord
     (tag : Tag)
@@ -220,7 +219,6 @@ module ProvingHelpers;
         };
     in DeltaProof.mkProofRecord proof verifyingKey publicInputs;
 
-  -- TODO should this be the generic ProofRecord?
   createDeltaProofRecord : GenericProofRecord.ProofRecord :=
     GenericProofRecord.Delta emptyDeltaProofRecord;
 end;
