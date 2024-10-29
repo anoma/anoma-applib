@@ -8,49 +8,49 @@ import Anoma.Resource open;
 import Anoma.Proving.Types open;
 
 import Applib.Helpers open;
-import Applib.Utils.Counter.Simple.Count open;
-import Applib.Resource.Traits open;
 import Applib.Identities open;
+import Applib.Resource.Traits open;
+import Applib.Utils.Counter.Simple.Count open;
+import Applib.Utils.Counter.Simple.Label open;
+
 
 counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   let
     tag := Logic.Instance.tag publicInputs;
-    customInputs := Logic.Witness.customInputs privateInputs;
-  in case tag of
-       | Consumed nullifier :=
-         case lookupResource nullifier customInputs of {
-           | nothing := false
-           | just self :=
-             case HasEphemerality.get self of {
-               | Ephemeral := initializationLogic self publicInputs
-               | NonEphemeral := incrementationLogic self publicInputs privateInputs
-             }
-         }
-       | Created commitment :=
-         case lookupResource commitment customInputs of
-           | nothing := false
-           | just self :=
-             case HasEphemerality.get self of
-               | Ephemeral := false
-               | NonEphemeral := true;
-
-initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
-  getCount self == 0 && HasQuantity.get self == 1;
-
-incrementationLogic
-  (self : Resource) (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
-  let
     consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
     created := privateInputs |> Logic.Witness.created |> Set.toList;
   in case consumed, created of
-       | [currentCounter], [incrementedCounter] :=
-         self == currentCounter
-           && kind currentCounter == kind incrementedCounter
-           && isIncremented@{
-             old := currentCounter;
-             new := incrementedCounter
+       | [consumedCounter], [createdCounter] :=
+         sameKindCheck@{
+             consumedCounter;
+             createdCounter
            }
+           && case both HasEphemerality.get (consumedCounter, createdCounter) of {
+                | Ephemerality.Ephemeral, Ephemerality.NonEphemeral :=
+                  creationCheck@{
+                    createdCounter
+                  }
+                | Ephemerality.NonEphemeral, Ephemerality.NonEphemeral :=
+                  incrementationCheck@{
+                    consumedCounter;
+                    createdCounter
+                  }
+                | _, _ := false
+              }
        | _, _ := false;
+
+
+sameKindCheck (consumedCounter createdCounter : Resource) : Bool :=
+  kind consumedCounter == kind createdCounter;
+
+creationCheck (createdCounter : Resource) : Bool :=
+  getCount createdCounter == 0 && HasQuantity.get createdCounter == 1;
+
+incrementationCheck (consumedCounter createdCounter : Resource) : Bool :=
+  isIncremented@{
+    old := consumedCounter;
+    new := createdCounter
+  };
 
 isIncremented (old new : Resource) : Bool :=
   let

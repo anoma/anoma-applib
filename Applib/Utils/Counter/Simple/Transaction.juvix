@@ -2,92 +2,57 @@ module Applib.Utils.Counter.Simple.Transaction;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
-import Stdlib.Debug.Trace open;
 import Stdlib.Data.Set as Set open using {Set};
 import Anoma.Resource open;
 import Anoma.Identity open;
 import Anoma.Transaction open;
 import Anoma.Utils open;
-import Anoma.Builtin.System open;
-import Anoma.Proving.Types open;
 
 import Applib.Helpers open;
-import Applib.Resource.Error open;
-import Applib.Authorization.Message open;
 import Applib.Identities open;
-import Applib.Utils.Counter.Simple.Logic open;
 import Applib.Utils.Counter.Simple.Resource open;
+import Applib.Utils.Counter.Simple.Logic open;
 import Applib.Utils.Counter.Simple.Count open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Standards.Ownership open;
-
-import Applib.Helpers open;
 
 --- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
-createCounter (standardInputs : StandardInputs) : Result StandardError Transaction :=
+createCounter (standardInputs : StandardInputs) : Transaction :=
   let
-    identity := StandardInputs.identity standardInputs;
     ephCounter :=
       mkCounter@{
-        identity;
-        ephemeral := true;
-        count := 0
+        ephemeral := true
       };
-    newCounter :=
-      mkCounter@{
-        identity;
-        ephemeral := false;
-        count := 0
-      };
-    consumed := Set.fromList [ephCounter];
-    created := Set.fromList [newCounter];
-
-    nfResMapping := nullifierToResourceMapping identity consumed;
-    cmResMapping := commitmentToResourceMapping created;
-
-    nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-    commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-
-    customInputs :=
-      Set.union
-        (NullifiersAndCustomInputs.customInputs nfResMapping)
-        (CommitmentsAndCustomInputs.customInputs cmResMapping);
-
-  in ok
-    mkTransactionHelper@{
-      roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-      actions :=
-        Set.singleton
-          mkActionHelper@{
-            identity := StandardInputs.identity standardInputs;
-            consumed;
-            created;
-            appData := Set.empty;
-            customInputs;
-            maybeNullifiers := just nullifiers;
-            maybeCommitments := just commitments
-          }
-    };
-
--- TODO check kind
-incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
-  let
-    updatedCounter : Resource :=
-      currentCounter@Resource{
-        ephemeral := false;
-        valueRef := let
-                      currentCount := getCount currentCounter;
-                    in Reference.to (currentCount + 1 |> mkValue)
-      };
+    createdCounter := mkCounter;
   in mkTransactionHelper@{
     roots := Set.singleton (StandardInputs.currentRoot standardInputs);
     actions :=
       Set.singleton
         mkActionHelper@{
-          identity := StandardInputs.identity standardInputs;
-          consumed := Set.singleton currentCounter;
-          created := Set.singleton updatedCounter;
+          identity := Universal.identity;
+          consumed := Set.singleton ephCounter;
+          created := Set.singleton createdCounter;
           appData := Set.empty;
           customInputs := Set.empty
         }
   };
+
+incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+  let
+    updatedCounter :=
+      mkCounter@{
+        count := getCount currentCounter + 1
+      };
+  in if
+    | kind currentCounter /= counterKind := failwith "The input resource has wrong kind."
+    | else :=
+      mkTransactionHelper@{
+        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+        actions :=
+          Set.singleton
+            mkActionHelper@{
+              identity := StandardInputs.identity standardInputs;
+              consumed := Set.singleton currentCounter;
+              created := Set.singleton updatedCounter;
+              appData := Set.empty;
+              customInputs := Set.empty
+            }
+      };

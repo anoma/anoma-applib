@@ -4,8 +4,5 @@ import Stdlib.Prelude open;
 import Anoma.Resource open;
 import Anoma.Builtin.System open;
 
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Traits.ValueMap open;
-
 getCount (resource : Resource) : Nat :=
   resource |> Resource.valueRef |> Reference.from |> Value.unValue;

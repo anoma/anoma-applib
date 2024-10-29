@@ -8,17 +8,15 @@ import Anoma.Utils open;
 import Anoma.Builtin.System open;
 import Anoma.Identity open;
 
+import Applib.Identities open;
+import Applib.Random open;
 import Applib.Helpers open;
 import Applib.Utils.Counter.Simple.Count open;
 import Applib.Utils.Counter.Simple.Label open;
 import Applib.Utils.Counter.Simple.Logic open;
-import Applib.Identities open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Standards.Ownership open;
-import Applib.Random open;
 
--- Can be incremented by everyone
-mkCounter (identity : Identity) (ephemeral : Bool) (count : Nat) : Resource :=
+--- A counter that can be incremented by everyone.
+mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
   mkResource@{
     logicRef := Reference.to (counterLogic);
     labelRef := Reference.to (counterLabel);
@@ -28,4 +26,10 @@ mkCounter (identity : Identity) (ephemeral : Bool) (count : Nat) : Resource :=
     nullifierKeyCommitment := toNullifierKeyCommitment Universal.identity;
     nonce := mkNonce rand;
     randSeed := mkRandSeed rand
+  };
+
+counterKind : Kind :=
+  KindInternal.kind@{
+    logicRef := Reference.to (counterLogic);
+    labelRef := Reference.to (counterLabel)
   };
