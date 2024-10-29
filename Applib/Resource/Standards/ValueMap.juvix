@@ -1,12 +1,19 @@
 module Applib.Resource.Standards.ValueMap;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
-import Stdlib.Data.Set as Set open using {Set; toList; insert};
-import Stdlib.Data.Map as Map open using {Map; fromList; lookup};
+import Stdlib.Data.Set as Set open using {Set};
+import Stdlib.Data.Map as Map open using {Map};
 import Anoma.Builtin.System open;
 
+{-
+  We should use a ;Map; here and not a ;Set;.
+  Interface on top of map that takes care of hashing of the keys.
+-}
+
 type ValueMapKey := mkValueMapKey@{unValueMapKey : Nat};
+-- Could be a different type (e.g., sha256 hash)
 
 type ValueMapValue := mkValueMapValue@{unValueMapValue : Nat};
 
@@ -33,10 +40,12 @@ valueMapEntrytoPair {A} {B} (valueMapEntry : ValueMapEntry) : Pair A B :=
 
 ValueMap : Type := Set ValueMapEntry;
 
-lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : Maybe B :=
+lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : B :=
   let
     map' : Map A B := Map.fromList (map (entry in Set.toList valueMap) {valueMapEntrytoPair entry});
-  in Map.lookup key map';
+  in case Map.lookup key map' of
+       | just value := value
+       | nothing := failwith "ValueMapKey not found";
 
 --- A module implementing traits for ;ValueMapKey;.
 module ValueMapKeyInternal;
@@ -84,3 +93,11 @@ module ValueMapEntryInternal;
   instance
   ValueMapEntry-Eq : Eq ValueMapEntry := fromOrdToEq;
 end;
+
+insertValueMap (key : ValueMapKey) (value : ValueMapValue) (valueMap : ValueMap) : ValueMap :=
+  Set.insert
+    mkValueMapEntry@{
+      key;
+      value
+    }
+    valueMap;

@@ -24,10 +24,6 @@ getUID (counter : Resource) : UID :=
     valueMap : ValueMap :=
       counter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
   in mkUID@{
-    id : Nat :=
-      case lookupValueMap countValueMapKey valueMap of
-        | just count := count
-        -- TODO Refactor and use result + error.
-        | nothing := failwith "ERROR";
+    id : Nat := lookupValueMap countValueMapKey valueMap;
     uniqueKind := kind counter
   };
