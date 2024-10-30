@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Label;
+module Applib.Utils.Counter.Unique.Label;
 
 import Stdlib.Prelude open;
 import Anoma.Resource open;

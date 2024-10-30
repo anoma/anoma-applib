@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Count;
+module Applib.Utils.Counter.Unique.Count;
 
 import Stdlib.Prelude open;
 import Anoma.Resource open;

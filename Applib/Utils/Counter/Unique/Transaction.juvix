@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Transaction;
+module Applib.Utils.Counter.Unique.Transaction;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
@@ -16,10 +16,10 @@ import Applib.Resource.Error open;
 import Applib.Authorization.Message open;
 import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
-import Applib.Utils.Counter.Label open;
-import Applib.Utils.Counter.Logic open;
-import Applib.Utils.Counter.Resource open;
-import Applib.Utils.Counter.Count open;
+import Applib.Utils.Counter.Unique.Label open;
+import Applib.Utils.Counter.Unique.Logic open;
+import Applib.Utils.Counter.Unique.Resource open;
+import Applib.Utils.Counter.Unique.Count open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
 

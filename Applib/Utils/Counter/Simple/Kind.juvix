@@ -1,0 +1,14 @@
+module Applib.Utils.Counter.Simple.Kind;
+
+import Stdlib.Prelude open;
+import Anoma.Resource open;
+
+import Applib.Helpers open;
+import Applib.Utils.Counter.Simple.Label open;
+import Applib.Utils.Counter.Simple.Logic open;
+
+counterKind : Kind :=
+  KindInternal.kind@{
+    logicRef := Reference.to (counterLogic);
+    labelRef := Reference.to (counterLabel)
+  };

@@ -1,10 +1,10 @@
-module Applib.Utils.Counter.Projection;
+module Applib.Utils.Counter.Unique.Projection;
 
 import Stdlib.Prelude open;
 import Anoma.Resource open;
 
 import Applib.Helpers open;
-import Applib.Utils.Counter.Count open;
+import Applib.Utils.Counter.Unique.Count open;
 
 --- A unique identifier (UID) characterized by a ;Nat; counter value
 --- and an unique counter ;Kind;.

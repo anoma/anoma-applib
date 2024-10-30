@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Resource;
+module Applib.Utils.Counter.Unique.Resource;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open;
@@ -9,9 +9,9 @@ import Anoma.Builtin.System open;
 import Anoma.Identity open;
 
 import Applib.Helpers open;
-import Applib.Utils.Counter.Count open;
-import Applib.Utils.Counter.Logic open;
-import Applib.Utils.Counter.Label open;
+import Applib.Utils.Counter.Unique.Count open;
+import Applib.Utils.Counter.Unique.Logic open;
+import Applib.Utils.Counter.Unique.Label open;
 import Applib.Identities open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;

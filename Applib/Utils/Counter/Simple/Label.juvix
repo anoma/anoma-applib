@@ -1,0 +1,7 @@
+module Applib.Utils.Counter.Simple.Label;
+
+import Stdlib.Prelude open;
+import Anoma.Resource open;
+import Anoma.Builtin.System open;
+
+counterLabel : Label := "SimpleCounter" |> anomaEncode |> mkLabel;

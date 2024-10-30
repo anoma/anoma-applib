@@ -1,0 +1,58 @@
+module Applib.Utils.Counter.Simple.Transaction;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
+import Stdlib.Data.Set as Set open using {Set};
+import Anoma.Resource open;
+import Anoma.Identity open;
+import Anoma.Transaction open;
+import Anoma.Utils open;
+
+import Applib.Helpers open;
+import Applib.Identities open;
+import Applib.Utils.Counter.Simple.Resource open;
+import Applib.Utils.Counter.Simple.Logic open;
+import Applib.Utils.Counter.Simple.Count open;
+
+--- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
+createCounter (standardInputs : StandardInputs) : Transaction :=
+  let
+    ephCounter :=
+      mkCounter@{
+        ephemeral := true
+      };
+    createdCounter := mkCounter;
+  in mkTransactionHelper@{
+    roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+    actions :=
+      Set.singleton
+        mkActionHelper@{
+          identity := Universal.identity;
+          consumed := Set.singleton ephCounter;
+          created := Set.singleton createdCounter;
+          appData := Set.empty;
+          customInputs := Set.empty
+        }
+  };
+
+incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+  let
+    updatedCounter :=
+      mkCounter@{
+        count := getCount currentCounter + 1
+      };
+  in if
+    | kind currentCounter /= counterKind := failwith "The input resource has wrong kind."
+    | else :=
+      mkTransactionHelper@{
+        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+        actions :=
+          Set.singleton
+            mkActionHelper@{
+              identity := StandardInputs.identity standardInputs;
+              consumed := Set.singleton currentCounter;
+              created := Set.singleton updatedCounter;
+              appData := Set.empty;
+              customInputs := Set.empty
+            }
+      };
