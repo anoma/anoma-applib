@@ -14,8 +14,7 @@ import Applib.Utils.Counter.Simple.Resource open;
 import Applib.Utils.Counter.Simple.Logic open;
 import Applib.Utils.Counter.Simple.Count open;
 
---- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
-createCounter (standardInputs : StandardInputs) : Transaction :=
+initialize (standardInputs : StandardInputs) : Transaction :=
   let
     ephCounter :=
       mkCounter@{
@@ -35,7 +34,7 @@ createCounter (standardInputs : StandardInputs) : Transaction :=
         }
   };
 
-incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   let
     updatedCounter :=
       mkCounter@{

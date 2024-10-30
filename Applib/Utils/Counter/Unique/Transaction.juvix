@@ -27,7 +27,7 @@ import Applib.Helpers open;
 
 -- TODO use general initialize/traits
 --- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
-createCounter
+initialize
   (standardInputs : StandardInputs) (consumable : Resource) : Result StandardError Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
@@ -60,7 +60,6 @@ createCounter
       Set.union
         (NullifiersAndCustomInputs.customInputs nfResMapping)
         (CommitmentsAndCustomInputs.customInputs cmResMapping);
-
   in ok
     mkTransactionHelper@{
       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
@@ -78,7 +77,7 @@ createCounter
     };
 
 -- TODO check kind
-incrementCounter (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
     label := getCounterLabel currentCounter;
