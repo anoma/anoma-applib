@@ -13,7 +13,6 @@ import Applib.Resource.Traits open;
 import Applib.Utils.Counter.Simple.Count open;
 import Applib.Utils.Counter.Simple.Label open;
 
-
 counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   let
     tag := Logic.Instance.tag publicInputs;
@@ -38,7 +37,6 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
                 | _, _ := false
               }
        | _, _ := false;
-
 
 sameKindCheck (consumedCounter createdCounter : Resource) : Bool :=
   kind consumedCounter == kind createdCounter;
