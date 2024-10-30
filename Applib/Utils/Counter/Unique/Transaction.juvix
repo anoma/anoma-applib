@@ -76,45 +76,41 @@ initialize
           }
     };
 
--- TODO check kind
 increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
-  let
-    identity := StandardInputs.identity standardInputs;
-    label := getCounterLabel currentCounter;
-    expectedKind :=
-      KindInternal.kind@{
-        logicRef := Reference.to counterLogic;
-        labelRef := Resource.labelRef currentCounter
-      };
-
-    updatedCounter : Resource :=
+  if
+    | kind currentCounter /= counterKind (Resource.labelRef currentCounter) :=
+      failwith "The input resource has wrong kind."
+    | else :=
       let
-        valueMap : ValueMap :=
-          currentCounter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
-        currentCount : Nat :=
-          lookupValueMap@{
-            key := countValueMapKey;
-            valueMap
+        identity := StandardInputs.identity standardInputs;
+        updatedCounter : Resource :=
+          let
+            valueMap : ValueMap :=
+              currentCounter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
+            currentCount : Nat :=
+              lookupValueMap@{
+                key := countValueMapKey;
+                valueMap
+              };
+            updatedValueMap : ValueMap :=
+              insertValueMap@{
+                key := countValueMapKey;
+                value := toValueMapValue (currentCount + 1);
+                valueMap
+              };
+          in currentCounter@Resource{
+            ephemeral := false;
+            valueRef := Reference.to (updatedValueMap |> anomaEncode |> mkValue)
           };
-        updatedValueMap : ValueMap :=
-          insertValueMap@{
-            key := countValueMapKey;
-            value := toValueMapValue (currentCount + 1);
-            valueMap
-          };
-      in currentCounter@Resource{
-        ephemeral := false;
-        valueRef := Reference.to (updatedValueMap |> anomaEncode |> mkValue)
+      in mkTransactionHelper@{
+        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+        actions :=
+          Set.singleton
+            mkActionHelper@{
+              identity;
+              consumed := Set.singleton currentCounter;
+              created := Set.singleton updatedCounter;
+              appData := Set.empty;
+              customInputs := Set.empty
+            }
       };
-  in mkTransactionHelper@{
-    roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-    actions :=
-      Set.singleton
-        mkActionHelper@{
-          identity;
-          consumed := Set.singleton currentCounter;
-          created := Set.singleton updatedCounter;
-          appData := Set.empty;
-          customInputs := Set.empty
-        }
-  };
