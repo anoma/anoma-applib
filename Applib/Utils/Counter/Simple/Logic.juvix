@@ -45,13 +45,7 @@ creationCheck (createdCounter : Resource) : Bool :=
   getCount createdCounter == 0 && HasQuantity.get createdCounter == 1;
 
 incrementationCheck (consumedCounter createdCounter : Resource) : Bool :=
-  isIncremented@{
-    old := consumedCounter;
-    new := createdCounter
-  };
-
-isIncremented (old new : Resource) : Bool :=
   let
-    expected : Nat := getCount old + 1;
-    actual : Nat := getCount new;
+    expected := getCount consumedCounter + 1;
+    actual := getCount createdCounter;
   in expected == actual;
