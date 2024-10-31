@@ -1,14 +1,10 @@
 module Applib.Resource.Traits.Kind;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open;
-
-import Anoma.Resource.Computable open;
-import Anoma.Transaction open;
-import Anoma.Builtin.System open;
+import Anoma open;
 
 instance
-Kind-Show : Show Kind := mkShow \ {k := natToString (Kind.unKind k)};
+Kind-Show : Show Kind := mkShow \{k := natToString (Kind.unKind k)};
 
 trait
 type HasKind ResourceT := mkHasKind@{get : ResourceT -> Kind};
@@ -17,5 +13,5 @@ type HasKind ResourceT := mkHasKind@{get : ResourceT -> Kind};
 instance
 Resource-HasKind : HasKind Resource :=
   mkHasKind@{
-    get (resource : Resource) : Kind := kind resource
+    get (resource : Resource) : Kind := kind resource;
   };

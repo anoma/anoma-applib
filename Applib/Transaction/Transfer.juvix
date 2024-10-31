@@ -2,14 +2,11 @@ module Applib.Transaction.Transfer;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Transaction open;
+import Anoma open;
 
 import Applib.Resource.Error open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
-
 import Applib.Helpers open;
 
 --- Transfers a ;Convertable; resource type to a receiver, if the calling ;Identity; is the owner.
@@ -28,7 +25,8 @@ transfer
   (receiver : ExternalIdentity)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity := standardInputs |> StandardInputs.identity |> Identity.external;
+    self : ExternalIdentity :=
+      standardInputs |> StandardInputs.identity |> Identity.external;
     owner : ExternalIdentity := HasOwner.get toTransfer;
     transferred : R := HasOwner.set receiver toTransfer;
   in case HasTransferability.get toTransfer of
@@ -39,16 +37,17 @@ transfer
              throw
                mkUnauthorizedError@{
                  expected := self;
-                 actual := owner
+                 actual := owner;
                }
            | true :=
              ok
                mkTransactionHelper@{
-                 roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+                 roots :=
+                   Set.singleton (StandardInputs.currentRoot standardInputs);
                  actions :=
                    Set.singleton
                      (ActionConvertable.toAction
                        standardInputs
                        (Set.singleton toTransfer)
-                       (Set.singleton transferred))
+                       (Set.singleton transferred));
                };

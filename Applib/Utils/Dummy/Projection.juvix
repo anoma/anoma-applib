@@ -5,12 +5,10 @@ import Stdlib.Debug.Fail open;
 import Stdlib.Debug.Trace open;
 import Stdlib.Data.Set as Set open using {Set};
 
+import Anoma open;
 import Anoma.Builtin.System open;
-import Anoma.Resource open;
-import Anoma.Identity open;
 
 import Applib.Utils.Dummy.Resource open;
-
 import Applib.Resource.Error open;
 import Applib.Helpers open;
 
@@ -22,25 +20,26 @@ readValueField (dummyResources : Set Resource) : List String :=
     expectedKind :=
       KindInternal.kind@{
         logicRef := Reference.to alwaysValidLogic;
-        labelRef := Reference.to emptyLabel
+        labelRef := Reference.to emptyLabel;
       };
   in "DEBUG: Evaluating `Applib.Utils.Dummy.Projection.readValueField`"
-    >-> map (resource in Set.toList dummyResources)
-          {let
-            currentKind := kind resource;
-          in fromResult
-            case currentKind == expectedKind of {
-              | true :=
-                resource
-                  |> Resource.valueRef
-                  |> Reference.from
-                  |> Value.unValue
-                  |> anomaDecode
-                  |> ok
-              | false :=
-                throw
-                  mkInvalidKindError@{
-                    expected := expectedKind;
-                    actual := currentKind
-                  }
-            }};
+    >-> map (resource in Set.toList dummyResources) {
+      let
+        currentKind := kind resource;
+      in fromResult
+        case currentKind == expectedKind of {
+          | true :=
+            resource
+              |> Resource.valueRef
+              |> Reference.from
+              |> Value.unValue
+              |> anomaDecode
+              |> ok
+          | false :=
+            throw
+              mkInvalidKindError@{
+                expected := expectedKind;
+                actual := currentKind;
+              }
+        }
+    };

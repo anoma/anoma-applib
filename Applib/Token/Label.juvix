@@ -1,11 +1,8 @@
 module Applib.Token.Label;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open;
-import Anoma.Utils open;
-import Anoma.Identity.External open;
+import Anoma open;
 import Anoma.Builtin.System open;
-
 import Applib.Helpers open;
 import Applib.Resource.Traits open;
 
@@ -16,7 +13,7 @@ type TokenLabel :=
     decimals : Nat;
     supply : Supply;
     transferability : Transferability;
-    originator : ExternalIdentity
+    originator : ExternalIdentity;
   };
 
 instance
@@ -29,13 +26,13 @@ TokenLabel-Eq : Eq TokenLabel :=
         , TokenLabel.supply l
         , TokenLabel.originator l;
   in mkEq@{
-    eq (l1 l2 : TokenLabel) : Bool := toProd l1 == toProd l2
-  };
+       eq (l1 l2 : TokenLabel) : Bool := toProd l1 == toProd l2;
+     };
 
 instance
 TokenLabel-Show : Show TokenLabel :=
   mkShow
-    \ {l :=
+    \{l :=
       "{"
         ++str "name : "
         ++str (l |> TokenLabel.name |> Show.show)
@@ -78,13 +75,13 @@ fromLabelRef (labelRef : LabelRef) : TokenLabel :=
 type InvalidLabelError :=
   mkInvalidLabelError@{
     expected : TokenLabel;
-    actual : TokenLabel
+    actual : TokenLabel;
   };
 
 instance
 InvalidLabelError-Show : Show InvalidLabelError :=
   mkShow
-    \ {e :=
+    \{e :=
       "InvalidLabelError:\n{"
         ++str "expected : "
         ++str (e |> InvalidLabelError.expected |> Show.show)

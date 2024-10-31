@@ -12,11 +12,14 @@ type ValueMapKey := mkValueMapKey@{unValueMapKey : Nat};
 
 type ValueMapValue := mkValueMapValue@{unValueMapValue : Nat};
 
-toValueMapKey {A} (argument : A) : ValueMapKey := argument |> anomaEncode |> mkValueMapKey;
+toValueMapKey {A} (argument : A) : ValueMapKey :=
+  argument |> anomaEncode |> mkValueMapKey;
 
-fromValueMapKey {A} (key : ValueMapKey) : A := key |> ValueMapKey.unValueMapKey |> anomaDecode;
+fromValueMapKey {A} (key : ValueMapKey) : A :=
+  key |> ValueMapKey.unValueMapKey |> anomaDecode;
 
-toValueMapValue {A} (argument : A) : ValueMapValue := argument |> anomaEncode |> mkValueMapValue;
+toValueMapValue {A} (argument : A) : ValueMapValue :=
+  argument |> anomaEncode |> mkValueMapValue;
 
 fromValueMapValue {A} (value : ValueMapValue) : A :=
   value |> ValueMapValue.unValueMapValue |> anomaDecode;
@@ -24,28 +27,40 @@ fromValueMapValue {A} (value : ValueMapValue) : A :=
 type ValueMapEntry :=
   mkValueMapEntry@{
     key : ValueMapKey;
-    value : ValueMapValue
+    value : ValueMapValue;
   };
 
 valueMapEntrytoPair {A} {B} (valueMapEntry : ValueMapEntry) : Pair A B :=
   let
-    key := valueMapEntry |> ValueMapEntry.key |> ValueMapKey.unValueMapKey |> anomaDecode;
-    value := valueMapEntry |> ValueMapEntry.value |> ValueMapValue.unValueMapValue |> anomaDecode;
+    key :=
+      valueMapEntry
+        |> ValueMapEntry.key
+        |> ValueMapKey.unValueMapKey
+        |> anomaDecode;
+    value :=
+      valueMapEntry
+        |> ValueMapEntry.value
+        |> ValueMapValue.unValueMapValue
+        |> anomaDecode;
   in key, value;
 
 ValueMap : Type := Set ValueMapEntry;
 
-lookupValueMapMaybe {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : Maybe B :=
+lookupValueMapMaybe
+  {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : Maybe B :=
   let
     converted : Map A B :=
-      Map.fromList (map (entry in Set.toList valueMap) {valueMapEntrytoPair entry});
+      Map.fromList
+        (map (entry in Set.toList valueMap) {
+          valueMapEntrytoPair entry
+        });
   in Map.lookup key converted;
 
 lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : B :=
   case
     lookupValueMapMaybe@{
       key;
-      valueMap
+      valueMap;
     }
   of
     | just value := value
@@ -70,7 +85,9 @@ end;
 module ValueMapValueInternal;
   --- Compares two ;ValueMapValue;s.
   compare (lhs rhs : ValueMapValue) : Ordering :=
-    Ord.cmp (ValueMapValue.unValueMapValue lhs) (ValueMapValue.unValueMapValue rhs);
+    Ord.cmp
+      (ValueMapValue.unValueMapValue lhs)
+      (ValueMapValue.unValueMapValue rhs);
 
   --- Implements the ;Ord; trait for ;ValueMapValue;.
   instance
@@ -86,7 +103,8 @@ module ValueMapEntryInternal;
   --- Compares two ;ValueMapEntry;s.
   compare (lhs rhs : ValueMapEntry) : Ordering :=
     let
-      prod (entry : ValueMapEntry) : _ := ValueMapEntry.key entry, ValueMapEntry.value entry;
+      prod (entry : ValueMapEntry) : _ :=
+        ValueMapEntry.key entry, ValueMapEntry.value entry;
     in Ord.cmp (prod lhs) (prod rhs);
 
   --- Implements the ;Ord; trait for ;ValueMapEntry;.
@@ -98,10 +116,14 @@ module ValueMapEntryInternal;
   ValueMapEntry-Eq : Eq ValueMapEntry := fromOrdToEq;
 end;
 
-insertValueMap (key : ValueMapKey) (value : ValueMapValue) (valueMap : ValueMap) : ValueMap :=
+insertValueMap
+  (key : ValueMapKey)
+  (value : ValueMapValue)
+  (valueMap : ValueMap)
+  : ValueMap :=
   Set.insert
     mkValueMapEntry@{
       key;
-      value
+      value;
     }
     valueMap;

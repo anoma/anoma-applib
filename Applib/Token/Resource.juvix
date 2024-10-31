@@ -4,16 +4,13 @@ import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Applib.Helpers open;
+import Anoma open;
+import Anoma.Builtin.System open;
 
+import Applib.Helpers open;
 import Applib.Resource.Traits open;
 import Applib.Token.Label open;
 import Applib.Token.Logic open;
-import Anoma.Builtin.System open;
-import Anoma.Utils open;
-
 import Applib.Identities open;
 import Applib.Random open;
 import Applib.Resource.Standards.Ownership open;
@@ -31,20 +28,29 @@ module Token;
       mkResource@{
         logicRef :=
           Reference.to
-            (tokenLogic (TokenLabel.supply tokenLabel) (TokenLabel.originator tokenLabel));
+            (tokenLogic
+              (TokenLabel.supply tokenLabel)
+              (TokenLabel.originator tokenLabel));
         labelRef := Reference.to (tokenLabel |> anomaEncode |> mkLabel);
         valueRef :=
-          Reference.to (owner |> ownershipValueMapEntry |> Set.singleton |> anomaEncode |> mkValue);
+          Reference.to
+            (owner
+              |> ownershipValueMapEntry
+              |> Set.singleton
+              |> anomaEncode
+              |> mkValue);
         quantity;
         ephemeral;
-        nullifierKeyCommitment := ExternalIdentity.toNullifierKeyCommitment owner;
+        nullifierKeyCommitment :=
+          ExternalIdentity.toNullifierKeyCommitment owner;
         nonce := mkNonce rand;
-        randSeed := mkRandSeed rand
+        randSeed := mkRandSeed rand;
       };
 
   module TokenInternal;
     --- Compares two ;Token; objects.
-    compare (lhs rhs : Token) : Ordering := Ord.cmp (Token.resource lhs) (Token.resource rhs);
+    compare (lhs rhs : Token) : Ordering :=
+      Ord.cmp (Token.resource lhs) (Token.resource rhs);
 
     --- Implements the ;Ord; trait for ;Token;.
     instance
@@ -66,12 +72,13 @@ Token-Convertable : Convertable Token :=
     toResource (token : Token) : Resource := Token.resource token;
     fromResource (resource : Resource) : Token :=
       Token.mk@{
-        resource
-      }
+        resource;
+      };
   };
 
 instance
-Token-HasQuantity : HasQuantity Token := TraitFromConvertable.hasQuantity {Token};
+Token-HasQuantity : HasQuantity Token :=
+  TraitFromConvertable.hasQuantity {Token};
 
 instance
 Token-HasOwner : HasOwner Token :=
@@ -88,11 +95,12 @@ Token-HasOwner : HasOwner Token :=
           |> anomaEncode
           |> mkValue
           |> Reference.to}
-        |> Convertable.fromResource
+        |> Convertable.fromResource;
   };
 
 instance
-Token-HasEphemerality : HasEphemerality Token := TraitFromConvertable.hasEphemerality {Token};
+Token-HasEphemerality : HasEphemerality Token :=
+  TraitFromConvertable.hasEphemerality {Token};
 
 instance
 Token-HasLogic : HasLogic Token := TraitFromConvertable.hasLogic {Token};
@@ -106,8 +114,9 @@ Token-Label-HasLabel : HasLabel Token TokenLabel :=
     get (token : Token) : TokenLabel :=
       token |> Convertable.toResource |> Resource.labelRef |> fromLabelRef;
     set (tokenLabel : TokenLabel) (token : Token) : Token :=
-      (token |> Convertable.toResource)@Resource{labelRef := toLabelRef tokenLabel}
-        |> Convertable.fromResource
+      (token |> Convertable.toResource)@Resource{labelRef := toLabelRef
+          tokenLabel}
+        |> Convertable.fromResource;
   };
 
 instance
@@ -117,25 +126,28 @@ Token-HasSupply : HasSupply Token :=
     set (supply : Supply) (token : Token) : Token :=
       let
         newLabel := (HasLabel.get token)@TokenLabel{supply := supply};
-      in HasLabel.set newLabel token
+      in HasLabel.set newLabel token;
   };
 
 instance
 Token-HasTransferability : HasTransferability Token :=
   mkHasTransferability@{
-    get (token : Token) : Transferability := token |> HasLabel.get |> TokenLabel.transferability;
+    get (token : Token) : Transferability :=
+      token |> HasLabel.get |> TokenLabel.transferability;
     set (transferability : Transferability) (token : Token) : Token :=
       let
-        newLabel := (HasLabel.get token)@TokenLabel{transferability := transferability};
-      in HasLabel.set newLabel token
+        newLabel :=
+          (HasLabel.get token)@TokenLabel{transferability := transferability};
+      in HasLabel.set newLabel token;
   };
 
 instance
 Token-HasOriginator : HasOriginator Token :=
   mkHasOriginator@{
-    get (token : Token) : ExternalIdentity := token |> HasLabel.get |> TokenLabel.originator;
+    get (token : Token) : ExternalIdentity :=
+      token |> HasLabel.get |> TokenLabel.originator;
     set (originator : ExternalIdentity) (token : Token) : Token :=
       let
         newLabel := (HasLabel.get token)@TokenLabel{originator := originator};
-      in HasLabel.set newLabel token
+      in HasLabel.set newLabel token;
   };

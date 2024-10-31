@@ -1,13 +1,13 @@
 module Applib.Resource.Traits.Quantity;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open;
+import Anoma open;
 
 trait
 type HasQuantity ResourceT :=
   mkHasQuantity@{
     get : ResourceT -> Quantity;
-    set : Quantity -> ResourceT -> ResourceT
+    set : Quantity -> ResourceT -> ResourceT;
   };
 
 instance
@@ -15,5 +15,5 @@ Resource-HasQuantity : HasQuantity Resource :=
   mkHasQuantity@{
     get (resource : Resource) : Quantity := Resource.quantity resource;
     set (quantity : Quantity) (resource : Resource) : Resource :=
-      resource@Resource{quantity := quantity}
+      resource@Resource{quantity := quantity};
   };

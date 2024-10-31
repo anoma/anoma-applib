@@ -3,18 +3,16 @@ module Applib.Utils.Dummy.Resource;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open;
 
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Utils open;
+import Anoma open;
 import Anoma.Builtin.System open;
-import Anoma.Proving.Types open;
 
 import Applib.Random open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
 import Applib.Identities open;
 
-alwaysValidLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
+alwaysValidLogic
+  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidLogic`" >-> true;
 
 emptyLabel : Label := mkLabel 0;
@@ -29,12 +27,13 @@ alwaysValidResource
   : Resource :=
   "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidResource`"
     >-> mkResource@{
-      logicRef := Reference.to alwaysValidLogic;
-      labelRef := Reference.to emptyLabel;
-      valueRef := Reference.to (mkValue (anomaEncode dummyValue));
-      quantity;
-      ephemeral;
-      nullifierKeyCommitment := ExternalIdentity.toNullifierKeyCommitment identity;
-      nonce := mkNonce rand;
-      randSeed := mkRandSeed rand
-    };
+          logicRef := Reference.to alwaysValidLogic;
+          labelRef := Reference.to emptyLabel;
+          valueRef := Reference.to (mkValue (anomaEncode dummyValue));
+          quantity;
+          ephemeral;
+          nullifierKeyCommitment :=
+            ExternalIdentity.toNullifierKeyCommitment identity;
+          nonce := mkNonce rand;
+          randSeed := mkRandSeed rand;
+        };

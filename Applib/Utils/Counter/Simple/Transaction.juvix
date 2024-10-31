@@ -3,10 +3,8 @@ module Applib.Utils.Counter.Simple.Transaction;
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Transaction open;
-import Anoma.Utils open;
+
+import Anoma open;
 
 import Applib.Helpers open;
 import Applib.Identities open;
@@ -18,30 +16,32 @@ initialize (standardInputs : StandardInputs) : Transaction :=
   let
     ephCounter :=
       mkCounter@{
-        ephemeral := true
+        ephemeral := true;
       };
     createdCounter := mkCounter;
   in mkTransactionHelper@{
-    roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-    actions :=
-      Set.singleton
-        mkActionHelper@{
-          identity := Universal.identity;
-          consumed := Set.singleton ephCounter;
-          created := Set.singleton createdCounter;
-          appData := Set.empty;
-          customInputs := Set.empty
-        }
-  };
+       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+       actions :=
+         Set.singleton
+           mkActionHelper@{
+             identity := Universal.identity;
+             consumed := Set.singleton ephCounter;
+             created := Set.singleton createdCounter;
+             appData := Set.empty;
+             customInputs := Set.empty;
+           };
+     };
 
-increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+increment
+  (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   let
     updatedCounter :=
       mkCounter@{
-        count := getCount currentCounter + 1
+        count := getCount currentCounter + 1;
       };
   in if
-    | kind currentCounter /= counterKind := failwith "The input resource has wrong kind."
+    | kind currentCounter /= counterKind :=
+      failwith "The input resource has wrong kind."
     | else :=
       mkTransactionHelper@{
         roots := Set.singleton (StandardInputs.currentRoot standardInputs);
@@ -52,6 +52,6 @@ increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transa
               consumed := Set.singleton currentCounter;
               created := Set.singleton updatedCounter;
               appData := Set.empty;
-              customInputs := Set.empty
-            }
+              customInputs := Set.empty;
+            };
       };

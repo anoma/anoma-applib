@@ -1,7 +1,7 @@
 module Applib.Resource.Traits.Supply;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open using {Nullifier};
+import Anoma open;
 
 type Supply :=
   | Unbound
@@ -15,13 +15,13 @@ Supply-Eq : Eq Supply :=
       | Unbound Unbound := true
       | Capped Capped := true
       | (Fixed f1) (Fixed f2) := f1 == f2
-      | _ _ := false
+      | _ _ := false;
   };
 
 instance
 Supply-Show : Show Supply :=
   mkShow
-    \ {
+    \{
       | Unbound := "Unbound"
       | Capped := "Capped"
       | (Fixed f) := "Fixed"
@@ -32,5 +32,5 @@ trait
 type HasSupply ResourceT :=
   mkHasSupply@{
     get : ResourceT -> Supply;
-    set : Supply -> ResourceT -> ResourceT
+    set : Supply -> ResourceT -> ResourceT;
   };

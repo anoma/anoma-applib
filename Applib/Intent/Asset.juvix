@@ -2,15 +2,14 @@ module Applib.Intent.Asset;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Resource open;
-import Anoma.Identity.External open;
+import Anoma open;
 import Applib.Helpers open;
 import Applib.Identities open;
 
 type Asset :=
   mkAsset@{
     quantity : Quantity;
-    kind : Kind
+    kind : Kind;
   };
 
 type Quantifier :=
@@ -20,14 +19,20 @@ type Quantifier :=
 type QuantifiedAssets :=
   mkQuantifiedAssets@{
     quantifier : Quantifier;
-    assets : List Asset
+    assets : List Asset;
   };
 
 --- Checks if an ;Asset; is included in a ;Set; of resources.
 --- The resource ;Kind; must match, the quantity must be
 --- greater or equal, and the `npk` must be the ;ExternalIdentity; of the receiver.
-includesAsset (asset : Asset) (receiver : ExternalIdentity) (resources : Set Resource) : Bool :=
-  any (r in Set.toList resources)
+includesAsset
+  (asset : Asset)
+  (receiver : ExternalIdentity)
+  (resources : Set Resource)
+  : Bool :=
+  any (r in Set.toList resources) {
     Asset.quantity asset <= Resource.quantity r
       && Asset.kind asset == kind r
-      && ExternalIdentity.toNullifierKeyCommitment receiver == Resource.nullifierKeyCommitment r;
+      && ExternalIdentity.toNullifierKeyCommitment receiver
+        == Resource.nullifierKeyCommitment r
+  };

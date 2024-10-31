@@ -2,16 +2,13 @@ module Applib.Transaction.Send;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Nat.Ord open using {compare};
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Transaction open;
+import Anoma open;
 
 import Applib.Resource.Error open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
 import Applib.Transaction.Transfer open;
 import Applib.Transaction.Split open;
-
 import Applib.Helpers open;
 
 --- Sends a ;HasQuantity; of token ;Resource; to a receiver, if the calling ;Identity; is the owner.
@@ -34,20 +31,23 @@ send
   (receiver : ExternalIdentity)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity := standardInputs |> StandardInputs.identity |> Identity.external;
+    self : ExternalIdentity :=
+      standardInputs |> StandardInputs.identity |> Identity.external;
     balance : Quantity := HasQuantity.get toSend;
   in case QuantityInternal.compare balance quantity of
        | LessThan :=
          throw
            mkInsufficientHasQuantityError@{
              limit := balance;
-             actual := quantity
+             actual := quantity;
            }
        | Equal := transfer standardInputs toSend receiver
        | GreaterThan :=
          let
            difference : Quantity :=
-             intSubNat (Quantity.unQuantity balance) (Quantity.unQuantity quantity)
+             intSubNat
+                 (Quantity.unQuantity balance)
+                 (Quantity.unQuantity quantity)
                |> toNat
                |> mkQuantity;
          in split standardInputs toSend [quantity, receiver; difference, self];

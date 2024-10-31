@@ -1,7 +1,8 @@
 module Applib.Utils.Counter.Unique.Count;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open;
+
+import Anoma open;
 import Anoma.Builtin.System open;
 
 import Applib.Resource.Standards.ValueMap open;

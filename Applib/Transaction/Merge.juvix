@@ -3,9 +3,7 @@ module Applib.Transaction.Merge;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Transaction open;
+import Anoma open;
 
 import Applib.Resource.Error open;
 import Applib.Resource.Traits open;
@@ -15,7 +13,7 @@ import Applib.Helpers open;
 --- Merges ;Convertable; typed ;Resource;s of the same ;Kind;.
 --- The function returns a ;StandardError; if the ;Convertable; ;Resource;s
 --- - have different ;Kind;
---- - are ;Transferability.NonTransferable;
+--- - are ;NonTransferable;
 --- - are not owned by calling ;Identity;.
 merge
   {R}
@@ -35,13 +33,17 @@ merge
       throw
         mkInsufficientElementsError@{
           limit := 1;
-          actual := 0
+          actual := 0;
         }
     | t :: _ :=
       let
-        self : ExternalIdentity := standardInputs |> StandardInputs.identity |> Identity.external;
+        self : ExternalIdentity :=
+          standardInputs |> StandardInputs.identity |> Identity.external;
         expectedKind : Kind := HasKind.get t;
-        totalQuantity : Quantity := listFor (acc := 0) (ti in toMerge) {HasQuantity.get ti + acc};
+        totalQuantity : Quantity :=
+          listFor (acc := 0) (ti in toMerge) {
+            HasQuantity.get ti + acc
+          };
         merged := HasOwner.set receiver (HasQuantity.set totalQuantity t);
       in case HasTransferability.get t of
            | NonTransferable := throw mkNonTransferableError
@@ -51,7 +53,7 @@ merge
                  throw
                    mkInvalidKindError@{
                      expected := expectedKind;
-                     actual := otherKind
+                     actual := otherKind;
                    }
                | nothing :=
                  case find ((/=) self) (map (HasOwner.get) toMerge) of
@@ -59,16 +61,18 @@ merge
                      throw
                        mkUnauthorizedError@{
                          expected := self;
-                         actual := notMyself
+                         actual := notMyself;
                        }
                    | nothing :=
                      ok
                        mkTransactionHelper@{
-                         roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+                         roots :=
+                           Set.singleton
+                             (StandardInputs.currentRoot standardInputs);
                          actions :=
                            Set.singleton
                              (ActionConvertable.toAction
                                standardInputs
                                (Set.fromList toMerge)
-                               (Set.singleton merged))
+                               (Set.singleton merged));
                        };

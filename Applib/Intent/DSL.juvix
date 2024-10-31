@@ -2,7 +2,7 @@
 module Applib.Intent.DSL;
 
 import Stdlib.Prelude open hiding {for; any; all};
-import Anoma.Resource open;
+import Anoma open;
 
 import Applib.Intent.Asset open;
 
@@ -13,7 +13,7 @@ type Intention :=
 type Clause :=
   mkClause@{
     lhs : Pair Intention QuantifiedAssets;
-    rhs : QuantifiedAssets
+    rhs : QuantifiedAssets;
   };
 
 syntax operator of_ additive;
@@ -23,19 +23,19 @@ syntax alias of_ := mkAsset;
 any (as : List Asset) : QuantifiedAssets :=
   mkQuantifiedAssets@{
     quantifier := Any;
-    assets := as
+    assets := as;
   };
 
 all (as : List Asset) : QuantifiedAssets :=
   mkQuantifiedAssets@{
     quantifier := All;
-    assets := as
+    assets := as;
   };
 
 exactly (a : Asset) : QuantifiedAssets :=
   mkQuantifiedAssets@{
     quantifier := All;
-    assets := [a]
+    assets := [a];
   };
 
 want (a : QuantifiedAssets) : Pair Intention QuantifiedAssets := Want, a;
@@ -47,7 +47,7 @@ syntax operator for pair;
 for (l : Pair Intention QuantifiedAssets) (qs : QuantifiedAssets) : Clause :=
   mkClause@{
     lhs := l;
-    rhs := qs
+    rhs := qs;
   };
 
 intent (clauses : List Clause) : Resource := mkIntent clauses;

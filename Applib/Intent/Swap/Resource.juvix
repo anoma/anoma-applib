@@ -3,11 +3,9 @@ module Applib.Intent.Swap.Resource;
 import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Utils open;
-import Applib.Helpers open;
+import Anoma open;
 
+import Applib.Helpers open;
 import Applib.Resource.Traits open;
 import Applib.Intent.Asset open;
 import Applib.Intent.Swap.Logic open;
@@ -16,7 +14,10 @@ import Applib.Random open;
 module SwapIntent;
   type SwapIntent := mk@{resource : Resource};
 
-  create (want : QuantifiedAssets) (receiver solver : ExternalIdentity) : SwapIntent :=
+  create
+    (want : QuantifiedAssets)
+    (receiver solver : ExternalIdentity)
+    : SwapIntent :=
     mk
       mkResource@{
         logicRef := Reference.to (swapIntentLogic want receiver);
@@ -25,9 +26,11 @@ module SwapIntent;
         quantity := 1;
         ephemeral := true;
         nullifierKeyCommitment :=
-          solver |> ExternalIdentity.unExternalIdentity |> mkNullifierKeyCommitment;
+          solver
+            |> ExternalIdentity.unExternalIdentity
+            |> mkNullifierKeyCommitment;
         nonce := mkNonce rand;
-        randSeed := mkRandSeed rand
+        randSeed := mkRandSeed rand;
       };
 
   module SwapIntentInternal;
@@ -53,18 +56,21 @@ instance
 SwapIntent-Convertable : Convertable SwapIntent :=
   mkConvertable@{
     toResource (t : SwapIntent) : Resource := SwapIntent.resource t;
-    fromResource (r : Resource) : SwapIntent := SwapIntent.mk r
+    fromResource (r : Resource) : SwapIntent := SwapIntent.mk r;
   };
 
 instance
-SwapIntent-HasQuantity : HasQuantity SwapIntent := TraitFromConvertable.hasQuantity {SwapIntent};
+SwapIntent-HasQuantity : HasQuantity SwapIntent :=
+  TraitFromConvertable.hasQuantity {SwapIntent};
 
 instance
-SwapIntent-HasOwner : HasOwner SwapIntent := TraitFromConvertable.hasOwner {SwapIntent};
+SwapIntent-HasOwner : HasOwner SwapIntent :=
+  TraitFromConvertable.hasOwner {SwapIntent};
 
 instance
 SwapIntent-HasEphemerality : HasEphemerality SwapIntent :=
   TraitFromConvertable.hasEphemerality {SwapIntent};
 
 instance
-SwapIntent-HasKind : HasKind SwapIntent := TraitFromConvertable.hasKind {SwapIntent};
+SwapIntent-HasKind : HasKind SwapIntent :=
+  TraitFromConvertable.hasKind {SwapIntent};

@@ -1,11 +1,10 @@
 module Applib.Resource.Traits.Label;
 
-import Anoma.Resource open;
-import Anoma.Utils open;
+import Anoma open;
 
 trait
 type HasLabel ResourceT LabelT :=
   mkHasLabel@{
     get : ResourceT -> LabelT;
-    set : LabelT -> ResourceT -> ResourceT
+    set : LabelT -> ResourceT -> ResourceT;
   };

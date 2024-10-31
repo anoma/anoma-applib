@@ -1,7 +1,7 @@
 module Applib.Resource.Traits.ValueMap;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open;
+import Anoma open;
 import Anoma.Builtin.System open;
 
 import Applib.Resource.Standards.ValueMap open;
@@ -10,7 +10,7 @@ trait
 type HasValueMap ResourceT :=
   mkHasValueMap@{
     get : ResourceT -> ValueMap;
-    set : ValueMap -> ResourceT -> ResourceT
+    set : ValueMap -> ResourceT -> ResourceT;
   };
 
 instance
@@ -20,12 +20,19 @@ Resource-HasValueMap : HasValueMap Resource :=
     --- @param resource The ;Resource; to return the value map from.
     --- @return The value map.
     get (resource : Resource) : ValueMap :=
-      resource |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
+      resource
+        |> Resource.valueRef
+        |> Reference.from
+        |> Value.unValue
+        |> anomaDecode;
 
     --- Sets the ;ValueMap; of a resource.
     --- @param valueMap The value map to set.
     --- @param resource The resource to set the owner for.
     --- @return The updated resource.
     set (valueMap : ValueMap) (resource : Resource) : Resource :=
-      resource@Resource{valueRef := valueMap |> anomaEncode |> mkValue |> Reference.to}
+      resource@Resource{valueRef := valueMap
+        |> anomaEncode
+        |> mkValue
+        |> Reference.to};
   };

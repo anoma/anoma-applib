@@ -2,21 +2,20 @@ module Applib.Authorization.Check;
 
 import Stdlib.Prelude open;
 
-import Anoma.Identity.External open;
-import Anoma.Identity.Signing.Types open;
+import Anoma open;
 import Applib.Authorization.Message open;
-import Anoma.Resource as Resource open;
-import Anoma.Transaction open;
-import Anoma.Proving.Types open;
-
 import Applib.Helpers open;
 
-isAuthorizedBy (signer : ExternalIdentity) (origin : Tag) (publicInputs : Logic.Instance) : Bool :=
+isAuthorizedBy
+  (signer : ExternalIdentity)
+  (origin : Tag)
+  (publicInputs : Logic.Instance)
+  : Bool :=
   case
     lookupAppData@{
       key := origin;
       Value := Pair ResourceRelationship Signature;
-      appData := Logic.Instance.appData publicInputs
+      appData := Logic.Instance.appData publicInputs;
     }
   of
     | nothing := false

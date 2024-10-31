@@ -3,10 +3,7 @@ module Applib.Resource.Error;
 import Stdlib.Prelude open;
 import Stdlib.Debug open;
 
-import Anoma.Resource open;
-import Anoma.Transaction open;
-import Anoma.Identity.External open;
-
+import Anoma open;
 import Applib.Helpers open;
 import Applib.Authorization.Check open;
 import Applib.Token.Resource open;
@@ -19,31 +16,31 @@ type NonTransferableError := mkNonTransferableError;
 type InsufficientElementsError :=
   mkInsufficientElementsError@{
     limit : Nat;
-    actual : Nat
+    actual : Nat;
   };
 
 type InsufficientHasQuantityError :=
   mkInsufficientHasQuantityError@{
     limit : Quantity;
-    actual : Quantity
+    actual : Quantity;
   };
 
 type InvalidLogicError :=
   mkInvalidLogicError@{
     expected : Nat;
-    actual : Nat
+    actual : Nat;
   };
 
 type InvalidKindError :=
   mkInvalidKindError@{
     expected : Kind;
-    actual : Kind
+    actual : Kind;
   };
 
 type UnauthorizedError :=
   mkUnauthorizedError@{
     expected : ExternalIdentity;
-    actual : ExternalIdentity
+    actual : ExternalIdentity;
   };
 
 type StandardError :=
@@ -63,58 +60,65 @@ open Throwable public;
 instance
 ErrorThrowable {A} : Throwable DefaultError A :=
   mkThrowable@{
-    throw (e : DefaultError) : Result StandardError A := error {_} {A} (ErrDefault e)
+    throw (e : DefaultError) : Result StandardError A :=
+      error {_} {A} (ErrDefault e);
   };
 
 instance
 UnauthorizedThrowable {A} : Throwable UnauthorizedError A :=
   mkThrowable@{
-    throw (e : UnauthorizedError) : Result StandardError A := error {_} {A} (ErrUnauthorized e)
+    throw (e : UnauthorizedError) : Result StandardError A :=
+      error {_} {A} (ErrUnauthorized e);
   };
 
 instance
-InsufficientHasQuantityThrowable {A} : Throwable InsufficientHasQuantityError A :=
+InsufficientHasQuantityThrowable
+  {A} : Throwable InsufficientHasQuantityError A :=
   mkThrowable@{
     throw (e : InsufficientHasQuantityError) : Result StandardError A :=
-      error {_} {A} (ErrInsufficientHasQuantity e)
+      error {_} {A} (ErrInsufficientHasQuantity e);
   };
 
 instance
 InsufficientElementsThrowable {A} : Throwable InsufficientElementsError A :=
   mkThrowable@{
     throw (e : InsufficientElementsError) : Result StandardError A :=
-      error {_} {A} (ErrInsufficientElements e)
+      error {_} {A} (ErrInsufficientElements e);
   };
 
 instance
 InvalidLogicThrowable {A} : Throwable InvalidLogicError A :=
   mkThrowable@{
-    throw (e : InvalidLogicError) : Result StandardError A := error {_} {A} (ErrInvalidLogic e)
+    throw (e : InvalidLogicError) : Result StandardError A :=
+      error {_} {A} (ErrInvalidLogic e);
   };
 
 instance
 InvalidKindThrowable {A} : Throwable InvalidKindError A :=
   mkThrowable@{
-    throw (e : InvalidKindError) : Result StandardError A := error {_} {A} (ErrInvalidKind e)
+    throw (e : InvalidKindError) : Result StandardError A :=
+      error {_} {A} (ErrInvalidKind e);
   };
 
 instance
 NonTransferableThrowable {A} : Throwable NonTransferableError A :=
   mkThrowable@{
     throw (e : NonTransferableError) : Result StandardError A :=
-      error {_} {A} (ErrNonTransferable e)
+      error {_} {A} (ErrNonTransferable e);
   };
 
 instance
-StandardError-Show : Show StandardError := mkShow \ {e := "StandardError:\n" ++str Show.show e};
+StandardError-Show : Show StandardError :=
+  mkShow \{e := "StandardError:\n" ++str Show.show e};
 
 instance
-NonTransferableError-Show : Show NonTransferableError := mkShow \ {e := "NonTransferableError"};
+NonTransferableError-Show : Show NonTransferableError :=
+  mkShow \{e := "NonTransferableError"};
 
 instance
 InsufficientElementsError-Show : Show InsufficientElementsError :=
   mkShow
-    \ {e :=
+    \{e :=
       "InsufficientElementsError:\n{"
         ++str "limit : "
         ++str (e |> InsufficientElementsError.limit |> Show.show)
@@ -126,19 +130,25 @@ InsufficientElementsError-Show : Show InsufficientElementsError :=
 instance
 InsufficientHasQuantityError-Show : Show InsufficientHasQuantityError :=
   mkShow
-    \ {e :=
+    \{e :=
       "InsufficientHasQuantityError:\n{"
         ++str "limit : "
-        ++str (e |> InsufficientHasQuantityError.limit |> Quantity.unQuantity |> Show.show)
+        ++str (e
+          |> InsufficientHasQuantityError.limit
+          |> Quantity.unQuantity
+          |> Show.show)
         ++str ", "
         ++str "actual"
-        ++str (e |> InsufficientHasQuantityError.actual |> Quantity.unQuantity |> Show.show)
+        ++str (e
+          |> InsufficientHasQuantityError.actual
+          |> Quantity.unQuantity
+          |> Show.show)
         ++str "}"};
 
 instance
 InvalidLogicError-Show : Show InvalidLogicError :=
   mkShow
-    \ {e :=
+    \{e :=
       "InvalidLogicError:\n{"
         ++str "expected : "
         ++str (e |> InvalidLogicError.expected |> Show.show)
@@ -150,7 +160,7 @@ InvalidLogicError-Show : Show InvalidLogicError :=
 instance
 InvalidKindError-Show : Show InvalidKindError :=
   mkShow
-    \ {e :=
+    \{e :=
       "InvalidLogicError:\n{"
         ++str "expected : "
         ++str (e |> InvalidKindError.expected |> Show.show)
@@ -162,7 +172,7 @@ InvalidKindError-Show : Show InvalidKindError :=
 instance
 UnauthorizedError-Show : Show UnauthorizedError :=
   mkShow
-    \ {e :=
+    \{e :=
       "UnauthorizedError:\n{"
         ++str "expected : "
         ++str (e |> UnauthorizedError.expected |> Show.show)
@@ -172,7 +182,11 @@ UnauthorizedError-Show : Show UnauthorizedError :=
         ++str "}"};
 
 fromResult
-  {ErrorType} {DataType} {{Show ErrorType}} (result : Result ErrorType DataType) : DataType :=
+  {ErrorType}
+  {DataType}
+  {{Show ErrorType}}
+  (result : Result ErrorType DataType)
+  : DataType :=
   case result of
     | ok data := data
     | error err := failwith (Show.show err);

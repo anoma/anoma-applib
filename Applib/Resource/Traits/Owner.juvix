@@ -2,11 +2,8 @@ module Applib.Resource.Traits.Owner;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open;
-
-import Anoma.Resource open;
-import Anoma.Identity.External open;
+import Anoma open;
 import Anoma.Builtin.System open;
-
 import Applib.Identities open;
 import Applib.Resource.Traits.ValueMap open;
 import Applib.Resource.Standards.ValueMap open;
@@ -16,7 +13,7 @@ trait
 type HasOwner ResourceT :=
   mkHasOwner@{
     get : ResourceT -> ExternalIdentity;
-    set : ExternalIdentity -> ResourceT -> ResourceT
+    set : ExternalIdentity -> ResourceT -> ResourceT;
   };
 
 instance
@@ -29,7 +26,7 @@ Resource-HasOwner : HasOwner Resource :=
       case
         lookupValueMapMaybe@{
           key := ownershipStandardKey;
-          valueMap := HasValueMap.get resource
+          valueMap := HasValueMap.get resource;
         }
       of
         | just value := anomaDecode value
@@ -45,9 +42,9 @@ Resource-HasOwner : HasOwner Resource :=
           elem :=
             mkValueMapEntry@{
               key := ownershipStandardKey;
-              value := toValueMapValue owner
+              value := toValueMapValue owner;
             };
-          set := HasValueMap.get resource
+          set := HasValueMap.get resource;
         }
-        resource
+        resource;
   };

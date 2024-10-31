@@ -2,9 +2,7 @@ module Applib.Transaction.Initialize;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Resource open;
-import Anoma.Transaction open;
-import Anoma.Identity open;
+import Anoma open;
 
 import Applib.Helpers open;
 import Applib.Resource.Error open;
@@ -32,8 +30,10 @@ initialize
   (maybeDummy : Maybe Resource)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity := standardInputs |> StandardInputs.identity |> Identity.external;
-    ephResource : R := HasEphemerality.set Ephemerality.Ephemeral (HasOwner.set self toInitialize);
+    self : ExternalIdentity :=
+      standardInputs |> StandardInputs.identity |> Identity.external;
+    ephResource : R :=
+      HasEphemerality.set Ephemeral (HasOwner.set self toInitialize);
     tx : Transaction :=
       mkTransactionHelper@{
         roots := Set.singleton (StandardInputs.currentRoot standardInputs);
@@ -42,7 +42,7 @@ initialize
             (ActionConvertable.toAction
               standardInputs
               (Set.singleton ephResource)
-              (Set.singleton toInitialize))
+              (Set.singleton toInitialize));
       };
   in case HasSupply.get toInitialize of
        | Unbound :=
@@ -51,13 +51,14 @@ initialize
            | just dummy :=
              throw
                mkDefaultError@{
-                 msg := "A dummy resource is only required for resources with fixed supply."
+                 msg :=
+                   "A dummy resource is only required for resources with fixed supply.";
                }
          }
        | Capped :=
          throw
            mkDefaultError@{
-             msg := "Tokens with capped supply are not supported yet."
+             msg := "Tokens with capped supply are not supported yet.";
            }
        | Fixed expectedNullifier :=
          case maybeDummy of
@@ -65,21 +66,24 @@ initialize
              throw
                mkDefaultError@{
                  msg :=
-                   "A resource to consume must be provided whose nullifier is referenced in the fixed supply type."
+                   "A resource to consume must be provided whose nullifier is referenced in the fixed supply type.";
                }
            | just dummy :=
              let
                actualNullifier :=
                  nullifier@{
                    resource := dummy;
-                   nullifierKey := standardInputs |> StandardInputs.identity |> toNullifierKey
+                   nullifierKey :=
+                     standardInputs
+                       |> StandardInputs.identity
+                       |> toNullifierKey;
                  };
              in case actualNullifier == expectedNullifier of
                   | false :=
                     throw
                       mkDefaultError@{
                         msg :=
-                          "The provided resource's nullifier does not match the one referenced in the fixed supply type."
+                          "The provided resource's nullifier does not match the one referenced in the fixed supply type.";
                       }
                   | true :=
                     ok
@@ -88,6 +92,6 @@ initialize
                         tx2 :=
                           Dummy.finalize@{
                             standardInputs;
-                            dummy
-                          }
+                            dummy;
+                          };
                       };

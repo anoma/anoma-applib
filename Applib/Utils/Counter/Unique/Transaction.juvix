@@ -2,15 +2,9 @@ module Applib.Utils.Counter.Unique.Transaction;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
-import Stdlib.Debug.Trace open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Transaction open;
-import Anoma.Utils open;
+import Anoma open;
 import Anoma.Builtin.System open;
-import Anoma.Proving.Types open;
-
 import Applib.Helpers open;
 import Applib.Resource.Error open;
 import Applib.Authorization.Message open;
@@ -28,7 +22,9 @@ import Applib.Helpers open;
 -- TODO use general initialize/traits
 --- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
 initialize
-  (standardInputs : StandardInputs) (consumable : Resource) : Result StandardError Transaction :=
+  (standardInputs : StandardInputs)
+  (consumable : Resource)
+  : Result StandardError Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
     ephConsumable := consumable@Resource{ephemeral := true};
@@ -38,14 +34,14 @@ initialize
         identity;
         ephemeral := true;
         uniqueLabel;
-        count := 0
+        count := 0;
       };
     newCounter :=
       mkCounter@{
         identity;
         ephemeral := false;
         uniqueLabel;
-        count := 0
+        count := 0;
       };
     consumed := Set.fromList [consumable; ephCounter];
     created := Set.fromList [ephConsumable; newCounter];
@@ -72,11 +68,12 @@ initialize
             appData := Set.empty;
             customInputs;
             maybeNullifiers := just nullifiers;
-            maybeCommitments := just commitments
-          }
+            maybeCommitments := just commitments;
+          };
     };
 
-increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+increment
+  (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   if
     | kind currentCounter /= counterKind (Resource.labelRef currentCounter) :=
       failwith "The input resource has wrong kind."
@@ -86,31 +83,36 @@ increment (standardInputs : StandardInputs) (currentCounter : Resource) : Transa
         updatedCounter : Resource :=
           let
             valueMap : ValueMap :=
-              currentCounter |> Resource.valueRef |> Reference.from |> Value.unValue |> anomaDecode;
+              currentCounter
+                |> Resource.valueRef
+                |> Reference.from
+                |> Value.unValue
+                |> anomaDecode;
             currentCount : Nat :=
               lookupValueMap@{
                 key := countValueMapKey;
-                valueMap
+                valueMap;
               };
             updatedValueMap : ValueMap :=
               insertValueMap@{
                 key := countValueMapKey;
                 value := toValueMapValue (currentCount + 1);
-                valueMap
+                valueMap;
               };
           in currentCounter@Resource{
             ephemeral := false;
-            valueRef := Reference.to (updatedValueMap |> anomaEncode |> mkValue)
+            valueRef := Reference.to
+              (updatedValueMap |> anomaEncode |> mkValue);
           };
       in mkTransactionHelper@{
-        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-        actions :=
-          Set.singleton
-            mkActionHelper@{
-              identity;
-              consumed := Set.singleton currentCounter;
-              created := Set.singleton updatedCounter;
-              appData := Set.empty;
-              customInputs := Set.empty
-            }
-      };
+           roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+           actions :=
+             Set.singleton
+               mkActionHelper@{
+                 identity;
+                 consumed := Set.singleton currentCounter;
+                 created := Set.singleton updatedCounter;
+                 appData := Set.empty;
+                 customInputs := Set.empty;
+               };
+         };

@@ -1,17 +1,10 @@
 module Applib.Resource.Traits.NullifierKey;
 
-import Anoma.Resource open;
-import Anoma.Utils open;
+import Anoma open;
 
 trait
 type HasNullifierKey ResourceT :=
   mkHasNullifierKey@{
     get : ResourceT -> NullifierKey;
-    set : NullifierKey -> ResourceT -> ResourceT
+    set : NullifierKey -> ResourceT -> ResourceT;
   };
-
-{-
-Requirement:
-- specify different nullifierkeys for different resources.
-- cannot be the users private key because private inputs are publicly visible
--}

@@ -18,19 +18,23 @@ module Transferability;
       | NonTransferable := false;
 end;
 
-open Transferability using {Transferability} public;
+open Transferability using {
+  Transferability;
+  NonTransferable;
+  Transferable;
+} public;
 
 instance
 Transferability-Eq : Eq Transferability :=
   mkEq@{
     eq (lhs rhs : Transferability) : Bool :=
-      Transferability.toBool lhs == Transferability.toBool rhs
+      Transferability.toBool lhs == Transferability.toBool rhs;
   };
 
 instance
 Transferability-Show : Show Transferability :=
   mkShow
-    \ {eph :=
+    \{eph :=
       case eph of
         | NonTransferable := "NonTransferable"
         | Transferable := "Transferable"};
@@ -39,5 +43,5 @@ trait
 type HasTransferability ResourceT :=
   mkHasTransferability@{
     get : ResourceT -> Transferability;
-    set : Transferability -> ResourceT -> ResourceT
+    set : Transferability -> ResourceT -> ResourceT;
   };

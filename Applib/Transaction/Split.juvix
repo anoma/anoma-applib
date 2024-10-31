@@ -3,19 +3,16 @@ module Applib.Transaction.Split;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Transaction open;
+import Anoma open;
 
 import Applib.Resource.Error open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
-
 import Applib.Helpers open;
 
 --- Splits a ;Convertable; typed ;Resource;.
 --- The function returns a ;StandardError; if the ;Convertable; ;Resource;
---- - is ;Transferability.NonTransferable;
+--- - is ;NonTransferable;
 --- - is not owned by the calling ;Identity;
 --- - or quantities do not balance.
 split
@@ -32,15 +29,20 @@ split
   (quantitiesAndReceivers : List (Pair Quantity ExternalIdentity))
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity := standardInputs |> StandardInputs.identity |> Identity.external;
+    self : ExternalIdentity :=
+      standardInputs |> StandardInputs.identity |> Identity.external;
     owner : ExternalIdentity := HasOwner.get toSplit;
     toSplitResource := Convertable.toResource toSplit;
-    sum : Quantity := listFor (acc := 0) (quantity, _ in quantitiesAndReceivers) {quantity + acc};
+    sum : Quantity :=
+      listFor (acc := 0) (quantity, _ in quantitiesAndReceivers) {
+        quantity + acc
+      };
 
     balance := HasQuantity.get toSplit;
     created : Set R :=
-      Set.map (quantity, receiver in Set.fromList quantitiesAndReceivers)
-        {toSplit |> HasOwner.set receiver |> HasQuantity.set quantity};
+      Set.map (quantity, receiver in Set.fromList quantitiesAndReceivers) {
+        toSplit |> HasOwner.set receiver |> HasQuantity.set quantity
+      };
   in case HasTransferability.get toSplit of
        | NonTransferable := throw mkNonTransferableError
        | Transferable :=
@@ -49,7 +51,7 @@ split
              throw
                mkUnauthorizedError@{
                  expected := self;
-                 actual := owner
+                 actual := owner;
                }
            | true :=
              case balance == sum of
@@ -57,16 +59,18 @@ split
                  throw
                    mkInsufficientHasQuantityError@{
                      limit := balance;
-                     actual := sum
+                     actual := sum;
                    }
                | true :=
                  ok
                    mkTransactionHelper@{
-                     roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+                     roots :=
+                       Set.singleton
+                         (StandardInputs.currentRoot standardInputs);
                      actions :=
                        Set.singleton
                          (ActionConvertable.toAction
                            standardInputs
                            (Set.singleton toSplit)
-                           (created))
+                           (created));
                    };

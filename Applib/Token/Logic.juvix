@@ -2,9 +2,7 @@ module Applib.Token.Logic;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
-import Anoma.Resource open;
-import Anoma.Identity open;
-import Anoma.Proving.Types open;
+import Anoma open;
 
 import Applib.Helpers open;
 import Applib.Resource.Traits open;
@@ -21,7 +19,8 @@ tokenLogic
   case supply of
     | Unbound := unboundSupplyLogic originator publicInputs privateInputs
     | Capped := cappedSupplyLogic originator publicInputs privateInputs
-    | Fixed nullifier := fixedSupplyLogic nullifier originator publicInputs privateInputs;
+    | Fixed nullifier :=
+      fixedSupplyLogic nullifier originator publicInputs privateInputs;
 
 unboundSupplyLogic
   (originator : ExternalIdentity)
@@ -37,18 +36,22 @@ unboundSupplyLogic
            | nothing := false
            | just self :=
              case HasEphemerality.get self of {
-               | Ephemeral := unboundSupplyInitializationLogic originator tag publicInputs
+               | Ephemeral :=
+                 unboundSupplyInitializationLogic originator tag publicInputs
                | NonEphemeral := transferLogic self tag publicInputs
              }
          }
        | Created commitment := true;
 
 unboundSupplyInitializationLogic
-  (originator : ExternalIdentity) (tag : Tag) (publicInputs : Logic.Instance) : Bool :=
+  (originator : ExternalIdentity)
+  (tag : Tag)
+  (publicInputs : Logic.Instance)
+  : Bool :=
   isAuthorizedBy@{
     signer := originator;
     origin := tag;
-    publicInputs
+    publicInputs;
   };
 
 fixedSupplyLogic
@@ -67,7 +70,11 @@ fixedSupplyLogic
            | just self :=
              case HasEphemerality.get self of {
                | Ephemeral :=
-                 fixedSupplyInitializationLogic originator passedNullifier tag publicInputs
+                 fixedSupplyInitializationLogic
+                   originator
+                   passedNullifier
+                   tag
+                   publicInputs
                | NonEphemeral := transferLogic self tag publicInputs
              }
          }
@@ -86,14 +93,14 @@ fixedSupplyInitializationLogic
   (publicInputs : Logic.Instance)
   : Bool :=
   isNullifierPresent@{
-      nullifier;
-      nullifierSet := Logic.Instance.nullifiers publicInputs
-    }
+    nullifier;
+    nullifierSet := Logic.Instance.nullifiers publicInputs;
+  }
     && isAuthorizedBy@{
-      signer := originator;
-      origin := tag;
-      publicInputs
-    };
+         signer := originator;
+         origin := tag;
+         publicInputs;
+       };
 
 cappedSupplyLogic
   (originator : ExternalIdentity)
@@ -101,10 +108,11 @@ cappedSupplyLogic
   (privateInputs : Logic.Witness)
   : Bool := failwith "NOT IMPLEMENTED";
 
-transferLogic (self : Resource) (tag : Tag) (publicInputs : Logic.Instance) : Bool :=
+transferLogic
+  (self : Resource) (tag : Tag) (publicInputs : Logic.Instance) : Bool :=
   isTransferable self
     && isAuthorizedBy@{
-      signer := HasOwner.get self;
-      origin := tag;
-      publicInputs
-    };
+         signer := HasOwner.get self;
+         origin := tag;
+         publicInputs;
+       };

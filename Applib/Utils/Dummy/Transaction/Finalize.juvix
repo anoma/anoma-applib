@@ -3,27 +3,23 @@ module Applib.Utils.Dummy.Transaction.Finalize;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Resource open;
-import Anoma.Transaction open;
-import Anoma.Identity open;
-import Applib.Helpers open;
+import Anoma open;
 
 import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Resource.Error open;
 import Applib.Helpers open;
 
--- TODO Use generic finalize.
 finalize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
   let
     expectedKind :=
       KindInternal.kind@{
         logicRef := Reference.to alwaysValidLogic;
-        labelRef := Reference.to emptyLabel
+        labelRef := Reference.to emptyLabel;
       };
     currentKind :=
       kind@{
-        resource := dummy
+        resource := dummy;
       };
   in "DEBUG: Evaluating `Applib.Utils.Dummy.Transaction.finalize`"
     >-> fromResult
@@ -32,12 +28,13 @@ finalize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
           throw
             mkInvalidKindError@{
               expected := expectedKind;
-              actual := currentKind
+              actual := currentKind;
             }
         | true :=
           ok
             mkTransactionHelper@{
-              roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+              roots :=
+                Set.singleton (StandardInputs.currentRoot standardInputs);
               actions :=
                 Set.singleton
                   mkActionHelper@{
@@ -45,7 +42,7 @@ finalize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
                     consumed := Set.singleton dummy;
                     created := Set.singleton dummy@Resource{ephemeral := true};
                     appData := Set.empty;
-                    customInputs := Set.empty
-                  }
+                    customInputs := Set.empty;
+                  };
             }
       };

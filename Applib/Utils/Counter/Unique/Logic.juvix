@@ -3,17 +3,15 @@ module Applib.Utils.Counter.Unique.Logic;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Identity open;
-import Anoma.Resource open;
-import Anoma.Proving.Types open;
-
+import Anoma open;
 import Applib.Helpers open;
 import Applib.Utils.Counter.Unique.Count open;
 import Applib.Utils.Counter.Unique.Label open;
 import Applib.Resource.Traits open;
 import Applib.Identities open;
 
-counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
+counterLogic
+  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   let
     tag := Logic.Instance.tag publicInputs;
     customInputs := Logic.Witness.customInputs privateInputs;
@@ -24,7 +22,8 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
            | just self :=
              case HasEphemerality.get self of {
                | Ephemeral := initializationLogic self publicInputs
-               | NonEphemeral := incrementationLogic self publicInputs privateInputs
+               | NonEphemeral :=
+                 incrementationLogic self publicInputs privateInputs
              }
          }
        | Created commitment :=
@@ -38,12 +37,15 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
   HasQuantity.get self == 1
     && isNullifierPresent@{
-      nullifier := getNullifierfFromLabel self;
-      nullifierSet := Logic.Instance.nullifiers publicInputs
-    };
+         nullifier := getNullifierfFromLabel self;
+         nullifierSet := Logic.Instance.nullifiers publicInputs;
+       };
 
 incrementationLogic
-  (self : Resource) (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
+  (self : Resource)
+  (publicInputs : Logic.Instance)
+  (privateInputs : Logic.Witness)
+  : Bool :=
   let
     consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
     created := privateInputs |> Logic.Witness.created |> Set.toList;
@@ -52,9 +54,9 @@ incrementationLogic
          self == currentCounter
            && kind currentCounter == kind incrementedCounter
            && isIncremented@{
-             old := currentCounter;
-             new := incrementedCounter
-           }
+                old := currentCounter;
+                new := incrementedCounter;
+              }
        | _, _ := false;
 
 isIncremented (old new : Resource) : Bool :=

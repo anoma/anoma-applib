@@ -2,11 +2,7 @@ module Applib.Intent.Swap.Logic;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Identity open;
-import Anoma.Resource open;
-import Anoma.Transaction open;
-import Anoma.Proving.Types open;
-
+import Anoma open;
 import Applib.Helpers open;
 import Applib.Intent.Asset open;
 import Applib.Resource.Traits open;
@@ -42,16 +38,18 @@ swapIntentLogic
                    created := Logic.Witness.created privateInputs;
                  in case QuantifiedAssets.quantifier want of
                       | Any :=
-                        any (asset in QuantifiedAssets.assets want)
+                        any (asset in QuantifiedAssets.assets want) {
                           includesAsset@{
                             asset;
                             receiver;
-                            resources := created
+                            resources := created;
                           }
+                        }
                       | All :=
-                        all (asset in QuantifiedAssets.assets want)
+                        all (asset in QuantifiedAssets.assets want) {
                           includesAsset@{
                             asset;
                             receiver;
-                            resources := created
-                          };
+                            resources := created;
+                          }
+                        };

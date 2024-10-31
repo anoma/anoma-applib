@@ -3,9 +3,10 @@ module Applib.Projection.Balance;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Resource open;
-import Anoma.Identity open;
+import Anoma open;
 
 --- Returns the total quantity of a ;Resource; ;Set;.
 balance (resources : Set Resource) : Quantity :=
-  for (sum := 0) (r in Set.toList resources) {sum + Resource.quantity r};
+  for (sum := 0) (r in Set.toList resources) {
+    sum + Resource.quantity r
+  };

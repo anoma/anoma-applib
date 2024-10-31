@@ -4,9 +4,7 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Resource open;
-import Anoma.Transaction open;
-import Anoma.Identity open;
+import Anoma open;
 
 import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
@@ -19,11 +17,11 @@ initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
     expectedKind :=
       KindInternal.kind@{
         logicRef := Reference.to alwaysValidLogic;
-        labelRef := Reference.to emptyLabel
+        labelRef := Reference.to emptyLabel;
       };
     currentKind :=
       kind@{
-        resource := dummy
+        resource := dummy;
       };
   in "DEBUG: Evaluating `Applib.Utils.Dummy.Transaction.initialize`"
     >-> fromResult
@@ -32,12 +30,13 @@ initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
           throw
             mkInvalidKindError@{
               expected := expectedKind;
-              actual := currentKind
+              actual := currentKind;
             }
         | true :=
           ok
             mkTransactionHelper@{
-              roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+              roots :=
+                Set.singleton (StandardInputs.currentRoot standardInputs);
               actions :=
                 Set.singleton
                   mkActionHelper@{
@@ -48,11 +47,11 @@ initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
                           ephemeral := true;
                           nullifierKeyCommitment := standardInputs
                             |> StandardInputs.identity
-                            |> toNullifierKeyCommitment
+                            |> toNullifierKeyCommitment;
                         };
                     created := Set.singleton dummy;
                     appData := Set.empty;
-                    customInputs := Set.empty
-                  }
+                    customInputs := Set.empty;
+                  };
             }
       };

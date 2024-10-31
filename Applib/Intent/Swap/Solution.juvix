@@ -2,8 +2,7 @@ module Applib.Intent.Swap.Solution;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
-import Anoma.Identity open;
-import Anoma.Transaction open;
+import Anoma open;
 
 import Applib.Transaction.Traits open;
 import Applib.Token.Transaction open;
@@ -17,7 +16,7 @@ module Solution;
   type Solution :=
     mk@{
       intent : SwapIntent;
-      created : Set Token
+      created : Set Token;
     };
 
   toAction (standardInputs : StandardInputs) (solution : Solution) : Action :=

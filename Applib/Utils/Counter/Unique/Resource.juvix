@@ -3,10 +3,8 @@ module Applib.Utils.Counter.Unique.Resource;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open;
 
-import Anoma.Resource open;
-import Anoma.Utils open;
+import Anoma open;
 import Anoma.Builtin.System open;
-import Anoma.Identity open;
 
 import Applib.Helpers open;
 import Applib.Utils.Counter.Unique.Count open;
@@ -18,29 +16,33 @@ import Applib.Resource.Standards.Ownership open;
 import Applib.Random open;
 
 mkCounter
-  (identity : Identity) (ephemeral : Bool) (uniqueLabel : CounterLabel) (count : Nat) : Resource :=
+  (identity : Identity)
+  (ephemeral : Bool)
+  (uniqueLabel : CounterLabel)
+  (count : Nat)
+  : Resource :=
   let
     valueMap : ValueMap :=
       Set.fromList
-        [ ownershipValueMapEntry@{
-          owner := Identity.external identity
-        }
-        ; mkValueMapEntry@{
-          key := countValueMapKey;
-          value := toValueMapValue count
-        }
+        [
+          ownershipValueMapEntry@{
+            owner := Identity.external identity;
+          };
+          mkValueMapEntry@{
+            key := countValueMapKey;
+            value := toValueMapValue count;
+          };
         ];
   in mkResource@{
-    logicRef := Reference.to counterLogic;
-    labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
-    valueRef := Reference.to (valueMap |> anomaEncode |> mkValue);
-    quantity := 1;
-    ephemeral;
-    nullifierKeyCommitment := toNullifierKeyCommitment identity;
-    nonce := mkNonce rand;
-    randSeed := mkRandSeed rand
-  };
-
+       logicRef := Reference.to counterLogic;
+       labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
+       valueRef := Reference.to (valueMap |> anomaEncode |> mkValue);
+       quantity := 1;
+       ephemeral;
+       nullifierKeyCommitment := toNullifierKeyCommitment identity;
+       nonce := mkNonce rand;
+       randSeed := mkRandSeed rand;
+     };
 
 counterKind (labelRef : LabelRef) : Kind :=
   KindInternal.kind@{

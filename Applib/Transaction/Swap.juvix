@@ -3,15 +3,13 @@ module Applib.Transaction.Swap;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set; insert};
 
-import Anoma.Identity open;
-import Anoma.Resource open;
-import Anoma.Transaction open;
-import Applib.Helpers open;
+import Anoma open;
 
 import Applib.Resource.Error open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
 import Applib.Intent.Swap.Solution open;
+import Applib.Helpers open;
 
 --- Swaps a list of ;Convertable; typed ;Resource;s via an intent of type `I`.
 --- The function returns a ;StandardError; if the ;Convertable; typed ;Resource;s are
@@ -34,10 +32,10 @@ swap
       throw
         mkInsufficientElementsError@{
           limit := 1;
-          actual := 0
+          actual := 0;
         }
     | _ :: _ :=
-      case find ((/=) (Transferability.Transferable)) (map HasTransferability.get toSwap) of
+      case find ((/=) (Transferable)) (map HasTransferability.get toSwap) of
         | just _ := throw mkNonTransferableError
         | nothing :=
           let
@@ -48,18 +46,20 @@ swap
                  throw
                    mkUnauthorizedError@{
                      expected := self;
-                     actual := notMyself
+                     actual := notMyself;
                    }
                | nothing :=
                  ok
                    mkTransactionHelper@{
-                     roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+                     roots :=
+                       Set.singleton
+                         (StandardInputs.currentRoot standardInputs);
                      actions :=
                        Set.singleton
                          (ActionConvertable.toAction
                            standardInputs
                            (Set.fromList toSwap)
-                           (Set.singleton intent))
+                           (Set.singleton intent));
                    };
 
 --- Settles a ;List; of swap ;Transaction;s by composing them with
@@ -72,24 +72,31 @@ settle
   (solutions : List Solution)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity := standardInputs |> StandardInputs.identity |> Identity.external;
-    actions := Set.fromList (map (Solution.toAction standardInputs) (solutions));
-  in case find ((/=) self) (map \ {s := HasOwner.get (Solution.intent s)} solutions) of
+    self : ExternalIdentity :=
+      standardInputs |> StandardInputs.identity |> Identity.external;
+    actions :=
+      Set.fromList (map (Solution.toAction standardInputs) (solutions));
+  in case
+       find ((/=) self) (map \{s := HasOwner.get (Solution.intent s)} solutions)
+     of
        | just notMyself :=
          throw
            mkUnauthorizedError@{
              expected := self;
-             actual := notMyself
+             actual := notMyself;
            }
        | nothing :=
          ok
            (composeAll
              (Set.fromList
                (transactions
-                 ++ [ mkTransactionHelper@{
-                      roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-                      actions
-                    }
+                 ++ [
+                      mkTransactionHelper@{
+                        roots :=
+                          Set.singleton
+                            (StandardInputs.currentRoot standardInputs);
+                        actions;
+                      };
                     ])));
 -- ( composeAll (Set.insert
 --    mkTransactionHelper@{

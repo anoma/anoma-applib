@@ -1,7 +1,7 @@
 module Applib.Utils.Counter.Unique.Projection;
 
 import Stdlib.Prelude open;
-import Anoma.Resource open;
+import Anoma open;
 
 import Applib.Helpers open;
 import Applib.Utils.Counter.Unique.Count open;
@@ -11,12 +11,12 @@ import Applib.Utils.Counter.Unique.Count open;
 type UID :=
   mkUID@{
     id : Nat;
-    uniqueKind : Kind
+    uniqueKind : Kind;
   };
 
 --- Returns the current UID of a counter ;Resource;.
 getUID (counter : Resource) : UID :=
   mkUID@{
     id : Nat := getCount counter;
-    uniqueKind := kind counter
+    uniqueKind := kind counter;
   };

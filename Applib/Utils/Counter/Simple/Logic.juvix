@@ -3,9 +3,7 @@ module Applib.Utils.Counter.Simple.Logic;
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
 
-import Anoma.Identity open;
-import Anoma.Resource open;
-import Anoma.Proving.Types open;
+import Anoma open;
 
 import Applib.Helpers open;
 import Applib.Identities open;
@@ -13,7 +11,8 @@ import Applib.Resource.Traits open;
 import Applib.Utils.Counter.Simple.Count open;
 import Applib.Utils.Counter.Simple.Label open;
 
-counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
+counterLogic
+  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   let
     tag := Logic.Instance.tag publicInputs;
     consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
@@ -21,18 +20,20 @@ counterLogic (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : B
   in case consumed, created of
        | [consumedCounter], [createdCounter] :=
          sameKindCheck@{
-             consumedCounter;
-             createdCounter
-           }
-           && case both HasEphemerality.get (consumedCounter, createdCounter) of {
-                | Ephemerality.Ephemeral, Ephemerality.NonEphemeral :=
+           consumedCounter;
+           createdCounter;
+         }
+           && case
+                both HasEphemerality.get (consumedCounter, createdCounter)
+              of {
+                | Ephemeral, NonEphemeral :=
                   creationCheck@{
-                    createdCounter
+                    createdCounter;
                   }
-                | Ephemerality.NonEphemeral, Ephemerality.NonEphemeral :=
+                | NonEphemeral, NonEphemeral :=
                   incrementationCheck@{
                     consumedCounter;
-                    createdCounter
+                    createdCounter;
                   }
                 | _, _ := false
               }
