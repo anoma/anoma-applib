@@ -1,5 +1,5 @@
 module Applib.Intent.Swap;
 
-import Applib.Intent.Swap.Logic as Logic open public;
-import Applib.Intent.Swap.Resource as Resource open public;
-import Applib.Intent.Swap.Solution as Solution open public;
+import Applib.Intent.Swap.Logic open public;
+import Applib.Intent.Swap.Resource open public;
+import Applib.Intent.Swap.Solution open public;
