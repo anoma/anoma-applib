@@ -2,4 +2,3 @@ module Applib.Utils.Counter;
 
 import Applib.Utils.Counter.Unique as Unique public;
 import Applib.Utils.Counter.Simple as Simple public;
-

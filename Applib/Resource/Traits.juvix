@@ -13,7 +13,6 @@ import Applib.Resource.Traits.Quantity open public;
 import Applib.Resource.Traits.Supply open public;
 import Applib.Resource.Traits.Transferability open public;
 
-
 module TraitFromConvertable;
   hasLogic {R} {{Convertable R}} : HasLogic R :=
     mkHasLogic@{
