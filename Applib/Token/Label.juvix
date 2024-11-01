@@ -3,7 +3,6 @@ module Applib.Token.Label;
 import Stdlib.Prelude open;
 import Anoma open;
 import Anoma.Builtin.System open;
-import Applib.Helpers open;
 import Applib.Resource.Traits open;
 
 type TokenLabel :=

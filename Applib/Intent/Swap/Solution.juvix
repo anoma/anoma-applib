@@ -8,7 +8,6 @@ import Applib.Transaction.Traits open;
 import Applib.Token.Transaction open;
 import Applib.Token.Resource open;
 import Applib.Intent.Swap.Resource open;
-
 import Applib.Helpers open;
 
 module Solution;

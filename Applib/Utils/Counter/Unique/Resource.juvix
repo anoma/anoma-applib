@@ -7,9 +7,9 @@ import Anoma open;
 import Anoma.Builtin.System open;
 
 import Applib.Helpers open;
-import Applib.Utils.Counter.Unique.Count open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Label open;
+import Applib.Utils.Counter.Unique.Interface.Projection open;
 import Applib.Identities open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;

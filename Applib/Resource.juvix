@@ -1,4 +1,5 @@
 module Applib.Resource;
 
-import Applib.Resource.Error as Error open public;
-import Applib.Resource.Traits as Traits open public;
+import Applib.Resource.Errors as Errors public;
+import Applib.Resource.Traits as Resource.Traits public;
+import Applib.Resource.Standards as Standards public;

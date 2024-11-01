@@ -1,4 +1,4 @@
-module Applib.Resource.Error;
+module Applib.Resource.Errors;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug open;

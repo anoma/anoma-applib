@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Unique.Transaction;
+module Applib.Utils.Counter.Unique.Interface.Transaction;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
@@ -6,14 +6,14 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 import Anoma.Builtin.System open;
 import Applib.Helpers open;
-import Applib.Resource.Error open;
-import Applib.Authorization.Message open;
 import Applib.Identities open;
+import Applib.Resource.Errors open;
+import Applib.Authorization open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Resource open;
-import Applib.Utils.Counter.Unique.Count open;
+import Applib.Utils.Counter.Unique.Interface.Projection open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
 

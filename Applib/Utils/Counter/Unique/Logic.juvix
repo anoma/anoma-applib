@@ -5,10 +5,10 @@ import Stdlib.Data.Set as Set open using {Set};
 
 import Anoma open;
 import Applib.Helpers open;
-import Applib.Utils.Counter.Unique.Count open;
-import Applib.Utils.Counter.Unique.Label open;
-import Applib.Resource.Traits open;
 import Applib.Identities open;
+import Applib.Resource.Traits open;
+import Applib.Utils.Counter.Unique.Interface.Projection open;
+import Applib.Utils.Counter.Unique.Label open;
 
 counterLogic
   (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=

@@ -7,12 +7,11 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 import Anoma.Builtin.System open;
 
-import Applib.Helpers open;
+import Applib.Random open;
 import Applib.Resource.Traits open;
 import Applib.Token.Label open;
 import Applib.Token.Logic open;
 import Applib.Identities open;
-import Applib.Random open;
 import Applib.Resource.Standards.Ownership open;
 
 module Token;
@@ -31,7 +30,7 @@ module Token;
             (tokenLogic
               (TokenLabel.supply tokenLabel)
               (TokenLabel.originator tokenLabel));
-        labelRef := Reference.to (tokenLabel |> anomaEncode |> mkLabel);
+        labelRef := toLabelRef tokenLabel;
         valueRef :=
           Reference.to
             (owner

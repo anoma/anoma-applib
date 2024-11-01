@@ -5,7 +5,7 @@ import Stdlib.Data.Set as Set open using {Set};
 
 import Anoma open;
 
-import Applib.Resource.Error open;
+import Applib.Resource.Errors open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
 import Applib.Helpers open;

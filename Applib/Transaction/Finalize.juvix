@@ -6,7 +6,7 @@ import Anoma open;
 
 import Applib.Helpers open;
 import Applib.Identities open;
-import Applib.Resource.Error open;
+import Applib.Resource.Errors open;
 import Applib.Resource.Traits open;
 import Applib.Transaction.Traits open;
 

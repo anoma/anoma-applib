@@ -2,7 +2,6 @@ module Applib.Resource.Traits;
 
 import Stdlib.Prelude open;
 import Anoma open;
-import Applib.Helpers open;
 import Applib.Resource.Traits.Convertable open public;
 import Applib.Resource.Traits.Ephemerality open public;
 import Applib.Resource.Traits.Kind open public;
@@ -13,6 +12,7 @@ import Applib.Resource.Traits.Owner open public;
 import Applib.Resource.Traits.Quantity open public;
 import Applib.Resource.Traits.Supply open public;
 import Applib.Resource.Traits.Transferability open public;
+
 
 module TraitFromConvertable;
   hasLogic {R} {{Convertable R}} : HasLogic R :=

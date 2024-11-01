@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Simple.Count;
+module Applib.Utils.Counter.Simple.Interface.Projection;
 
 import Stdlib.Prelude open;
 import Anoma open;
