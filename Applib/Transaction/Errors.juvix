@@ -1,7 +1,7 @@
-module Applib.Resource.Errors;
+module Applib.Transaction.Errors;
 
 import Stdlib.Prelude open;
-import Stdlib.Debug open;
+import Stdlib.Debug open using {failwith};
 
 import Anoma open;
 import Applib.Helpers open;
