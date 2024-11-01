@@ -3,7 +3,7 @@ module Applib.Identities;
 import Stdlib.Prelude open;
 
 import Anoma open;
-import Anoma.Builtin.ByteArray as ByteArray open;
+import Anoma.Builtin.ByteArray open;
 
 toNullifierKey (identity : Identity) : NullifierKey :=
   identity

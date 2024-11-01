@@ -1,4 +1,4 @@
 module Applib.Resource.Standards;
 
-import Applib.Resource.Standards.ValueMap as ValueMap open public;
-import Applib.Resource.Standards.Ownership as OwnerShip open public;
+import Applib.Resource.Standards.ValueMap as ValueMap public;
+import Applib.Resource.Standards.Ownership as Ownership public;

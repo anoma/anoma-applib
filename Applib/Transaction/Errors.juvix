@@ -1,7 +1,7 @@
-module Applib.Resource.Error;
+module Applib.Transaction.Errors;
 
 import Stdlib.Prelude open;
-import Stdlib.Debug open;
+import Stdlib.Debug open using {failwith};
 
 import Anoma open;
 import Applib.Helpers open;
@@ -180,13 +180,3 @@ UnauthorizedError-Show : Show UnauthorizedError :=
         ++str "actual"
         ++str (e |> UnauthorizedError.actual |> Show.show)
         ++str "}"};
-
-fromResult
-  {ErrorType}
-  {DataType}
-  {{Show ErrorType}}
-  (result : Result ErrorType DataType)
-  : DataType :=
-  case result of
-    | ok data := data
-    | error err := failwith (Show.show err);

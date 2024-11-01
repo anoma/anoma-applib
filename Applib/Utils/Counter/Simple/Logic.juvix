@@ -8,13 +8,12 @@ import Anoma open;
 import Applib.Helpers open;
 import Applib.Identities open;
 import Applib.Resource.Traits open;
-import Applib.Utils.Counter.Simple.Count open;
 import Applib.Utils.Counter.Simple.Label open;
+import Applib.Utils.Counter.Simple.Interface.Projection open;
 
 counterLogic
   (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
   let
-    tag := Logic.Instance.tag publicInputs;
     consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
     created := privateInputs |> Logic.Witness.created |> Set.toList;
   in case consumed, created of

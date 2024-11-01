@@ -2,9 +2,7 @@ module Applib.Intent.Swap.Resource;
 
 import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
-
 import Anoma open;
-
 import Applib.Helpers open;
 import Applib.Resource.Traits open;
 import Applib.Intent.Asset open;

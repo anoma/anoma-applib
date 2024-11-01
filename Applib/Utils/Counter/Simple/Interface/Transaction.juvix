@@ -1,4 +1,4 @@
-module Applib.Utils.Counter.Simple.Transaction;
+module Applib.Utils.Counter.Simple.Interface.Transaction;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
@@ -10,7 +10,7 @@ import Applib.Helpers open;
 import Applib.Identities open;
 import Applib.Utils.Counter.Simple.Resource open;
 import Applib.Utils.Counter.Simple.Logic open;
-import Applib.Utils.Counter.Simple.Count open;
+import Applib.Utils.Counter.Simple.Interface.Projection open;
 
 initialize (standardInputs : StandardInputs) : Transaction :=
   let
