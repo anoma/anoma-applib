@@ -180,13 +180,3 @@ UnauthorizedError-Show : Show UnauthorizedError :=
         ++str "actual"
         ++str (e |> UnauthorizedError.actual |> Show.show)
         ++str "}"};
-
-fromResult
-  {ErrorType}
-  {DataType}
-  {{Show ErrorType}}
-  (result : Result ErrorType DataType)
-  : DataType :=
-  case result of
-    | ok data := data
-    | error err := failwith (Show.show err);

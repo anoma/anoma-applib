@@ -334,3 +334,13 @@ composeAll (txs : Set Transaction) : Transaction :=
   for (acc := emptyTx) (tx in txs) {
     composeTransactions acc tx
   };
+
+fromResult
+  {ErrorType}
+  {DataType}
+  {{Show ErrorType}}
+  (result : Result ErrorType DataType)
+  : DataType :=
+  case result of
+    | ok data := data
+    | error err := failwith (Show.show err);
