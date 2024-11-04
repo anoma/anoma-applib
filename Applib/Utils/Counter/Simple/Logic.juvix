@@ -10,8 +10,12 @@ import Applib.Resource.Traits open;
 import Applib.Utils.Counter.Simple.Interface.Projection open;
 import Applib.Utils.Counter.Simple.Label open;
 
-counterLogic
-  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
+parametrizedCounterLogic
+  (initializationLogic : Resource -> Logic.Instance -> Bool)
+  (incrementationLogic : Resource -> Logic.Witness -> Bool)
+  (publicInputs : Logic.Instance)
+  (privateInputs : Logic.Witness)
+  : Bool :=
   let
     tag := Logic.Instance.tag publicInputs;
     customInputs := Logic.Witness.customInputs privateInputs;
@@ -32,6 +36,15 @@ counterLogic
              case HasEphemerality.get self of
                | Ephemeral := false
                | NonEphemeral := true;
+
+counterLogic
+  : (publicInputs : Logic.Instance)
+    -> (privateInputs : Logic.Witness)
+    -> Bool :=
+  -- TODO how to use the named syntax here?
+    parametrizedCounterLogic
+    initializationLogic
+    incrementationLogic;
 
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
   quantityCheck@{

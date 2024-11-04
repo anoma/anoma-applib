@@ -22,7 +22,7 @@ mkCounter
   {ephemeral : Bool := false}
   : Resource :=
   mkResource@{
-    logicRef := Reference.to counterLogic;
+    logicRef := Reference.to (counterLogic);
     labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
     valueRef := Reference.to (count |> mkValue);
     quantity := 1;

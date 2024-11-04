@@ -12,27 +12,13 @@ import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Simple.Logic as Simple;
 
 counterLogic
-  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
-  let
-    tag := Logic.Instance.tag publicInputs;
-    customInputs := Logic.Witness.customInputs privateInputs;
-  in case tag of
-       | Consumed nullifier :=
-         case lookupResource nullifier customInputs of {
-           | nothing := false
-           | just self :=
-             case HasEphemerality.get self of {
-               | Ephemeral := initializationLogic self publicInputs
-               | NonEphemeral := incrementationLogic self privateInputs
-             }
-         }
-       | Created commitment :=
-         case lookupResource commitment customInputs of
-           | nothing := false
-           | just self :=
-             case HasEphemerality.get self of
-               | Ephemeral := false
-               | NonEphemeral := true;
+  : (publicInputs : Logic.Instance)
+    -> (privateInputs : Logic.Witness)
+    -> Bool :=
+  -- TODO how to use the named syntax here?
+    Simple.parametrizedCounterLogic
+    initializationLogic
+    Simple.incrementationLogic;
 
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
   Simple.quantityCheck@{
@@ -42,9 +28,3 @@ initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
          nullifier := getNullifierfFromLabel self;
          nullifierSet := Logic.Instance.nullifiers publicInputs;
        };
-
-incrementationLogic (self : Resource) (privateInputs : Logic.Witness) : Bool :=
-  Simple.incrementationLogic@{
-    self;
-    privateInputs;
-  };
