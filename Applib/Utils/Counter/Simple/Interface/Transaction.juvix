@@ -19,6 +19,7 @@ initialize (standardInputs : StandardInputs) : Transaction :=
         ephemeral := true;
       };
     createdCounter := mkCounter;
+
   in mkTransactionHelper@{
        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
        actions :=

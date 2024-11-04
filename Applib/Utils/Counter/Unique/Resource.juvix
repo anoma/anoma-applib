@@ -17,32 +17,20 @@ import Applib.Random open;
 
 mkCounter
   (identity : Identity)
-  (ephemeral : Bool)
   (uniqueLabel : CounterLabel)
-  (count : Nat)
+  {count : Nat := 0}
+  {ephemeral : Bool := false}
   : Resource :=
-  let
-    valueMap : ValueMap :=
-      Set.fromList
-        [
-          ownershipValueMapEntry@{
-            owner := Identity.external identity;
-          };
-          mkValueMapEntry@{
-            key := countValueMapKey;
-            value := toValueMapValue count;
-          };
-        ];
-  in mkResource@{
-       logicRef := Reference.to counterLogic;
-       labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
-       valueRef := Reference.to (valueMap |> anomaEncode |> mkValue);
-       quantity := 1;
-       ephemeral;
-       nullifierKeyCommitment := toNullifierKeyCommitment identity;
-       nonce := mkNonce rand;
-       randSeed := mkRandSeed rand;
-     };
+  mkResource@{
+    logicRef := Reference.to counterLogic;
+    labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
+    valueRef := Reference.to (count |> mkValue);
+    quantity := 1;
+    ephemeral;
+    nullifierKeyCommitment := toNullifierKeyCommitment identity;
+    nonce := mkNonce rand;
+    randSeed := mkRandSeed rand;
+  };
 
 counterKind (labelRef : LabelRef) : Kind :=
   KindInternal.kind@{

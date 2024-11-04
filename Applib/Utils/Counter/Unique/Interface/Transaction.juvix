@@ -16,15 +16,11 @@ import Applib.Utils.Counter.Unique.Resource open;
 import Applib.Utils.Counter.Unique.Interface.Projection open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
-
 import Applib.Helpers open;
 
--- TODO use general initialize/traits
 --- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
 initialize
-  (standardInputs : StandardInputs)
-  (consumable : Resource)
-  : Result StandardError Transaction :=
+  (standardInputs : StandardInputs) (consumable : Resource) : Transaction :=
   let
     identity := StandardInputs.identity standardInputs;
     ephConsumable := consumable@Resource{ephemeral := true};
@@ -56,21 +52,20 @@ initialize
       Set.union
         (NullifiersAndCustomInputs.customInputs nfResMapping)
         (CommitmentsAndCustomInputs.customInputs cmResMapping);
-  in ok
-    mkTransactionHelper@{
-      roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-      actions :=
-        Set.singleton
-          mkActionHelper@{
-            identity := StandardInputs.identity standardInputs;
-            consumed;
-            created;
-            appData := Set.empty;
-            customInputs;
-            maybeNullifiers := just nullifiers;
-            maybeCommitments := just commitments;
-          };
-    };
+  in mkTransactionHelper@{
+       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+       actions :=
+         Set.singleton
+           mkActionHelper@{
+             identity := StandardInputs.identity standardInputs;
+             consumed;
+             created;
+             appData := Set.empty;
+             customInputs;
+             maybeNullifiers := just nullifiers;
+             maybeCommitments := just commitments;
+           };
+     };
 
 increment
   (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
@@ -80,30 +75,26 @@ increment
     | else :=
       let
         identity := StandardInputs.identity standardInputs;
-        updatedCounter : Resource :=
-          let
-            valueMap : ValueMap :=
-              currentCounter
-                |> Resource.valueRef
-                |> Reference.from
-                |> Value.unValue
-                |> anomaDecode;
-            currentCount : Nat :=
-              lookupValueMap@{
-                key := countValueMapKey;
-                valueMap;
-              };
-            updatedValueMap : ValueMap :=
-              insertValueMap@{
-                key := countValueMapKey;
-                value := toValueMapValue (currentCount + 1);
-                valueMap;
-              };
-          in currentCounter@Resource{
-            ephemeral := false;
-            valueRef := Reference.to
-              (updatedValueMap |> anomaEncode |> mkValue);
+        updatedCounter :=
+          mkCounter@{
+            identity;
+            uniqueLabel := getCounterLabel currentCounter;
+            count := getCount currentCounter + 1;
           };
+
+        consumed := Set.fromList [currentCounter];
+        created := Set.fromList [updatedCounter];
+
+        nfResMapping := nullifierToResourceMapping identity consumed;
+        cmResMapping := commitmentToResourceMapping created;
+
+        nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
+        commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
+
+        customInputs :=
+          Set.union
+            (NullifiersAndCustomInputs.customInputs nfResMapping)
+            (CommitmentsAndCustomInputs.customInputs cmResMapping);
       in mkTransactionHelper@{
            roots := Set.singleton (StandardInputs.currentRoot standardInputs);
            actions :=
@@ -113,6 +104,6 @@ increment
                  consumed := Set.singleton currentCounter;
                  created := Set.singleton updatedCounter;
                  appData := Set.empty;
-                 customInputs := Set.empty;
+                 customInputs;
                };
          };
