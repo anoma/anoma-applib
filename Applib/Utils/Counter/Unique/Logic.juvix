@@ -9,6 +9,7 @@ import Applib.Identities open;
 import Applib.Resource.Traits open;
 import Applib.Utils.Counter.Unique.Interface.Projection open;
 import Applib.Utils.Counter.Unique.Label open;
+import Applib.Utils.Counter.Simple.Logic as Simple;
 
 counterLogic
   (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
@@ -22,8 +23,7 @@ counterLogic
            | just self :=
              case HasEphemerality.get self of {
                | Ephemeral := initializationLogic self publicInputs
-               | NonEphemeral :=
-                 incrementationLogic self publicInputs privateInputs
+               | NonEphemeral := incrementationLogic self privateInputs
              }
          }
        | Created commitment :=
@@ -35,32 +35,16 @@ counterLogic
                | NonEphemeral := true;
 
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
-  HasQuantity.get self == 1
+  Simple.quantityCheck@{
+    self;
+  }
     && isNullifierPresent@{
          nullifier := getNullifierfFromLabel self;
          nullifierSet := Logic.Instance.nullifiers publicInputs;
        };
 
-incrementationLogic
-  (self : Resource)
-  (publicInputs : Logic.Instance)
-  (privateInputs : Logic.Witness)
-  : Bool :=
-  let
-    consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
-    created := privateInputs |> Logic.Witness.created |> Set.toList;
-  in case consumed, created of
-       | [currentCounter], [incrementedCounter] :=
-         self == currentCounter
-           && kind currentCounter == kind incrementedCounter
-           && isIncremented@{
-                old := currentCounter;
-                new := incrementedCounter;
-              }
-       | _, _ := false;
-
-isIncremented (old new : Resource) : Bool :=
-  let
-    expected : Nat := getCount old + 1;
-    actual : Nat := getCount new;
-  in expected == actual;
+incrementationLogic (self : Resource) (privateInputs : Logic.Witness) : Bool :=
+  Simple.incrementationLogic@{
+    self;
+    privateInputs;
+  };

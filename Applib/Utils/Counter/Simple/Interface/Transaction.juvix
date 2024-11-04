@@ -14,12 +14,26 @@ import Applib.Utils.Counter.Simple.Interface.Projection open;
 
 initialize (standardInputs : StandardInputs) : Transaction :=
   let
+    identity := StandardInputs.identity standardInputs;
     ephCounter :=
       mkCounter@{
         ephemeral := true;
       };
     createdCounter := mkCounter;
 
+    consumed := Set.fromList [ephCounter];
+    created := Set.fromList [createdCounter];
+
+    nfResMapping := nullifierToResourceMapping identity consumed;
+    cmResMapping := commitmentToResourceMapping created;
+
+    nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
+    commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
+
+    customInputs :=
+      Set.union
+        (NullifiersAndCustomInputs.customInputs nfResMapping)
+        (CommitmentsAndCustomInputs.customInputs cmResMapping);
   in mkTransactionHelper@{
        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
        actions :=
@@ -29,30 +43,47 @@ initialize (standardInputs : StandardInputs) : Transaction :=
              consumed := Set.singleton ephCounter;
              created := Set.singleton createdCounter;
              appData := Set.empty;
-             customInputs := Set.empty;
+             customInputs;
+             maybeNullifiers := just nullifiers;
+             maybeCommitments := just commitments;
            };
      };
 
 increment
   (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
-  let
-    updatedCounter :=
-      mkCounter@{
-        count := getCount currentCounter + 1;
-      };
-  in if
+  if
     | kind currentCounter /= counterKind :=
       failwith "The input resource has wrong kind."
     | else :=
-      mkTransactionHelper@{
-        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-        actions :=
-          Set.singleton
-            mkActionHelper@{
-              identity := StandardInputs.identity standardInputs;
-              consumed := Set.singleton currentCounter;
-              created := Set.singleton updatedCounter;
-              appData := Set.empty;
-              customInputs := Set.empty;
-            };
-      };
+      let
+        identity := StandardInputs.identity standardInputs;
+        updatedCounter :=
+          mkCounter@{
+            count := getCount currentCounter + 1;
+          };
+
+        consumed := Set.fromList [currentCounter];
+        created := Set.fromList [updatedCounter];
+
+        nfResMapping := nullifierToResourceMapping identity consumed;
+        cmResMapping := commitmentToResourceMapping created;
+
+        nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
+        commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
+
+        customInputs :=
+          Set.union
+            (NullifiersAndCustomInputs.customInputs nfResMapping)
+            (CommitmentsAndCustomInputs.customInputs cmResMapping);
+      in mkTransactionHelper@{
+           roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+           actions :=
+             Set.singleton
+               mkActionHelper@{
+                 identity;
+                 consumed := Set.singleton currentCounter;
+                 created := Set.singleton updatedCounter;
+                 appData := Set.empty;
+                 customInputs;
+               };
+         };
