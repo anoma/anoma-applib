@@ -41,10 +41,10 @@ counterLogic
   : (publicInputs : Logic.Instance)
     -> (privateInputs : Logic.Witness)
     -> Bool :=
-  -- TODO how to use the named syntax here?
-    parametrizedCounterLogic
-    initializationLogic
+  parametrizedCounterLogic@?{
+    initializationLogic;
     incrementationLogic;
+  };
 
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
   quantityCheck@{

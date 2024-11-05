@@ -14,7 +14,6 @@ import Applib.Utils.Counter.Unique.Label open;
 {-- A counter with a unique label containing a reference nullifier and a quantity of 1 ensuring that it can only be initialized once.
 The counter can be consumed by a specified identity. --}
 mkCounter
-  (identity : Identity)
   (uniqueLabel : CounterLabel)
   {count : Nat := 0}
   {ephemeral : Bool := false}
@@ -25,7 +24,7 @@ mkCounter
     valueRef := Reference.to (count |> mkValue);
     quantity := 1;
     ephemeral;
-    nullifierKeyCommitment := toNullifierKeyCommitment identity;
+    nullifierKeyCommitment := Universal.nullifierKeyCommitment;
     nonce := mkNonce rand;
     randSeed := mkRandSeed rand;
   };

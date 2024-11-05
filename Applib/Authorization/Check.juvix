@@ -28,7 +28,7 @@ isAuthorizedBy
   of
     | nothing := false
     | just (message, signature) :=
-      -- TODO use name application syntax when possible.
+      -- TODO use named application syntax.
           verify
           signature
           message

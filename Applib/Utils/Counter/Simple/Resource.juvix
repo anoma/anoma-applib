@@ -12,7 +12,6 @@ import Applib.Helpers open;
 import Applib.Utils.Counter.Simple.Label open;
 import Applib.Utils.Counter.Simple.Logic open;
 
-
 {-- A counter with a quantity of 1 ensuring that can be consumed by the universal identity (and anyone who has composed their identity with it). --}
 mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
   mkResource@{
@@ -21,7 +20,7 @@ mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
     valueRef := Reference.to (count |> mkValue);
     quantity := 1;
     ephemeral;
-    nullifierKeyCommitment := toNullifierKeyCommitment Universal.identity;
+    nullifierKeyCommitment := Universal.nullifierKeyCommitment;
     nonce := mkNonce rand;
     randSeed := mkRandSeed rand;
   };

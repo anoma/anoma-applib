@@ -5,6 +5,7 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 import Applib.Helpers open;
 import Applib.Identities open;
+import Applib.Resource.Traits open;
 
 type Asset :=
   mkAsset@{
@@ -25,7 +26,6 @@ type QuantifiedAssets :=
 --- Checks if an ;Asset; is included in a ;Set; of resources.
 --- The resource ;Kind; must match, the quantity must be
 --- greater or equal, and the `npk` must be the ;ExternalIdentity; of the receiver.
--- TODO check owner?
 includesAsset
   (asset : Asset)
   (receiver : ExternalIdentity)
@@ -34,6 +34,5 @@ includesAsset
   any (r in Set.toList resources) {
     Asset.quantity asset <= Resource.quantity r
       && Asset.kind asset == kind r
-      && ExternalIdentity.toNullifierKeyCommitment receiver
-        == Resource.nullifierKeyCommitment r
+      && receiver == HasOwner.get r
   };

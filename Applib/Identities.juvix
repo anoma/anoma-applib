@@ -5,17 +5,24 @@ import Stdlib.Prelude open;
 import Anoma open;
 import Anoma.Builtin.ByteArray open;
 
+module InternalIdentity;
+  toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
+    internalIdentity |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
+end;
+
+module ExternalIdentity;
+  toNullifierKeyCommitment
+    (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
+    externalIdentity
+      |> ExternalIdentity.unExternalIdentity
+      |> mkNullifierKeyCommitment;
+end;
+
 toNullifierKey (identity : Identity) : NullifierKey :=
-  identity
-    |> Identity.internal
-    |> InternalIdentity.unInternalIdentity
-    |> mkNullifierKey;
+  identity |> Identity.internal |> InternalIdentity.toNullifierKey;
 
 toNullifierKeyCommitment (identity : Identity) : NullifierKeyCommitment :=
-  identity
-    |> Identity.external
-    |> ExternalIdentity.unExternalIdentity
-    |> mkNullifierKeyCommitment;
+  identity |> Identity.external |> ExternalIdentity.toNullifierKeyCommitment;
 
 --- The ;Identity; generated from the seed `0x0000000000000000000000000000000000000000000000000000000000000000`
 --- (see, e.g., https://cyphr.me/ed25519_tool/ed.html) in little-endian byte order.
@@ -231,17 +238,4 @@ end;
 module Zero;
   externalIdentity : ExternalIdentity :=
     mkExternalIdentity (mkByteArray (replicate 32 0x0));
-end;
-
-module ExternalIdentity;
-  toNullifierKeyCommitment
-    (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
-    externalIdentity
-      |> ExternalIdentity.unExternalIdentity
-      |> mkNullifierKeyCommitment;
-end;
-
-module InternalIdentity;
-  toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
-    internalIdentity |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
 end;

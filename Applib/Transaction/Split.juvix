@@ -30,7 +30,7 @@ split
   : Result StandardError Transaction :=
   let
     self : ExternalIdentity :=
-      standardInputs |> StandardInputs.identity |> Identity.external;
+      standardInputs |> StandardInputs.caller |> Identity.external;
     owner : ExternalIdentity := HasOwner.get toSplit;
     toSplitResource := Convertable.toResource toSplit;
     sum : Quantity :=

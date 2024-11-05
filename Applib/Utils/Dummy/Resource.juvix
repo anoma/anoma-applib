@@ -20,8 +20,7 @@ emptyLabel : Label := mkLabel 0;
 dummyValueMapKey : ValueMapKey := toValueMapKey "dummyKey";
 
 alwaysValidResource
-  (quantity : Quantity)
-  (identity : ExternalIdentity)
+  {quantity : Quantity := 1}
   {dummyValue : String := "dummyValue"}
   {ephemeral : Bool := false}
   : Resource :=
@@ -32,8 +31,7 @@ alwaysValidResource
           valueRef := Reference.to (mkValue (anomaEncode dummyValue));
           quantity;
           ephemeral;
-          nullifierKeyCommitment :=
-            ExternalIdentity.toNullifierKeyCommitment identity;
+          nullifierKeyCommitment := Universal.nullifierKeyCommitment;
           nonce := mkNonce rand;
           randSeed := mkRandSeed rand;
         };

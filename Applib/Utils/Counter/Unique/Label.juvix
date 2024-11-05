@@ -8,7 +8,7 @@ import Applib.Identities open;
 type CounterLabel := mkCounterLabel@{nullifier : Nullifier};
 
 createUniqueCounterLabel (consumable : Resource) : CounterLabel :=
-  mkCounterLabel (nullifier (toNullifierKey Universal.identity) consumable);
+  mkCounterLabel (nullifier Universal.nullifierKey consumable);
 
 instance
 CounterLabel-Eq : Eq CounterLabel :=

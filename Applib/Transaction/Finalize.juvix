@@ -28,18 +28,18 @@ finalize
   (toFinalize : R)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity :=
-      standardInputs |> StandardInputs.identity |> Identity.external;
+    caller : ExternalIdentity :=
+      standardInputs |> StandardInputs.caller |> Identity.external;
     owner : ExternalIdentity := HasOwner.get toFinalize;
     ephResource :=
       HasEphemerality.set
         Ephemeral
         (HasOwner.set Zero.externalIdentity toFinalize);
   in if
-    | owner /= self :=
+    | owner /= caller :=
       throw
         mkUnauthorizedError@{
-          expected := self;
+          expected := caller;
           actual := owner;
         }
     | else :=

@@ -10,7 +10,7 @@ import Applib.Helpers open;
 import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Dummy.Transaction.Finalize open;
-import Applib.Utils.Dummy.Test.Initialize open;
+import Applib.Utils.Dummy.Test.Initialize as Initialize;
 
 oldRandSeed : RandSeed := mkRandSeed 0;
 

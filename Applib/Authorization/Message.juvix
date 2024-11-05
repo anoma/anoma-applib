@@ -42,7 +42,7 @@ checkResourceRelationship
 --- @param mustBeCreated The resources that must be created.
 --- @return The app data entry.
 mkResourceRelationshipAppDataEntry
-  (identity : Identity)
+  (signer : InternalIdentity)
   (origin : Tag)
   (mustBeConsumed : Set Nullifier)
   (mustBeCreated : Set Commitment)
@@ -54,7 +54,8 @@ mkResourceRelationshipAppDataEntry
         mustBeConsumed;
         mustBeCreated;
       };
-    sig : Signature := sign msg (Identity.internal identity);
+    sig : Signature := sign msg signer;
+  -- TODO use named syntax.
   in case origin of
        | Created commitment :=
          mkAppDataEntry@{
@@ -89,8 +90,6 @@ module ActionFromConvertable;
         (createdResources : Set CreatedTypedResource)
         : Action :=
         let
-          identity := StandardInputs.identity standardInputs;
-
           -- Convert typed resources to resources.
           consumed :=
             Set.map (r in consumedResources) {
@@ -104,7 +103,7 @@ module ActionFromConvertable;
           -- Put maps into the custom inputs that map:
           -- - nullifiers to consumed resources
           -- - commitments to created resources
-          nfResMapping := nullifierToResourceMapping identity consumed;
+          nfResMapping := nullifierToResourceMapping consumed;
           cmResMapping := commitmentToResourceMapping created;
           customInputs :=
             Set.union
@@ -120,14 +119,14 @@ module ActionFromConvertable;
           appData :=
             Set.map (nullifier in nullifiers) {
               mkResourceRelationshipAppDataEntry@{
-                identity;
+                signer :=
+                  Identity.internal (StandardInputs.caller standardInputs);
                 origin := Consumed nullifier;
                 mustBeConsumed := Set.empty;
                 mustBeCreated := commitments;
               }
             };
         in mkActionHelper@{
-             identity;
              consumed;
              created;
              appData;

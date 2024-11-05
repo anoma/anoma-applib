@@ -40,7 +40,7 @@ swap
         | nothing :=
           let
             self : ExternalIdentity :=
-              standardInputs |> StandardInputs.identity |> Identity.external;
+              standardInputs |> StandardInputs.caller |> Identity.external;
           in case find ((/=) (self)) (map HasOwner.get toSwap) of
                | just notMyself :=
                  throw
@@ -73,7 +73,7 @@ settle
   : Result StandardError Transaction :=
   let
     self : ExternalIdentity :=
-      standardInputs |> StandardInputs.identity |> Identity.external;
+      standardInputs |> StandardInputs.caller |> Identity.external;
     actions :=
       Set.fromList (map (Solution.toAction standardInputs) (solutions));
   in case

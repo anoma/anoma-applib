@@ -23,6 +23,7 @@ import Anoma.Builtin.System open;
 import Applib.Random open;
 import Applib.Resource.Traits.Convertable open;
 
+-- TODO Move to "juvix-arm-specs"
 instance
 ExternalIdentity-Show : Show ExternalIdentity :=
   mkShow
@@ -32,6 +33,7 @@ ExternalIdentity-Show : Show ExternalIdentity :=
         |> toAnomaContents
         |> natToString};
 
+-- TODO Move to "juvix-arm-specs"
 instance
 InternalIdentity-Show : Show InternalIdentity :=
   mkShow
@@ -41,6 +43,7 @@ InternalIdentity-Show : Show InternalIdentity :=
         |> toAnomaContents
         |> natToString};
 
+-- TODO Move to "juvix-arm-specs"
 instance
 Identity-Show : Show Identity :=
   mkShow
@@ -99,9 +102,12 @@ lookupResource
     customInputs;
   };
 
+--- Standard inputs to for transaction functions.
+--- NOTE: In the future, this will include more settings such as the information flow control flag.
 type StandardInputs :=
   mkStandardInputs@{
-    identity : Identity;
+    -- TODO rename or add accessor method
+    caller : Identity;
     currentRoot : CommitmentTree.Root;
   };
 
@@ -143,10 +149,10 @@ commitmentToResourceMapping
      };
 
 nullifierToResourceMapping
-  (identity : Identity) (consumed : Set Resource) : NullifiersAndCustomInputs :=
+  (consumed : Set Resource) : NullifiersAndCustomInputs :=
   let
     consumed' := Set.toList consumed;
-    nullifiers' := map (nullifier (toNullifierKey identity)) consumed';
+    nullifiers' := map (nullifier Universal.nullifierKey) consumed';
   in mkNullifiersAndCustomInputs@{
        nullifiers := Set.fromList nullifiers';
        customInputs := Set.fromList (zipWith toMapEntry nullifiers' consumed');
@@ -235,7 +241,6 @@ open ProvingHelpers;
 --- @param maybeCommitments Optional commitments to avoid recomputation.
 --- @return The action object.
 mkActionHelper
-  (identity : Identity)
   (consumed created : Set Resource)
   (appData : AppData)
   (customInputs : Logic.CustomInputs)
@@ -243,22 +248,25 @@ mkActionHelper
   {maybeCommitments : Maybe (Set Commitment) := nothing}
   : Action :=
   let
-    nullifierKey := toNullifierKey identity;
     nullifiers :=
       case maybeNullifiers of
+        | just nullifiers := nullifiers
         | nothing :=
-          Set.map (r in consumed) {
-            nullifier nullifierKey r
-          }
-        | just nullifiers := nullifiers;
+          Set.map (resource in consumed) {
+            nullifier@{
+              nullifierKey := Universal.nullifierKey;
+              resource;
+            }
+          };
     commitments :=
       case maybeCommitments of
+        | just commitments := commitments
         | nothing :=
-          Set.map (r in created) {
-            commitment r
-          }
-        | just commitments := commitments;
-
+          Set.map (resource in created) {
+            commitment@{
+              resource;
+            }
+          };
     tags : Set Tag :=
       Set.union
         Set.map (nullifier in nullifiers) {

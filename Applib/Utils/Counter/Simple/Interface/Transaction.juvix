@@ -48,12 +48,10 @@ prepareCounterTransaction
   (consumed created : Set Resource)
   : Transaction :=
   let
-    identity := StandardInputs.identity standardInputs;
-
     -- Put maps into the custom inputs that map:
     -- - nullifiers to consumed resources
     -- - commitments to created resources
-    nfResMapping := nullifierToResourceMapping identity consumed;
+    nfResMapping := nullifierToResourceMapping consumed;
     cmResMapping := commitmentToResourceMapping created;
     customInputs :=
       Set.union
@@ -69,7 +67,6 @@ prepareCounterTransaction
        actions :=
          Set.singleton
            mkActionHelper@{
-             identity := Universal.identity;
              consumed;
              created;
              appData := Set.empty;

@@ -22,19 +22,16 @@ import Applib.Utils.Counter.Simple.Interface.Transaction as Simple;
 initialize
   (standardInputs : StandardInputs) (consumable : Resource) : Transaction :=
   let
-    identity := StandardInputs.identity standardInputs;
     ephConsumable := consumable@Resource{ephemeral := true};
     uniqueLabel := createUniqueCounterLabel consumable;
     ephCounter :=
       mkCounter@{
-        identity;
         ephemeral := true;
         uniqueLabel;
         count := 0;
       };
     newCounter :=
       mkCounter@{
-        identity;
         ephemeral := false;
         uniqueLabel;
         count := 0;
@@ -52,14 +49,12 @@ increment
     | kind currentCounter /= counterKind (Resource.labelRef currentCounter) :=
       failwith "The input resource has wrong kind."
     | else :=
-
       Simple.prepareCounterTransaction@{
         standardInputs;
         consumed := Set.singleton currentCounter;
         created :=
           Set.singleton
             mkCounter@{
-              identity := StandardInputs.identity standardInputs;
               uniqueLabel := getCounterLabel currentCounter;
               count := getCount currentCounter + 1;
             };

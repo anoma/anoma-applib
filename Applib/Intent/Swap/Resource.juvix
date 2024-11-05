@@ -4,6 +4,7 @@ import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Anoma open;
 import Applib.Helpers open;
+import Applib.Identities open;
 import Applib.Resource.Traits open;
 import Applib.Intent.Asset open;
 import Applib.Intent.Swap.Logic open;
@@ -14,6 +15,7 @@ module SwapIntent;
 
   create
     (want : QuantifiedAssets)
+    -- TODO add authorization mechanism to select solvers.
     (receiver solver : ExternalIdentity)
     : SwapIntent :=
     mk
@@ -23,10 +25,7 @@ module SwapIntent;
         valueRef := Reference.to (mkValue 0);
         quantity := 1;
         ephemeral := true;
-        nullifierKeyCommitment :=
-          solver
-            |> ExternalIdentity.unExternalIdentity
-            |> mkNullifierKeyCommitment;
+        nullifierKeyCommitment := Universal.nullifierKeyCommitment;
         nonce := mkNonce rand;
         randSeed := mkRandSeed rand;
       };
