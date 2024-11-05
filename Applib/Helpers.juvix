@@ -282,7 +282,7 @@ mkTransactionHelper
     roots;
     actions;
     delta := Delta.zero;
-    deltaProofRecord := createDeltaProofRecord;
+    deltaProofRecord := emptyDeltaProofRecord;
   };
 
 emptyTx : Transaction :=
