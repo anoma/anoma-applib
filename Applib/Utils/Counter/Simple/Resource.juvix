@@ -18,9 +18,9 @@ import Applib.Utils.Counter.Simple.Logic open;
 --- @return The constructed counter resource.
 mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
   mkResource@{
-    logicRef := Reference.to (counterLogic);
-    labelRef := Reference.to (counterLabel);
-    valueRef := Reference.to (count |> mkValue);
+    logicRef := BindingReference.compute (counterLogic);
+    labelRef := BindingReference.compute (counterLabel);
+    valueRef := BindingReference.compute (count |> mkValue);
     quantity := 1;
     ephemeral;
     nullifierKeyCommitment := Universal.nullifierKeyCommitment;
@@ -32,6 +32,6 @@ mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
 --- @return The counter kind.
 counterKind : Kind :=
   KindInternal.kind@{
-    logicRef := Reference.to (counterLogic);
-    labelRef := Reference.to (counterLabel);
+    logicRef := BindingReference.compute (counterLogic);
+    labelRef := BindingReference.compute (counterLabel);
   };

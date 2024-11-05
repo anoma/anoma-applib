@@ -28,7 +28,7 @@ CounterLabel-Eq : Eq CounterLabel :=
 getCounterLabel (counter : Resource) : CounterLabel :=
   counter
     |> Resource.labelRef
-    |> Reference.from
+    |> lookupFromReferenceChecked
     |> Label.unLabel
     |> anomaDecode;
 

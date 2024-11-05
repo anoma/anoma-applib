@@ -22,9 +22,10 @@ mkCounter
   {ephemeral : Bool := false}
   : Resource :=
   mkResource@{
-    logicRef := Reference.to (counterLogic);
-    labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
-    valueRef := Reference.to (count |> mkValue);
+    logicRef := BindingReference.compute (counterLogic);
+    labelRef :=
+      BindingReference.compute (uniqueLabel |> anomaEncode |> mkLabel);
+    valueRef := BindingReference.compute (count |> mkValue);
     quantity := 1;
     ephemeral;
     nullifierKeyCommitment := Universal.nullifierKeyCommitment;
@@ -37,6 +38,6 @@ mkCounter
 --- @return The counter kind.
 counterKind (labelRef : LabelRef) : Kind :=
   KindInternal.kind@{
-    logicRef := Reference.to (counterLogic);
+    logicRef := BindingReference.compute (counterLogic);
     labelRef;
   };

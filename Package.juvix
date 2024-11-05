@@ -11,11 +11,10 @@ package : Package :=
         github
           "anoma"
           "juvix-stdlib"
-          "37d3dd74b78f0ec0c48c8adc44f5b99c6d068464";
-        github "anoma" "juvix-test" "v0.15.0";
+          "8bc67b874860a26cba02d853b879e9c0a347efe2";
         github
           "anoma"
           "juvix-arm-specs"
-          "33731a510a0c9e1eb077ef8140521184b89fd16d";
+          "846d2e5eb359c6a923b014983663cdf53b6ef9d4";
       ];
   };

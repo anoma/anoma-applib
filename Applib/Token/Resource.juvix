@@ -26,13 +26,13 @@ module Token;
     mk
       mkResource@{
         logicRef :=
-          Reference.to
+          BindingReference.compute
             (tokenLogic
               (TokenLabel.supply tokenLabel)
               (TokenLabel.originator tokenLabel));
         labelRef := toLabelRef tokenLabel;
         valueRef :=
-          Reference.to
+          BindingReference.compute
             (owner
               |> ownershipValueMapEntry
               |> Set.singleton
@@ -85,14 +85,14 @@ Token-HasOwner : HasOwner Token :=
       token
         |> Convertable.toResource
         |> Resource.valueRef
-        |> Reference.from
+        |> lookupFromReferenceChecked
         |> Value.unValue
         |> anomaDecode;
     set (owner : ExternalIdentity) (token : Token) : Token :=
       (token |> Convertable.toResource)@Resource{valueRef := owner
           |> anomaEncode
           |> mkValue
-          |> Reference.to}
+          |> BindingReference.compute}
         |> Convertable.fromResource;
   };
 
