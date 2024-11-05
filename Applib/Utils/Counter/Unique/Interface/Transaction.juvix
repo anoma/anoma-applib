@@ -14,9 +14,9 @@ import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Resource open;
 import Applib.Utils.Counter.Simple.Count open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Standards.Ownership open;
 import Applib.Helpers open;
+
+import Applib.Utils.Counter.Simple.Interface.Transaction as Simple;
 
 --- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
 initialize
@@ -39,36 +39,11 @@ initialize
         uniqueLabel;
         count := 0;
       };
-    consumed := Set.fromList [consumable; ephCounter];
-    created := Set.fromList [ephConsumable; newCounter];
 
-    -- Put maps into the custom inputs that map:
-    -- - nullifiers to consumed resources
-    -- - commitments to created resources
-    nfResMapping := nullifierToResourceMapping identity consumed;
-    cmResMapping := commitmentToResourceMapping created;
-    customInputs :=
-      Set.union
-        (NullifiersAndCustomInputs.customInputs nfResMapping)
-        (CommitmentsAndCustomInputs.customInputs cmResMapping);
-
-    -- Extract nullifiers and commitments to avoid recomputing them
-    nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-    commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-
-  in mkTransactionHelper@{
-       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-       actions :=
-         Set.singleton
-           mkActionHelper@{
-             identity := StandardInputs.identity standardInputs;
-             consumed;
-             created;
-             appData := Set.empty;
-             customInputs;
-             maybeNullifiers := just nullifiers;
-             maybeCommitments := just commitments;
-           };
+  in Simple.prepareCounterTransaction@{
+       standardInputs;
+       consumed := Set.fromList [consumable; ephCounter];
+       created := Set.fromList [ephConsumable; newCounter];
      };
 
 increment
@@ -77,40 +52,15 @@ increment
     | kind currentCounter /= counterKind (Resource.labelRef currentCounter) :=
       failwith "The input resource has wrong kind."
     | else :=
-      let
-        identity := StandardInputs.identity standardInputs;
-        updatedCounter :=
-          mkCounter@{
-            identity;
-            uniqueLabel := getCounterLabel currentCounter;
-            count := getCount currentCounter + 1;
-          };
 
-        consumed := Set.fromList [currentCounter];
-        created := Set.fromList [updatedCounter];
-
-        -- Put maps into the custom inputs that map:
-        -- - nullifiers to consumed resources
-        -- - commitments to created resources
-        nfResMapping := nullifierToResourceMapping identity consumed;
-        cmResMapping := commitmentToResourceMapping created;
-        customInputs :=
-          Set.union
-            (NullifiersAndCustomInputs.customInputs nfResMapping)
-            (CommitmentsAndCustomInputs.customInputs cmResMapping);
-
-        -- Extract nullifiers and commitments to avoid recomputing them
-        nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-        commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-      in mkTransactionHelper@{
-           roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-           actions :=
-             Set.singleton
-               mkActionHelper@{
-                 identity;
-                 consumed := Set.singleton currentCounter;
-                 created := Set.singleton updatedCounter;
-                 appData := Set.empty;
-                 customInputs;
-               };
-         };
+      Simple.prepareCounterTransaction@{
+        standardInputs;
+        consumed := Set.singleton currentCounter;
+        created :=
+          Set.singleton
+            mkCounter@{
+              identity := StandardInputs.identity standardInputs;
+              uniqueLabel := getCounterLabel currentCounter;
+              count := getCount currentCounter + 1;
+            };
+      };

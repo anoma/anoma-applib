@@ -33,17 +33,15 @@ increment
     | kind currentCounter /= counterKind :=
       failwith "The input resource has wrong kind."
     | else :=
-      let
-        identity := StandardInputs.identity standardInputs;
-        updatedCounter :=
-          mkCounter@{
-            count := getCount currentCounter + 1;
-          };
-      in prepareCounterTransaction@{
-           standardInputs;
-           consumed := Set.singleton currentCounter;
-           created := Set.singleton updatedCounter;
-         };
+      prepareCounterTransaction@{
+        standardInputs;
+        consumed := Set.singleton currentCounter;
+        created :=
+          Set.singleton
+            mkCounter@{
+              count := getCount currentCounter + 1;
+            };
+      };
 
 prepareCounterTransaction
   (standardInputs : StandardInputs)

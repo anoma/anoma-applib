@@ -8,6 +8,7 @@ import Applib.Helpers open;
 import Applib.Utils.Counter.Unique.Resource open;
 import Applib.Utils.Counter.Simple.Count open;
 
+-- TODO refactor name
 count (resource : Resource) : Nat :=
   if
     -- TODO refactor this check. (Only the logicRef is checked here and this should be more explicit)

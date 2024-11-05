@@ -25,6 +25,7 @@ type QuantifiedAssets :=
 --- Checks if an ;Asset; is included in a ;Set; of resources.
 --- The resource ;Kind; must match, the quantity must be
 --- greater or equal, and the `npk` must be the ;ExternalIdentity; of the receiver.
+-- TODO check owner?
 includesAsset
   (asset : Asset)
   (receiver : ExternalIdentity)
