@@ -11,8 +11,11 @@ import Applib.Identities open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Label open;
 
-{-- A counter with a unique label containing a reference nullifier and a quantity of 1 ensuring that it can only be initialized once.
-The counter can be consumed by a specified identity. --}
+--- Constructs a counter with unique label and a quantity of 1 that can be consumed by the universal identity (and everyone who has composed their identity with it).
+--- @param uniqueLabel The unique ;CounterLabel;.
+--- @param count The intial count.
+--- @param ephemeral Whether the resource is ephemeral or not.
+--- @return The constructed counter resource.
 mkCounter
   (uniqueLabel : CounterLabel)
   {count : Nat := 0}
@@ -29,6 +32,9 @@ mkCounter
     randSeed := mkRandSeed rand;
   };
 
+--- Returns the counter kind.
+--- @param labelRef The binding reference to the label.
+--- @return The counter kind.
 counterKind (labelRef : LabelRef) : Kind :=
   KindInternal.kind@{
     logicRef := Reference.to (counterLogic);

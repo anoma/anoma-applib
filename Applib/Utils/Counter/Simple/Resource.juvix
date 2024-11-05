@@ -12,7 +12,10 @@ import Applib.Helpers open;
 import Applib.Utils.Counter.Simple.Label open;
 import Applib.Utils.Counter.Simple.Logic open;
 
-{-- A counter with a quantity of 1 ensuring that can be consumed by the universal identity (and anyone who has composed their identity with it). --}
+--- Constructs a counter with a quantity of 1 that can be consumed by the universal identity (and everyone who has composed their identity with it).
+--- @param count The intial count.
+--- @param ephemeral Whether the resource is ephemeral or not.
+--- @return The constructed counter resource.
 mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
   mkResource@{
     logicRef := Reference.to (counterLogic);
@@ -25,7 +28,8 @@ mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
     randSeed := mkRandSeed rand;
   };
 
-{-- The counter kind --}
+--- Returns the counter kind.
+--- @return The counter kind.
 counterKind : Kind :=
   KindInternal.kind@{
     logicRef := Reference.to (counterLogic);

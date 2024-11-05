@@ -3,11 +3,8 @@ module Applib.Utils.Counter.Simple.Interface.Transaction;
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
 import Stdlib.Data.Set as Set open using {Set};
-
 import Anoma open;
-
 import Applib.Helpers open;
-import Applib.Identities open;
 import Applib.Utils.Counter.Simple.Resource open;
 import Applib.Utils.Counter.Simple.Logic open;
 import Applib.Utils.Counter.Simple.Count open;
@@ -30,7 +27,7 @@ initialize (standardInputs : StandardInputs) : Transaction :=
         };
   };
 
---- Increments a counter.
+--- Increments the counter value by 1.
 --- @param currentCounter The current counter to increment.
 --- @param standardInputs The transaction function standard inputs.
 --- @return The transaction object incrementing a counter.
@@ -71,7 +68,7 @@ prepareCounterTransaction
         (NullifiersAndCustomInputs.customInputs nfResMapping)
         (CommitmentsAndCustomInputs.customInputs cmResMapping);
 
-    -- Extract nullifiers and commitments to avoid recomputing them
+    -- Extract nullifiers and commitments to avoid recomputing them.
     nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
     commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
 

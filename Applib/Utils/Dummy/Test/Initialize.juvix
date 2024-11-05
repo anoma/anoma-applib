@@ -11,7 +11,6 @@ import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Dummy.Transaction.Initialize open;
 
-
 dummy : Resource := alwaysValidResource;
 
 standardInputs : StandardInputs :=

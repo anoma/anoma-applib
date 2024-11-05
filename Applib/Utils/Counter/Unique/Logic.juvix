@@ -10,18 +10,28 @@ import Applib.Resource.Traits open;
 import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Simple.Logic as Simple;
 
+--- The counter resource logic.
+--- @param publicInputs The resource logic public inputs.
+--- @param privateInputs The resource logic private inputs.
+--- @return The resource logic validity.
 counterLogic
   : (publicInputs : Logic.Instance)
     -> (privateInputs : Logic.Witness)
     -> Bool :=
-  -- TODO how to use the named syntax here?
-    Simple.parametrizedCounterLogic
-    initializationLogic
-    Simple.incrementationLogic;
+  Simple.parametrizedCounterLogic@?{
+    initializationLogic;
+    incrementationLogic := Simple.incrementationLogic;
+  };
 
+--- The initialization sub-logic function checking that the quantity equals 1 and
+--- that the nullifier specified in the counter ;Label; is present.
+--- @param self The resource object carrying the checking resource logic.
+--- @param publicInputs The resource logic public inputs.
+--- @return Whether the logic is valid or not.
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
-  Simple.quantityCheck@{
+  Simple.initializationLogic@{
     self;
+    publicInputs;
   }
     && isNullifierPresent@{
          nullifier := getNullifierfFromLabel self;
