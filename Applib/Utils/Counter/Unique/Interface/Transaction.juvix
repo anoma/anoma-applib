@@ -13,7 +13,7 @@ import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Resource open;
-import Applib.Utils.Counter.Unique.Interface.Projection open;
+import Applib.Utils.Counter.Simple.Count open;
 import Applib.Resource.Standards.ValueMap open;
 import Applib.Resource.Standards.Ownership open;
 import Applib.Helpers open;

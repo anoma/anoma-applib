@@ -6,14 +6,10 @@ import Stdlib.Data.Set as Set open;
 import Anoma open;
 import Anoma.Builtin.System open;
 
-import Applib.Helpers open;
+import Applib.Random open;
+import Applib.Identities open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Label open;
-import Applib.Utils.Counter.Unique.Interface.Projection open;
-import Applib.Identities open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Standards.Ownership open;
-import Applib.Random open;
 
 {-- A counter with a unique label containing a reference nullifier and a quantity of 1 ensuring that it can only be initialized once.
 The counter can be consumed by a specified identity. --}

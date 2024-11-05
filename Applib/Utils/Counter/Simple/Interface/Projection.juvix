@@ -1,8 +1,13 @@
 module Applib.Utils.Counter.Simple.Interface.Projection;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open using {failwith};
 import Anoma open;
-import Anoma.Builtin.System open;
+import Applib.Utils.Counter.Simple.Resource open;
+import Applib.Utils.Counter.Simple.Count open;
 
-getCount (resource : Resource) : Nat :=
-  resource |> Resource.valueRef |> Reference.from |> Value.unValue;
+count (resource : Resource) : Nat :=
+  if
+    | kind resource /= counterKind :=
+      failwith "The input resource has wrong kind."
+    | else := getCount resource;

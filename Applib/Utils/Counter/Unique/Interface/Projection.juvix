@@ -1,14 +1,21 @@
 module Applib.Utils.Counter.Unique.Interface.Projection;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open using {failwith};
 import Anoma open;
 
 import Applib.Helpers open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Traits.ValueMap open;
+import Applib.Utils.Counter.Unique.Resource open;
+import Applib.Utils.Counter.Simple.Count open;
 
-getCount (resource : Resource) : Nat :=
-  resource |> Resource.valueRef |> Reference.from |> Value.unValue;
+count (resource : Resource) : Nat :=
+  if
+    -- TODO refactor this check. (Only the logicRef is checked here and this should be more explicit)
+    | kind resource
+      /= counterKind@{
+           labelRef := Resource.labelRef resource;
+         } := failwith "The input resource has wrong kind."
+    | else := getCount resource;
 
 --- A unique identifier (UID) characterized by a ;Nat; counter value
 --- and an unique counter ;Kind;.

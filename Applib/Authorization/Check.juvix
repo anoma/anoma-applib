@@ -5,15 +5,12 @@ import Stdlib.Prelude open;
 import Anoma open;
 import Applib.Authorization.Message open;
 import Applib.Helpers open;
-import Stdlib.Data.Set as Set open using {isSubset};
+import Stdlib.Data.Set as Set open using {Set};
 
 --- Checks if an ;ExternalIdentity; has authorized the creation and consumption of ;Resource;s within the same ;Action; as the resource logic performing this check.
 --- The check proceeds in five steps:
 --- 1. The ;ResourceRelationship; message and corresponding ;Signature; are looked up in ;AppData; with the ;Tag; of the checking resource as the lookup key.
---- 2. The `origin` ;Tag; in the message is checked to match the one used as the lookup key.
 --- 3. The ;ResourceRelationship; message and corresponding ;Signature; are verified to be authored by the `signer` ;ExternalIdentity;.
---- 4. The `mustBeConsumed` ;Nullifier;s are checked to be a subset of the action nullifier set.
---- 5. The `mustBeCreated` ;Commitment;s are checked to be a subset of the action commitment set.
 --- @param signer The external identity that has authorized the consumption and creation of resources.
 --- @param origin The ;Tag; referencing the resource that must perform the check.
 --- @param publicInputs The public inputs of the resource logic function.
@@ -30,12 +27,15 @@ isAuthorizedBy
     }
   of
     | nothing := false
-    | just (msg, sig) :=
-      ResourceRelationship.origin msg == origin
-        && verify sig msg signer
-        && Set.isSubset
-          (ResourceRelationship.mustBeConsumed msg)
-          (Logic.Instance.nullifiers publicInputs)
-        && Set.isSubset
-          (ResourceRelationship.mustBeCreated msg)
-          (Logic.Instance.commitments publicInputs);
+    | just (message, signature) :=
+      -- TODO use name application syntax when possible.
+          verify
+          signature
+          message
+          signer
+        && checkResourceRelationship@{
+             message;
+             origin;
+             nullifiers := Logic.Instance.nullifiers publicInputs;
+             commitments := Logic.Instance.commitments publicInputs;
+           };

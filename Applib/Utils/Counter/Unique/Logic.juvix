@@ -7,7 +7,6 @@ import Anoma open;
 import Applib.Helpers open;
 import Applib.Identities open;
 import Applib.Resource.Traits open;
-import Applib.Utils.Counter.Unique.Interface.Projection open;
 import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Simple.Logic as Simple;
 

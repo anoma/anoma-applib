@@ -9,17 +9,31 @@ import Applib.Helpers open;
 import Applib.Identities open;
 
 --- A message format specifiying resources that must be created and consumed within an ;Action;.
---- @param origin The resource performing the check.
+--- @param origin The reference to the resource performing the check.
 --- @param mustBeConsumed The resources that must be consumed.
 --- @param mustBeCreated The resources that must be created.
 type ResourceRelationship :=
   mkResourceRelationship@{
-    --- The ;Tag; of the resource performing the check.
     origin : Tag;
-    --- The  performing the check.
     mustBeConsumed : Set Nullifier;
     mustBeCreated : Set Commitment;
   };
+
+--- Checks that a ;ResourceRelationship; message has the expected values.
+--- @param message The resource relationship message to check.
+--- @param origin The expected origin.
+--- @param nullifiers The nullifier set that must contain the `mustBeConsumed` nullifiers as a subset.
+--- @param commitments The commitment set that must contain the `mustBeCreated` commitments as a subset.
+--- @return The check result.
+checkResourceRelationship
+  (message : ResourceRelationship)
+  (origin : Tag)
+  (nullifiers : Set Nullifier)
+  (commitments : Set Commitment)
+  : Bool :=
+  ResourceRelationship.origin message == origin
+    && Set.isSubset (ResourceRelationship.mustBeConsumed message) nullifiers
+    && Set.isSubset (ResourceRelationship.mustBeCreated message) commitments;
 
 --- Creates an ;AppDataEntry; consisting of a ;ResourceRelationship; message and corresponding ;Signature; as the ;AppDataValue; and the resource ;Tag; value as the ;AppDataKey;.
 --- @param identity The identity to derive the nullifier key from.
@@ -76,6 +90,8 @@ module ActionFromConvertable;
         : Action :=
         let
           identity := StandardInputs.identity standardInputs;
+
+          -- Convert typed resources to resources.
           consumed :=
             Set.map (r in consumedResources) {
               Convertable.toResource r

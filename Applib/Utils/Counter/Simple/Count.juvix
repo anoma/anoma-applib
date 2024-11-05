@@ -1,0 +1,8 @@
+module Applib.Utils.Counter.Simple.Count;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Anoma.Builtin.System open;
+
+getCount (resource : Resource) : Nat :=
+  resource |> Resource.valueRef |> Reference.from |> Value.unValue;
