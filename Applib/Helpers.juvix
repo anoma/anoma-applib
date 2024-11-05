@@ -23,13 +23,6 @@ import Anoma.Builtin.System open;
 import Applib.Random open;
 import Applib.Resource.Traits.Convertable open;
 
-module Set;
-  isSubset {A} {{Ord A}} (sub sup : Set A) : Bool :=
-    all (x in Set.toList sub) {
-      Set.isMember x sup
-    };
-end;
-
 instance
 ExternalIdentity-Show : Show ExternalIdentity :=
   mkShow
@@ -60,22 +53,9 @@ Identity-Show : Show Identity :=
         ++str (id |> Identity.internal |> Show.show)
         ++str "}"};
 
-isCreated (commitment : Commitment) (publicInputs : Logic.Instance) : Bool :=
-  Set.isMember commitment (Logic.Instance.commitments publicInputs);
-
-isConsumed (nullifier : Nullifier) (publicInputs : Logic.Instance) : Bool :=
-  Set.isMember nullifier (Logic.Instance.nullifiers publicInputs);
-
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
-
-isSublist {A} {{Ord A}} (sub sup : List A) : Bool :=
-  let
-    sup' := Set.fromList sup;
-  in all (x in sub) {
-    Set.isMember x sup'
-  };
 
 module AppDataMap;
   fromSet (appDataSet : Set AppDataEntry) : Map AppDataKey AppDataValue :=
@@ -133,11 +113,6 @@ computableComponentToCustomInputs
       value := r |> anomaEncode |> mkAppDataValue;
     }
   };
-
--- TODO
--- extractKeys {A} {{Ord A}} (customInputs : Logic.CustomInputs) : Set A :=
---   Set.map (key in Map.keys (AppDataMap.fromSet customInputs))
---     {key |> AppDataKey.unAppDataKey |> anomaDecode};
 
 toMapEntry {A} (k : A) (v : Resource) : AppDataEntry :=
   mkAppDataEntry@{
@@ -250,6 +225,15 @@ end;
 
 open ProvingHelpers;
 
+--- Helps with the creation of an action ;Action;.
+--- @param identity The identity to derive the nullifier key from.
+--- @param consumed The resources being consumed in this action.
+--- @param created The resources being created in this action.
+--- @param appData The app data of the action.
+--- @param customInputs The custom inputs of the action.
+--- @param maybeNullifiers Optional nullifiers to avoid recomputation.
+--- @param maybeCommitments Optional commitments to avoid recomputation.
+--- @return The action object.
 mkActionHelper
   (identity : Identity)
   (consumed created : Set Resource)
@@ -303,6 +287,8 @@ mkActionHelper
             };
         }
       };
+
+    -- Populate the compliance proofs (that currently are empty).
     -- NOTE: Proof replicas will be deduplicated by ;Set;
     complianceProofs : Set ProofRecord :=
       Set.map (_ in tags) {
