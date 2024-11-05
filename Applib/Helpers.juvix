@@ -23,39 +23,6 @@ import Anoma.Builtin.System open;
 import Applib.Random open;
 import Applib.Resource.Traits.Convertable open;
 
--- TODO Move to "juvix-arm-specs"
-instance
-ExternalIdentity-Show : Show ExternalIdentity :=
-  mkShow
-    \{id :=
-      id
-        |> ExternalIdentity.unExternalIdentity
-        |> toAnomaContents
-        |> natToString};
-
--- TODO Move to "juvix-arm-specs"
-instance
-InternalIdentity-Show : Show InternalIdentity :=
-  mkShow
-    \{id :=
-      id
-        |> InternalIdentity.unInternalIdentity
-        |> toAnomaContents
-        |> natToString};
-
--- TODO Move to "juvix-arm-specs"
-instance
-Identity-Show : Show Identity :=
-  mkShow
-    \{id :=
-      "{"
-        ++str "external : "
-        ++str (id |> Identity.external |> Show.show)
-        ++str ", "
-        ++str "internal : "
-        ++str (id |> Identity.internal |> Show.show)
-        ++str "}"};
-
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;

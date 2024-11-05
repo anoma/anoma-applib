@@ -26,9 +26,10 @@ alwaysValidResource
   : Resource :=
   "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidResource`"
     >-> mkResource@{
-          logicRef := Reference.to alwaysValidLogic;
-          labelRef := Reference.to emptyLabel;
-          valueRef := Reference.to (mkValue (anomaEncode dummyValue));
+          logicRef := BindingReference.compute alwaysValidLogic;
+          labelRef := BindingReference.compute emptyLabel;
+          valueRef :=
+            BindingReference.compute (mkValue (anomaEncode dummyValue));
           quantity;
           ephemeral;
           nullifierKeyCommitment := Universal.nullifierKeyCommitment;

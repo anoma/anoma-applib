@@ -16,8 +16,8 @@ initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
   let
     expectedKind :=
       KindInternal.kind@{
-        logicRef := Reference.to alwaysValidLogic;
-        labelRef := Reference.to emptyLabel;
+        logicRef := BindingReference.compute alwaysValidLogic;
+        labelRef := BindingReference.compute emptyLabel;
       };
     currentKind :=
       kind@{

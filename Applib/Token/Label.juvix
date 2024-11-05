@@ -53,7 +53,11 @@ TokenLabel-Show : Show TokenLabel :=
         ++str "}"};
 
 getTokenLabel (r : Resource) : TokenLabel :=
-  r |> Resource.labelRef |> Reference.from |> Label.unLabel |> anomaDecode;
+  r
+    |> Resource.labelRef
+    |> lookupFromReferenceChecked
+    |> Label.unLabel
+    |> anomaDecode;
 
 getTokenName (r : Resource) : String := TokenLabel.name (getTokenLabel r);
 
@@ -66,10 +70,10 @@ isTransferable (r : Resource) : Bool :=
   r |> getTokenLabel |> TokenLabel.transferability |> Transferability.toBool;
 
 toLabelRef (tokenLabel : TokenLabel) : LabelRef :=
-  tokenLabel |> anomaEncode |> mkLabel |> Reference.to;
+  tokenLabel |> anomaEncode |> mkLabel |> BindingReference.compute;
 
 fromLabelRef (labelRef : LabelRef) : TokenLabel :=
-  labelRef |> Reference.from |> Label.unLabel |> anomaDecode;
+  labelRef |> lookupFromReferenceChecked |> Label.unLabel |> anomaDecode;
 
 type InvalidLabelError :=
   mkInvalidLabelError@{

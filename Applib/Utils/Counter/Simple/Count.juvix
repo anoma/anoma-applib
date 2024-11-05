@@ -8,4 +8,4 @@ import Anoma.Builtin.System open;
 --- @param resource The counter resource.
 --- @return The count.
 getCount (counter : Resource) : Nat :=
-  counter |> Resource.valueRef |> Reference.from |> Value.unValue;
+  counter |> Resource.valueRef |> lookupFromReferenceChecked |> Value.unValue;

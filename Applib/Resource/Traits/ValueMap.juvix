@@ -22,7 +22,7 @@ Resource-HasValueMap : HasValueMap Resource :=
     get (resource : Resource) : ValueMap :=
       resource
         |> Resource.valueRef
-        |> Reference.from
+        |> lookupFromReferenceChecked
         |> Value.unValue
         |> anomaDecode;
 
@@ -34,5 +34,5 @@ Resource-HasValueMap : HasValueMap Resource :=
       resource@Resource{valueRef := valueMap
         |> anomaEncode
         |> mkValue
-        |> Reference.to};
+        |> BindingReference.compute};
   };

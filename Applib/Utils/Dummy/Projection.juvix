@@ -19,8 +19,8 @@ readValueField (dummyResources : Set Resource) : List String :=
   let
     expectedKind :=
       KindInternal.kind@{
-        logicRef := Reference.to alwaysValidLogic;
-        labelRef := Reference.to emptyLabel;
+        logicRef := BindingReference.compute alwaysValidLogic;
+        labelRef := BindingReference.compute emptyLabel;
       };
   in "DEBUG: Evaluating `Applib.Utils.Dummy.Projection.readValueField`"
     >-> map (resource in Set.toList dummyResources) {
@@ -31,7 +31,7 @@ readValueField (dummyResources : Set Resource) : List String :=
           | true :=
             resource
               |> Resource.valueRef
-              |> Reference.from
+              |> lookupFromReferenceChecked
               |> Value.unValue
               |> anomaDecode
               |> ok

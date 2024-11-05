@@ -20,9 +20,9 @@ module SwapIntent;
     : SwapIntent :=
     mk
       mkResource@{
-        logicRef := Reference.to (swapIntentLogic want receiver);
-        labelRef := Reference.to (mkLabel 0);
-        valueRef := Reference.to (mkValue 0);
+        logicRef := BindingReference.compute (swapIntentLogic want receiver);
+        labelRef := BindingReference.compute (mkLabel 0);
+        valueRef := BindingReference.compute (mkValue 0);
         quantity := 1;
         ephemeral := true;
         nullifierKeyCommitment := Universal.nullifierKeyCommitment;

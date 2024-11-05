@@ -14,8 +14,8 @@ instance
 Resource-HasLogic : HasLogic Resource :=
   mkHasLogic@{
     get (resource : Resource) : Logic :=
-      resource |> Resource.logicRef |> Reference.from;
+      resource |> Resource.logicRef |> lookupFromReferenceChecked;
 
     set (logic : Logic) (resource : Resource) : Resource :=
-      resource@Resource{logicRef := Reference.to logic};
+      resource@Resource{logicRef := BindingReference.compute logic};
   };
