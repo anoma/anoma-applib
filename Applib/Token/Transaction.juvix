@@ -7,6 +7,7 @@ import Applib.Token.Resource open;
 import Applib.Intent.Swap.Resource open;
 import Applib.Authorization.Message open;
 
+--- Instantiates the ;ActionConvertable; trait by defining `toAction`.
 instance
 Token-Token-ActionConvertable : ActionConvertable Token Token :=
   ActionFromConvertable.actionWithAuthorizationAppData {Token} {Token};
