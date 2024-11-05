@@ -23,7 +23,8 @@ mkCounter
   : Resource :=
   mkResource@{
     logicRef := BindingReference.compute (counterLogic);
-    labelRef := BindingReference.compute (uniqueLabel |> anomaEncode |> mkLabel);
+    labelRef :=
+      BindingReference.compute (uniqueLabel |> anomaEncode |> mkLabel);
     valueRef := BindingReference.compute (count |> mkValue);
     quantity := 1;
     ephemeral;
