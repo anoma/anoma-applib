@@ -6,8 +6,8 @@ import Anoma open;
 import Applib.Utils.Counter.Simple.Resource open;
 import Applib.Utils.Counter.Simple.Count open;
 
-count (resource : Resource) : Nat :=
+count (counter : Resource) : Nat :=
   if
-    | kind resource /= counterKind :=
+    | kind counter /= counterKind :=
       failwith "The input resource has wrong kind."
-    | else := getCount resource;
+    | else := getCount counter;

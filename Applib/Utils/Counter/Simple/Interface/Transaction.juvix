@@ -12,6 +12,9 @@ import Applib.Utils.Counter.Simple.Resource open;
 import Applib.Utils.Counter.Simple.Logic open;
 import Applib.Utils.Counter.Simple.Count open;
 
+--- Initializes a counter that can be incremented by everyone.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object initializing a counter.
 initialize (standardInputs : StandardInputs) : Transaction :=
   prepareCounterTransaction@{
     standardInputs;
@@ -27,6 +30,10 @@ initialize (standardInputs : StandardInputs) : Transaction :=
         };
   };
 
+--- Increments a counter.
+--- @param currentCounter The current counter to increment.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object incrementing a counter.
 increment
   (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   if
@@ -43,6 +50,12 @@ increment
             };
       };
 
+--- A helper function preparing the transaction object by creating an action object
+--- containing data required by counter resources.
+--- @param standardInputs The transaction function standard inputs.
+--- @param consumed The consumed resources.
+--- @param created The created resources.
+--- @return The transaction object.
 prepareCounterTransaction
   (standardInputs : StandardInputs)
   (consumed created : Set Resource)

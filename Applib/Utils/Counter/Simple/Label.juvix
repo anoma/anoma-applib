@@ -4,4 +4,5 @@ import Stdlib.Prelude open;
 import Anoma open;
 import Anoma.Builtin.System open;
 
+--- The counter label.
 counterLabel : Label := "SimpleCounter" |> anomaEncode |> mkLabel;

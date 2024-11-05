@@ -10,6 +10,16 @@ import Applib.Resource.Traits open;
 import Applib.Utils.Counter.Simple.Count open;
 import Applib.Utils.Counter.Simple.Label open;
 
+--- The counter logic.
+counterLogic
+  : (publicInputs : Logic.Instance)
+    -> (privateInputs : Logic.Witness)
+    -> Bool :=
+  parametrizedCounterLogic@?{
+    initializationLogic;
+    incrementationLogic;
+  };
+
 parametrizedCounterLogic
   (initializationLogic : Resource -> Logic.Instance -> Bool)
   (incrementationLogic : Resource -> Logic.Witness -> Bool)
@@ -36,15 +46,6 @@ parametrizedCounterLogic
              case HasEphemerality.get self of
                | Ephemeral := false
                | NonEphemeral := true;
-
-counterLogic
-  : (publicInputs : Logic.Instance)
-    -> (privateInputs : Logic.Witness)
-    -> Bool :=
-  parametrizedCounterLogic@?{
-    initializationLogic;
-    incrementationLogic;
-  };
 
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
   quantityCheck@{
