@@ -40,8 +40,7 @@ module Token;
               |> mkValue);
         quantity;
         ephemeral;
-        nullifierKeyCommitment :=
-          ExternalIdentity.toNullifierKeyCommitment owner;
+        nullifierKeyCommitment := Universal.nullifierKeyCommitment;
         nonce := mkNonce rand;
         randSeed := mkRandSeed rand;
       };

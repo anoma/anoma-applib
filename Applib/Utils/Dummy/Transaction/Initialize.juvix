@@ -40,15 +40,7 @@ initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
               actions :=
                 Set.singleton
                   mkActionHelper@{
-                    identity := StandardInputs.identity standardInputs;
-                    consumed :=
-                      Set.singleton
-                        dummy@Resource{
-                          ephemeral := true;
-                          nullifierKeyCommitment := standardInputs
-                            |> StandardInputs.identity
-                            |> toNullifierKeyCommitment;
-                        };
+                    consumed := Set.singleton dummy@Resource{ephemeral := true};
                     created := Set.singleton dummy;
                     appData := Set.empty;
                     customInputs := Set.empty;

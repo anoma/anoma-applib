@@ -38,7 +38,7 @@ merge
     | t :: _ :=
       let
         self : ExternalIdentity :=
-          standardInputs |> StandardInputs.identity |> Identity.external;
+          standardInputs |> StandardInputs.caller |> Identity.external;
         expectedKind : Kind := HasKind.get t;
         totalQuantity : Quantity :=
           listFor (acc := 0) (ti in toMerge) {

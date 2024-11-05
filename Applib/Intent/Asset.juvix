@@ -5,6 +5,7 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 import Applib.Helpers open;
 import Applib.Identities open;
+import Applib.Resource.Traits open;
 
 type Asset :=
   mkAsset@{
@@ -33,6 +34,5 @@ includesAsset
   any (r in Set.toList resources) {
     Asset.quantity asset <= Resource.quantity r
       && Asset.kind asset == kind r
-      && ExternalIdentity.toNullifierKeyCommitment receiver
-        == Resource.nullifierKeyCommitment r
+      && receiver == HasOwner.get r
   };

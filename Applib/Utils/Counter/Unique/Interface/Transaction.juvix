@@ -4,106 +4,58 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
 import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
-import Anoma.Builtin.System open;
 import Applib.Helpers open;
-import Applib.Identities open;
-import Applib.Transaction.Errors open;
-import Applib.Authorization open;
-import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Counter.Unique.Label open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Resource open;
-import Applib.Utils.Counter.Unique.Interface.Projection open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Standards.Ownership open;
-import Applib.Helpers open;
+import Applib.Utils.Counter.Simple.Count as Simple.Count;
+import Applib.Utils.Counter.Simple.Interface.Transaction as Simple.Transaction;
 
---- Requires a consumable resource, e.g., `Utils.Dummy.Resource`.
+--- Initializes a unique counter that can be incremented by everyone.
+--- This requires a consumable resource, e.g., `Utils.Dummy.Resource`.
+--- @param standardInputs The transaction function standard inputs.
+--- @param consumable A consumable resource.
+--- @return The transaction object initializing a counter.
 initialize
   (standardInputs : StandardInputs) (consumable : Resource) : Transaction :=
   let
-    identity := StandardInputs.identity standardInputs;
     ephConsumable := consumable@Resource{ephemeral := true};
     uniqueLabel := createUniqueCounterLabel consumable;
     ephCounter :=
       mkCounter@{
-        identity;
         ephemeral := true;
         uniqueLabel;
         count := 0;
       };
     newCounter :=
       mkCounter@{
-        identity;
         ephemeral := false;
         uniqueLabel;
         count := 0;
       };
-    consumed := Set.fromList [consumable; ephCounter];
-    created := Set.fromList [ephConsumable; newCounter];
-
-    nfResMapping := nullifierToResourceMapping identity consumed;
-    cmResMapping := commitmentToResourceMapping created;
-
-    nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-    commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-
-    customInputs :=
-      Set.union
-        (NullifiersAndCustomInputs.customInputs nfResMapping)
-        (CommitmentsAndCustomInputs.customInputs cmResMapping);
-  in mkTransactionHelper@{
-       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-       actions :=
-         Set.singleton
-           mkActionHelper@{
-             identity := StandardInputs.identity standardInputs;
-             consumed;
-             created;
-             appData := Set.empty;
-             customInputs;
-             maybeNullifiers := just nullifiers;
-             maybeCommitments := just commitments;
-           };
+  in Simple.Transaction.prepareCounterTransaction@{
+       standardInputs;
+       consumed := Set.fromList [consumable; ephCounter];
+       created := Set.fromList [ephConsumable; newCounter];
      };
 
+--- Increments the counter value by 1.
+--- @param currentCounter The current counter to increment.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object incrementing a counter.
 increment
   (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
   if
     | kind currentCounter /= counterKind (Resource.labelRef currentCounter) :=
       failwith "The input resource has wrong kind."
     | else :=
-      let
-        identity := StandardInputs.identity standardInputs;
-        updatedCounter :=
-          mkCounter@{
-            identity;
-            uniqueLabel := getCounterLabel currentCounter;
-            count := getCount currentCounter + 1;
-          };
-
-        consumed := Set.fromList [currentCounter];
-        created := Set.fromList [updatedCounter];
-
-        nfResMapping := nullifierToResourceMapping identity consumed;
-        cmResMapping := commitmentToResourceMapping created;
-
-        nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-        commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-
-        customInputs :=
-          Set.union
-            (NullifiersAndCustomInputs.customInputs nfResMapping)
-            (CommitmentsAndCustomInputs.customInputs cmResMapping);
-      in mkTransactionHelper@{
-           roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-           actions :=
-             Set.singleton
-               mkActionHelper@{
-                 identity;
-                 consumed := Set.singleton currentCounter;
-                 created := Set.singleton updatedCounter;
-                 appData := Set.empty;
-                 customInputs;
-               };
-         };
+      Simple.Transaction.prepareCounterTransaction@{
+        standardInputs;
+        consumed := Set.singleton currentCounter;
+        created :=
+          Set.singleton
+            mkCounter@{
+              uniqueLabel := getCounterLabel currentCounter;
+              count := Simple.Count.getCount currentCounter + 1;
+            };
+      };

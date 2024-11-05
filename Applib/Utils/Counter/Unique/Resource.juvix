@@ -6,32 +6,35 @@ import Stdlib.Data.Set as Set open;
 import Anoma open;
 import Anoma.Builtin.System open;
 
-import Applib.Helpers open;
+import Applib.Random open;
+import Applib.Identities open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Label open;
-import Applib.Utils.Counter.Unique.Interface.Projection open;
-import Applib.Identities open;
-import Applib.Resource.Standards.ValueMap open;
-import Applib.Resource.Standards.Ownership open;
-import Applib.Random open;
 
+--- Constructs a counter with unique label and a quantity of 1 that can be consumed by the universal identity (and everyone who has composed their identity with it).
+--- @param uniqueLabel The unique ;CounterLabel;.
+--- @param count The intial count.
+--- @param ephemeral Whether the resource is ephemeral or not.
+--- @return The constructed counter resource.
 mkCounter
-  (identity : Identity)
   (uniqueLabel : CounterLabel)
   {count : Nat := 0}
   {ephemeral : Bool := false}
   : Resource :=
   mkResource@{
-    logicRef := Reference.to counterLogic;
+    logicRef := Reference.to (counterLogic);
     labelRef := Reference.to (uniqueLabel |> anomaEncode |> mkLabel);
     valueRef := Reference.to (count |> mkValue);
     quantity := 1;
     ephemeral;
-    nullifierKeyCommitment := toNullifierKeyCommitment identity;
+    nullifierKeyCommitment := Universal.nullifierKeyCommitment;
     nonce := mkNonce rand;
     randSeed := mkRandSeed rand;
   };
 
+--- Returns the counter kind.
+--- @param labelRef The binding reference to the label.
+--- @return The counter kind.
 counterKind (labelRef : LabelRef) : Kind :=
   KindInternal.kind@{
     logicRef := Reference.to (counterLogic);

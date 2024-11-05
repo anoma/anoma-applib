@@ -7,60 +7,33 @@ import Anoma open;
 import Applib.Helpers open;
 import Applib.Identities open;
 import Applib.Resource.Traits open;
-import Applib.Utils.Counter.Unique.Interface.Projection open;
 import Applib.Utils.Counter.Unique.Label open;
+import Applib.Utils.Counter.Simple.Logic as Simple;
 
+--- The counter resource logic.
+--- @param publicInputs The resource logic public inputs.
+--- @param privateInputs The resource logic private inputs.
+--- @return The resource logic validity.
 counterLogic
-  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
-  let
-    tag := Logic.Instance.tag publicInputs;
-    customInputs := Logic.Witness.customInputs privateInputs;
-  in case tag of
-       | Consumed nullifier :=
-         case lookupResource nullifier customInputs of {
-           | nothing := false
-           | just self :=
-             case HasEphemerality.get self of {
-               | Ephemeral := initializationLogic self publicInputs
-               | NonEphemeral :=
-                 incrementationLogic self publicInputs privateInputs
-             }
-         }
-       | Created commitment :=
-         case lookupResource commitment customInputs of
-           | nothing := false
-           | just self :=
-             case HasEphemerality.get self of
-               | Ephemeral := false
-               | NonEphemeral := true;
+  : (publicInputs : Logic.Instance)
+    -> (privateInputs : Logic.Witness)
+    -> Bool :=
+  Simple.parametrizedCounterLogic@?{
+    initializationLogic;
+    incrementationLogic := Simple.incrementationLogic;
+  };
 
+--- The initialization sub-logic function checking that the quantity equals 1 and
+--- that the nullifier specified in the counter ;Label; is present.
+--- @param self The resource object carrying the checking resource logic.
+--- @param publicInputs The resource logic public inputs.
+--- @return Whether the logic is valid or not.
 initializationLogic (self : Resource) (publicInputs : Logic.Instance) : Bool :=
-  HasQuantity.get self == 1
+  Simple.initializationLogic@{
+    self;
+    publicInputs;
+  }
     && isNullifierPresent@{
          nullifier := getNullifierfFromLabel self;
          nullifierSet := Logic.Instance.nullifiers publicInputs;
        };
-
-incrementationLogic
-  (self : Resource)
-  (publicInputs : Logic.Instance)
-  (privateInputs : Logic.Witness)
-  : Bool :=
-  let
-    consumed := privateInputs |> Logic.Witness.consumed |> Set.toList;
-    created := privateInputs |> Logic.Witness.created |> Set.toList;
-  in case consumed, created of
-       | [currentCounter], [incrementedCounter] :=
-         self == currentCounter
-           && kind currentCounter == kind incrementedCounter
-           && isIncremented@{
-                old := currentCounter;
-                new := incrementedCounter;
-              }
-       | _, _ := false;
-
-isIncremented (old new : Resource) : Bool :=
-  let
-    expected : Nat := getCount old + 1;
-    actual : Nat := getCount new;
-  in expected == actual;

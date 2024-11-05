@@ -11,9 +11,11 @@ import Applib.Random open;
 import Applib.Helpers open;
 import Applib.Utils.Counter.Simple.Label open;
 import Applib.Utils.Counter.Simple.Logic open;
-import Applib.Utils.Counter.Simple.Interface.Projection open;
 
---- A counter that can be incremented by everyone.
+--- Constructs a counter with a quantity of 1 that can be consumed by the universal identity (and everyone who has composed their identity with it).
+--- @param count The intial count.
+--- @param ephemeral Whether the resource is ephemeral or not.
+--- @return The constructed counter resource.
 mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
   mkResource@{
     logicRef := Reference.to (counterLogic);
@@ -21,11 +23,13 @@ mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
     valueRef := Reference.to (count |> mkValue);
     quantity := 1;
     ephemeral;
-    nullifierKeyCommitment := toNullifierKeyCommitment Universal.identity;
+    nullifierKeyCommitment := Universal.nullifierKeyCommitment;
     nonce := mkNonce rand;
     randSeed := mkRandSeed rand;
   };
 
+--- Returns the counter kind.
+--- @return The counter kind.
 counterKind : Kind :=
   KindInternal.kind@{
     logicRef := Reference.to (counterLogic);

@@ -1,58 +1,87 @@
 module Applib.Utils.Counter.Simple.Interface.Transaction;
 
 import Stdlib.Prelude open;
-import Stdlib.Debug.Fail open;
+import Stdlib.Debug.Fail open using {failwith};
 import Stdlib.Data.Set as Set open using {Set};
-
 import Anoma open;
-
 import Applib.Helpers open;
-import Applib.Identities open;
 import Applib.Utils.Counter.Simple.Resource open;
 import Applib.Utils.Counter.Simple.Logic open;
-import Applib.Utils.Counter.Simple.Interface.Projection open;
+import Applib.Utils.Counter.Simple.Count open;
 
+--- Initializes a counter that can be incremented by everyone.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object initializing a counter.
 initialize (standardInputs : StandardInputs) : Transaction :=
-  let
-    ephCounter :=
-      mkCounter@{
-        ephemeral := true;
+  prepareCounterTransaction@{
+    standardInputs;
+    consumed :=
+      Set.singleton
+        mkCounter@{
+          ephemeral := true;
+        };
+    created :=
+      Set.singleton
+        mkCounter@{
+          ephemeral := false;
+        };
+  };
+
+--- Increments the counter value by 1.
+--- @param currentCounter The current counter to increment.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object incrementing a counter.
+increment
+  (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+  if
+    | kind currentCounter /= counterKind :=
+      failwith "The input resource has wrong kind."
+    | else :=
+      prepareCounterTransaction@{
+        standardInputs;
+        consumed := Set.singleton currentCounter;
+        created :=
+          Set.singleton
+            mkCounter@{
+              count := getCount currentCounter + 1;
+            };
       };
-    createdCounter := mkCounter;
+
+--- A helper function preparing the transaction object by creating an action object
+--- containing data required by counter resources.
+--- @param standardInputs The transaction function standard inputs.
+--- @param consumed The consumed resources.
+--- @param created The created resources.
+--- @return The transaction object.
+prepareCounterTransaction
+  (standardInputs : StandardInputs)
+  (consumed created : Set Resource)
+  : Transaction :=
+  let
+    -- Put maps into the custom inputs that map:
+    -- - nullifiers to consumed resources
+    -- - commitments to created resources
+    nfResMapping := nullifierToResourceMapping consumed;
+    cmResMapping := commitmentToResourceMapping created;
+    customInputs :=
+      Set.union
+        (NullifiersAndCustomInputs.customInputs nfResMapping)
+        (CommitmentsAndCustomInputs.customInputs cmResMapping);
+
+    -- Extract nullifiers and commitments to avoid recomputing them.
+    nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
+    commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
 
   in mkTransactionHelper@{
        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
        actions :=
          Set.singleton
            mkActionHelper@{
-             identity := Universal.identity;
-             consumed := Set.singleton ephCounter;
-             created := Set.singleton createdCounter;
+             consumed;
+             created;
              appData := Set.empty;
-             customInputs := Set.empty;
+             customInputs;
+             maybeNullifiers := just nullifiers;
+             maybeCommitments := just commitments;
            };
      };
-
-increment
-  (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
-  let
-    updatedCounter :=
-      mkCounter@{
-        count := getCount currentCounter + 1;
-      };
-  in if
-    | kind currentCounter /= counterKind :=
-      failwith "The input resource has wrong kind."
-    | else :=
-      mkTransactionHelper@{
-        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-        actions :=
-          Set.singleton
-            mkActionHelper@{
-              identity := StandardInputs.identity standardInputs;
-              consumed := Set.singleton currentCounter;
-              created := Set.singleton updatedCounter;
-              appData := Set.empty;
-              customInputs := Set.empty;
-            };
-      };

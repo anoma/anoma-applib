@@ -11,17 +11,11 @@ import Applib.Identities open;
 import Applib.Utils.Dummy.Resource open;
 import Applib.Utils.Dummy.Transaction.Initialize open;
 
-universal : Identity := Universal.identity;
-
-dummy : Resource :=
-  alwaysValidResource@{
-    quantity := 1;
-    identity := Identity.external universal;
-  };
+dummy : Resource := alwaysValidResource;
 
 standardInputs : StandardInputs :=
   mkStandardInputs@{
-    identity := universal;
+    caller := Universal.identity;
     currentRoot := mkRoot 0;
   };
 

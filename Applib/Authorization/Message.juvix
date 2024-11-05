@@ -1,29 +1,48 @@
 module Applib.Authorization.Message;
 
 import Stdlib.Prelude open;
-import Stdlib.Debug.Fail open using {failwith};
 import Stdlib.Data.Set as Set open using {Set};
-import Applib.Helpers open;
-import Applib.Identities open;
-
 import Anoma open;
 import Anoma.Builtin.System open;
 
+import Applib.Helpers open;
+import Applib.Identities open;
+
 --- A message format specifiying resources that must be created and consumed within an ;Action;.
---- @param origin The resource performing the check.
+--- @param origin The reference to the resource performing the check.
 --- @param mustBeConsumed The resources that must be consumed.
 --- @param mustBeCreated The resources that must be created.
 type ResourceRelationship :=
   mkResourceRelationship@{
-    --- The ;Tag; of the resource performing the check.
     origin : Tag;
-    --- The  performing the check.
     mustBeConsumed : Set Nullifier;
     mustBeCreated : Set Commitment;
   };
 
+--- Checks that a ;ResourceRelationship; message has the expected values.
+--- @param message The resource relationship message to check.
+--- @param origin The expected origin.
+--- @param nullifiers The nullifier set that must contain the `mustBeConsumed` nullifiers as a subset.
+--- @param commitments The commitment set that must contain the `mustBeCreated` commitments as a subset.
+--- @return The check result.
+checkResourceRelationship
+  (message : ResourceRelationship)
+  (origin : Tag)
+  (nullifiers : Set Nullifier)
+  (commitments : Set Commitment)
+  : Bool :=
+  ResourceRelationship.origin message == origin
+    && Set.isSubset (ResourceRelationship.mustBeConsumed message) nullifiers
+    && Set.isSubset (ResourceRelationship.mustBeCreated message) commitments;
+
+--- Creates an ;AppDataEntry; consisting of a ;ResourceRelationship; message and corresponding ;Signature; as the ;AppDataValue; and the resource ;Tag; value as the ;AppDataKey;.
+--- @param identity The identity to derive the nullifier key from.
+--- @param origin The resource performing the check.
+--- @param mustBeConsumed The resources that must be consumed.
+--- @param mustBeCreated The resources that must be created.
+--- @return The app data entry.
 mkResourceRelationshipAppDataEntry
-  (identity : Identity)
+  (signer : InternalIdentity)
   (origin : Tag)
   (mustBeConsumed : Set Nullifier)
   (mustBeCreated : Set Commitment)
@@ -35,7 +54,8 @@ mkResourceRelationshipAppDataEntry
         mustBeConsumed;
         mustBeCreated;
       };
-    sig : Signature := sign msg (Identity.internal identity);
+    sig : Signature := sign msg signer;
+  -- TODO use named syntax.
   in case origin of
        | Created commitment :=
          mkAppDataEntry@{
@@ -52,22 +72,25 @@ module ActionFromConvertable;
   import Applib.Resource.Traits.Convertable open;
   import Applib.Transaction.Traits open;
 
-  --- Creates an app data map entry for every consumed ;Convertable; ;Resource; of type `R1` with a ;ResourceRelationship; message and signature being stored at the consumed resources commitment  message. This message must be signed by the respective owner of the consumed resources and requires  all created ;Convertable; ;Resource; of type `R2` to be present in the ;Commitment; ;Set; of the transaction.
+  --- Instantiates the ;ActionConvertable; trait with a parametrized function accepting `ConsumedTypedResource` and `CreatedTypedResource` being required to implement the ;Ord; and ;Convertable; traits.
+  --- The underlying inmplementation converts the typed resources to standard ;Resource;s and creates an ;Action; with
+  --- - authorization ;AppData; containing an ;AppDataEntry; for every consumed ;Resource;.
+  --- - custom inputs (;Logic.CustomInputs;) containing entries mapping nullifiers to consumed resources and commitments to created resources.
   actionWithAuthorizationAppData
-    {R1 R2}
-    {{Ord R1}}
-    {{Ord R2}}
-    {{Convertable R1}}
-    {{Convertable R2}}
-    : ActionConvertable R1 R2 :=
+    {ConsumedTypedResource CreatedTypedResource}
+    {{Ord ConsumedTypedResource}}
+    {{Ord CreatedTypedResource}}
+    {{Convertable ConsumedTypedResource}}
+    {{Convertable CreatedTypedResource}}
+    : ActionConvertable ConsumedTypedResource CreatedTypedResource :=
     mkActionConvertable@{
       toAction
         (standardInputs : StandardInputs)
-        (consumedResources : Set R1)
-        (createdResources : Set R2)
+        (consumedResources : Set ConsumedTypedResource)
+        (createdResources : Set CreatedTypedResource)
         : Action :=
         let
-          identity := StandardInputs.identity standardInputs;
+          -- Convert typed resources to resources.
           consumed :=
             Set.map (r in consumedResources) {
               Convertable.toResource r
@@ -77,29 +100,33 @@ module ActionFromConvertable;
               Convertable.toResource r
             };
 
-          nfResMapping := nullifierToResourceMapping identity consumed;
+          -- Put maps into the custom inputs that map:
+          -- - nullifiers to consumed resources
+          -- - commitments to created resources
+          nfResMapping := nullifierToResourceMapping consumed;
           cmResMapping := commitmentToResourceMapping created;
-
-          nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-          commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-
           customInputs :=
             Set.union
               (NullifiersAndCustomInputs.customInputs nfResMapping)
               (CommitmentsAndCustomInputs.customInputs cmResMapping);
 
+          -- Extract nullifiers and commitments to avoid recomputing them
+          nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
+          commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
+
+          -- Put signed messages and signatures by the owner in the app data.
+          -- The signed messages link back to the original consumed resources, where the signature verification is part of the resource logic requiring the commitments of created resources to be part of the action.
           appData :=
             Set.map (nullifier in nullifiers) {
               mkResourceRelationshipAppDataEntry@{
-                identity;
+                signer :=
+                  Identity.internal (StandardInputs.caller standardInputs);
                 origin := Consumed nullifier;
                 mustBeConsumed := Set.empty;
                 mustBeCreated := commitments;
               }
             };
-          appDataMap := AppDataMap.fromSet appData;
         in mkActionHelper@{
-             identity;
              consumed;
              created;
              appData;

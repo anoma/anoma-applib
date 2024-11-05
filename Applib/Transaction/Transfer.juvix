@@ -26,7 +26,7 @@ transfer
   : Result StandardError Transaction :=
   let
     self : ExternalIdentity :=
-      standardInputs |> StandardInputs.identity |> Identity.external;
+      standardInputs |> StandardInputs.caller |> Identity.external;
     owner : ExternalIdentity := HasOwner.get toTransfer;
     transferred : R := HasOwner.set receiver toTransfer;
   in case HasTransferability.get toTransfer of

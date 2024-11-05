@@ -31,7 +31,7 @@ initialize
   : Result StandardError Transaction :=
   let
     self : ExternalIdentity :=
-      standardInputs |> StandardInputs.identity |> Identity.external;
+      standardInputs |> StandardInputs.caller |> Identity.external;
     ephResource : R :=
       HasEphemerality.set Ephemeral (HasOwner.set self toInitialize);
     tx : Transaction :=
@@ -73,10 +73,7 @@ initialize
                actualNullifier :=
                  nullifier@{
                    resource := dummy;
-                   nullifierKey :=
-                     standardInputs
-                       |> StandardInputs.identity
-                       |> toNullifierKey;
+                   nullifierKey := Universal.nullifierKey;
                  };
              in case actualNullifier == expectedNullifier of
                   | false :=

@@ -61,7 +61,7 @@ getTokenSymbol (r : Resource) : String := TokenLabel.symbol (getTokenLabel r);
 
 getTokenDecimals (r : Resource) : Nat := TokenLabel.decimals (getTokenLabel r);
 
--- TODO generalize / eliminate
+-- TODO Use map for label and standardize.
 isTransferable (r : Resource) : Bool :=
   r |> getTokenLabel |> TokenLabel.transferability |> Transferability.toBool;
 
