@@ -28,11 +28,11 @@ isAuthorizedBy
   of
     | nothing := false
     | just (message, signature) :=
-      -- TODO use named application syntax.
-          verify
-          signature
-          message
-          signer
+      verify@{
+        signature;
+        message;
+        signer;
+      }
         && checkResourceRelationship@{
              message;
              origin;

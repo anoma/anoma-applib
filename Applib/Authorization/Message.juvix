@@ -48,24 +48,27 @@ mkResourceRelationshipAppDataEntry
   (mustBeCreated : Set Commitment)
   : AppDataEntry :=
   let
-    msg : ResourceRelationship :=
+    message : ResourceRelationship :=
       mkResourceRelationship@{
         origin;
         mustBeConsumed;
         mustBeCreated;
       };
-    sig : Signature := sign msg signer;
-  -- TODO use named syntax.
+    signature : Signature :=
+      sign@{
+        message;
+        signer;
+      };
   in case origin of
        | Created commitment :=
          mkAppDataEntry@{
            key := commitment |> anomaEncode |> mkAppDataKey;
-           value := (msg, sig) |> anomaEncode |> mkAppDataValue;
+           value := (message, signature) |> anomaEncode |> mkAppDataValue;
          }
        | Consumed nullifier :=
          mkAppDataEntry@{
            key := nullifier |> anomaEncode |> mkAppDataKey;
-           value := (msg, sig) |> anomaEncode |> mkAppDataValue;
+           value := (message, signature) |> anomaEncode |> mkAppDataValue;
          };
 
 module ActionFromConvertable;
