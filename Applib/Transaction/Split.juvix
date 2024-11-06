@@ -29,17 +29,17 @@ split
   (quantitiesAndReceivers : List (Pair Quantity ExternalIdentity))
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity :=
-      standardInputs |> StandardInputs.caller |> Identity.external;
-    owner : ExternalIdentity := HasOwner.get toSplit;
+    self := Identity.external (StandardInputs.caller standardInputs);
+    owner := HasOwner.get toSplit;
     toSplitResource := Convertable.toResource toSplit;
-    sum : Quantity :=
+    sum :=
       listFor (acc := 0) (quantity, _ in quantitiesAndReceivers) {
         quantity + acc
       };
 
     balance := HasQuantity.get toSplit;
-    created : Set R :=
+    -- TODO Add nonces
+    created :=
       Set.map (quantity, receiver in Set.fromList quantitiesAndReceivers) {
         toSplit |> HasOwner.set receiver |> HasQuantity.set quantity
       };

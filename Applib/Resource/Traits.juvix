@@ -7,6 +7,8 @@ import Applib.Resource.Traits.Ephemerality open public;
 import Applib.Resource.Traits.Kind open public;
 import Applib.Resource.Traits.Label open public;
 import Applib.Resource.Traits.Logic open public;
+import Applib.Resource.Traits.Nonce open public;
+import Applib.Resource.Traits.NullifierKey open public;
 import Applib.Resource.Traits.Originator open public;
 import Applib.Resource.Traits.Owner open public;
 import Applib.Resource.Traits.Quantity open public;
@@ -19,6 +21,15 @@ module TraitFromConvertable;
       get (typed : R) : Logic := HasLogic.get (Convertable.toResource typed);
       set (logic : Logic) (typed : R) : R :=
         HasLogic.set logic (Convertable.toResource typed)
+          |> Convertable.fromResource;
+    };
+
+  hasNonce {R} {{Convertable R}} : HasNonce R :=
+    mkHasNonce@{
+      get (typed : R) : Nonce := HasNonce.get (Convertable.toResource typed);
+
+      set (nonce : Nonce) (typed : R) : R :=
+        HasNonce.set nonce (Convertable.toResource typed)
           |> Convertable.fromResource;
     };
 

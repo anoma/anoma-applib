@@ -31,9 +31,8 @@ send
   (receiver : ExternalIdentity)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity :=
-      standardInputs |> StandardInputs.caller |> Identity.external;
-    balance : Quantity := HasQuantity.get toSend;
+    self := Identity.external (StandardInputs.caller standardInputs);
+    balance := HasQuantity.get toSend;
   in case QuantityInternal.compare balance quantity of
        | LessThan :=
          throw

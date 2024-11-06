@@ -30,11 +30,10 @@ initialize
   (maybeDummy : Maybe Resource)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity :=
-      standardInputs |> StandardInputs.caller |> Identity.external;
+    self := Identity.external (StandardInputs.caller standardInputs);
     ephResource : R :=
-      HasEphemerality.set Ephemeral (HasOwner.set self toInitialize);
-    tx : Transaction :=
+      toInitialize |> HasOwner.set self |> HasEphemerality.set Ephemeral;
+    tx :=
       mkTransactionHelper@{
         roots := Set.singleton (StandardInputs.currentRoot standardInputs);
         actions :=

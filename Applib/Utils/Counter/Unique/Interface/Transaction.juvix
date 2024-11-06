@@ -20,7 +20,7 @@ initialize
   (standardInputs : StandardInputs) (consumable : Resource) : Transaction :=
   let
     nonces :=
-      generatePseudoRandomNonces@{
+      generateNonces@{
         n := 2;
         randSeed := StandardInputs.randSeed standardInputs;
       };
@@ -62,9 +62,7 @@ increment
         created :=
           Set.singleton
             mkCounter@{
-              nonce :=
-                generatePseudoRandomNonce
-                  (StandardInputs.randSeed standardInputs);
+              nonce := generateNonce (StandardInputs.randSeed standardInputs);
               uniqueLabel := getCounterLabel currentCounter;
               count := Simple.Count.getCount currentCounter + 1;
             };

@@ -39,8 +39,7 @@ swap
         | just _ := throw mkNonTransferableError
         | nothing :=
           let
-            self : ExternalIdentity :=
-              standardInputs |> StandardInputs.caller |> Identity.external;
+            self := Identity.external (StandardInputs.caller standardInputs);
           in case find ((/=) (self)) (map HasOwner.get toSwap) of
                | just notMyself :=
                  throw
@@ -72,8 +71,7 @@ settle
   (solutions : List Solution)
   : Result StandardError Transaction :=
   let
-    self : ExternalIdentity :=
-      standardInputs |> StandardInputs.caller |> Identity.external;
+    self := Identity.external (StandardInputs.caller standardInputs);
     actions :=
       Set.fromList (map (Solution.toAction standardInputs) (solutions));
   in case
@@ -88,20 +86,12 @@ settle
        | nothing :=
          ok
            (composeAll
-             (Set.fromList
-               (transactions
-                 ++ [
-                      mkTransactionHelper@{
-                        roots :=
-                          Set.singleton
-                            (StandardInputs.currentRoot standardInputs);
-                        actions;
-                      };
-                    ])));
--- TODO
--- ( composeAll (Set.insert
---    mkTransactionHelper@{
---      roots := Set.singleton (StandardInputs.currentRoot standardInputs);
---      actions
---    }
---    txs));
+             Set.insert@{
+               elem :=
+                 mkTransactionHelper@{
+                   roots :=
+                     Set.singleton (StandardInputs.currentRoot standardInputs);
+                   actions;
+                 };
+               set := Set.fromList transactions;
+             });

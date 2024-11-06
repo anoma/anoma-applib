@@ -15,7 +15,7 @@ import Applib.Utils.Counter.Simple.Count open;
 initialize (standardInputs : StandardInputs) : Transaction :=
   let
     nonces :=
-      generatePseudoRandomNonces@{
+      generateNonces@{
         n := 2;
         randSeed := StandardInputs.randSeed standardInputs;
       };
@@ -45,18 +45,18 @@ increment
     | kind currentCounter /= counterKind :=
       failwith "The input resource has wrong kind."
     | else :=
-      prepareCounterTransaction@{
-        standardInputs;
-        consumed := Set.singleton currentCounter;
-        created :=
-          Set.singleton
-            mkCounter@{
-              nonce :=
-                generatePseudoRandomNonce
-                  (StandardInputs.randSeed standardInputs);
-              count := getCount currentCounter + 1;
-            };
-      };
+      let
+        nonce := generateNonce (StandardInputs.randSeed standardInputs);
+      in prepareCounterTransaction@{
+           standardInputs;
+           consumed := Set.singleton currentCounter;
+           created :=
+             Set.singleton
+               mkCounter@{
+                 nonce;
+                 count := getCount currentCounter + 1;
+               };
+         };
 
 --- A helper function preparing the transaction object by creating an action object
 --- containing data required by counter resources.

@@ -15,6 +15,6 @@ package : Package :=
         github
           "anoma"
           "juvix-arm-specs"
-          "efdd96172af1f88eb116f585370b102a0757f5a7";
+          "6f4e8960009169be1b34720554ac692cc54d8cd7";
       ];
   };
