@@ -8,12 +8,12 @@ import Applib.Identities open;
 import Applib.Resource.Traits open;
 import Applib.Intent.Asset open;
 import Applib.Intent.Swap.Logic open;
-import Applib.Random open;
 
 module SwapIntent;
   type SwapIntent := mk@{resource : Resource};
 
   create
+    (nonce : Nonce)
     (want : QuantifiedAssets)
     -- TODO add authorization mechanism to select solvers.
     (receiver solver : ExternalIdentity)
@@ -26,8 +26,8 @@ module SwapIntent;
         quantity := 1;
         ephemeral := true;
         nullifierKeyCommitment := Universal.nullifierKeyCommitment;
-        nonce := mkNonce rand;
-        randSeed := mkRandSeed rand;
+        nonce;
+        randSeed := UnusedRandSeed;
       };
 
   module SwapIntentInternal;

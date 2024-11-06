@@ -7,7 +7,6 @@ import Anoma open;
 import Anoma.Builtin.System open;
 
 import Applib.Identities open;
-import Applib.Random open;
 import Applib.Helpers open;
 import Applib.Utils.Counter.Simple.Label open;
 import Applib.Utils.Counter.Simple.Logic open;
@@ -16,7 +15,8 @@ import Applib.Utils.Counter.Simple.Logic open;
 --- @param count The intial count.
 --- @param ephemeral Whether the resource is ephemeral or not.
 --- @return The constructed counter resource.
-mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
+mkCounter
+  (nonce : Nonce) {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
   mkResource@{
     logicRef := BindingReference.compute (counterLogic);
     labelRef := BindingReference.compute (counterLabel);
@@ -24,8 +24,8 @@ mkCounter {count : Nat := 0} {ephemeral : Bool := false} : Resource :=
     quantity := 1;
     ephemeral;
     nullifierKeyCommitment := Universal.nullifierKeyCommitment;
-    nonce := mkNonce rand;
-    randSeed := mkRandSeed rand;
+    nonce;
+    randSeed := UnusedRandSeed;
   };
 
 --- Returns the counter kind.

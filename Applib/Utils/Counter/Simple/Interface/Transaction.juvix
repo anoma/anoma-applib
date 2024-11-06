@@ -13,19 +13,27 @@ import Applib.Utils.Counter.Simple.Count open;
 --- @param standardInputs The transaction function standard inputs.
 --- @return The transaction object initializing a counter.
 initialize (standardInputs : StandardInputs) : Transaction :=
-  prepareCounterTransaction@{
-    standardInputs;
-    consumed :=
-      Set.singleton
-        mkCounter@{
-          ephemeral := true;
-        };
-    created :=
-      Set.singleton
-        mkCounter@{
-          ephemeral := false;
-        };
-  };
+  let
+    nonces :=
+      generatePseudoRandomNonces@{
+        n := 2;
+        randSeed := StandardInputs.randSeed standardInputs;
+      };
+  in prepareCounterTransaction@{
+       standardInputs;
+       consumed :=
+         Set.singleton
+           mkCounter@{
+             nonce := get 0 nonces;
+             ephemeral := true;
+           };
+       created :=
+         Set.singleton
+           mkCounter@{
+             nonce := get 1 nonces;
+             ephemeral := false;
+           };
+     };
 
 --- Increments the counter value by 1.
 --- @param currentCounter The current counter to increment.
@@ -43,6 +51,9 @@ increment
         created :=
           Set.singleton
             mkCounter@{
+              nonce :=
+                generatePseudoRandomNonce
+                  (StandardInputs.randSeed standardInputs);
               count := getCount currentCounter + 1;
             };
       };

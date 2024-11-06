@@ -15,7 +15,10 @@ import Applib.Utils.Dummy.Test.Initialize as PreviousTest;
 newRoot : Root := mkRoot 1;
 
 standardInputs : StandardInputs :=
-  PreviousTest.standardInputs@StandardInputs{currentRoot := newRoot};
+  PreviousTest.standardInputs@StandardInputs{
+    currentRoot := newRoot;
+    randSeed := mkRandSeed 5678;
+  };
 
 main : AnomaTransaction :=
   toAnomaTransaction

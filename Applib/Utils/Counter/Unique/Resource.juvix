@@ -6,7 +6,6 @@ import Stdlib.Data.Set as Set open;
 import Anoma open;
 import Anoma.Builtin.System open;
 
-import Applib.Random open;
 import Applib.Identities open;
 import Applib.Utils.Counter.Unique.Logic open;
 import Applib.Utils.Counter.Unique.Label open;
@@ -17,6 +16,7 @@ import Applib.Utils.Counter.Unique.Label open;
 --- @param ephemeral Whether the resource is ephemeral or not.
 --- @return The constructed counter resource.
 mkCounter
+  (nonce : Nonce)
   (uniqueLabel : CounterLabel)
   {count : Nat := 0}
   {ephemeral : Bool := false}
@@ -29,8 +29,8 @@ mkCounter
     quantity := 1;
     ephemeral;
     nullifierKeyCommitment := Universal.nullifierKeyCommitment;
-    nonce := mkNonce rand;
-    randSeed := mkRandSeed rand;
+    nonce;
+    randSeed := UnusedRandSeed;
   };
 
 --- Returns the counter kind.

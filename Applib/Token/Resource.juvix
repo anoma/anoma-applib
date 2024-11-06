@@ -7,7 +7,6 @@ import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 import Anoma.Builtin.System open;
 
-import Applib.Random open;
 import Applib.Resource.Traits open;
 import Applib.Token.Label open;
 import Applib.Token.Logic open;
@@ -18,6 +17,7 @@ module Token;
   type Token := mk@{resource : Resource};
 
   create
+    (nonce : Nonce)
     (quantity : Quantity)
     (tokenLabel : TokenLabel)
     (owner : ExternalIdentity)
@@ -41,8 +41,8 @@ module Token;
         quantity;
         ephemeral;
         nullifierKeyCommitment := Universal.nullifierKeyCommitment;
-        nonce := mkNonce rand;
-        randSeed := mkRandSeed rand;
+        nonce;
+        randSeed := UnusedRandSeed;
       };
 
   module TokenInternal;
