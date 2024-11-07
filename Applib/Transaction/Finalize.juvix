@@ -20,6 +20,7 @@ finalize
   {R}
   {{Ord R}}
   {{Convertable R}}
+  {{HasNonce R}}
   {{HasOwner R}}
   {{HasSupply R}}
   {{HasEphemerality R}}
@@ -29,11 +30,14 @@ finalize
   : Result StandardError Transaction :=
   let
     self := Identity.external (StandardInputs.caller standardInputs);
+    nonce := generateNonce (StandardInputs.randSeed standardInputs);
     owner := HasOwner.get toFinalize;
-    ephResource :=
-      HasEphemerality.set
-        Ephemeral
-        (HasOwner.set Zero.externalIdentity toFinalize);
+
+    toCreateEph :=
+      toFinalize
+        |> HasEphemerality.set Ephemeral
+        |> HasOwner.set Zero.externalIdentity
+        |> HasNonce.set nonce;
   in if
     | owner /= self :=
       throw
@@ -53,7 +57,7 @@ finalize
                   (ActionConvertable.toAction
                     standardInputs
                     (Set.singleton toFinalize)
-                    (Set.singleton ephResource));
+                    (Set.singleton toCreateEph));
             }
         | Capped :=
           throw

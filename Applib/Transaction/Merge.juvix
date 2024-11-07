@@ -36,24 +36,24 @@ merge
           limit := 1;
           actual := 0;
         }
-    | t :: _ :=
+    | firstElem :: _ :=
       let
         self := Identity.external (StandardInputs.caller standardInputs);
         nonce := generateNonce (StandardInputs.randSeed standardInputs);
 
-        expectedKind := HasKind.get t;
+        expectedKind := HasKind.get firstElem;
         totalQuantity :=
           listFor (acc := 0) (ti in toMerge) {
             HasQuantity.get ti + acc
           };
 
         merged :=
-          t
+          firstElem
             |> HasOwner.set receiver
             |> HasQuantity.set totalQuantity
             |> HasNonce.set nonce;
 
-      in case HasTransferability.get t of
+      in case HasTransferability.get firstElem of
            | NonTransferable := throw mkNonTransferableError
            | Transferable :=
              case find ((/=) expectedKind) (map HasKind.get toMerge) of

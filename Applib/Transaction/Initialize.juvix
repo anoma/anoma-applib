@@ -24,6 +24,7 @@ initialize
   {{HasOwner R}}
   {{HasSupply R}}
   {{HasEphemerality R}}
+  {{HasNonce R}}
   {{ActionConvertable R R}}
   (standardInputs : StandardInputs)
   (toInitialize : R)
@@ -31,22 +32,28 @@ initialize
   : Result StandardError Transaction :=
   let
     self := Identity.external (StandardInputs.caller standardInputs);
-    ephResource : R :=
-      toInitialize |> HasOwner.set self |> HasEphemerality.set Ephemeral;
-    tx :=
+    nonce := generateNonce (StandardInputs.randSeed standardInputs);
+
+    toConsumeEph : R :=
+      toInitialize
+        |> HasEphemerality.set Ephemeral
+        |> HasOwner.set self
+        |> HasNonce.set nonce;
+
+    tokenCreationTransaction :=
       mkTransactionHelper@{
         roots := Set.singleton (StandardInputs.currentRoot standardInputs);
         actions :=
           Set.singleton
             (ActionConvertable.toAction
               standardInputs
-              (Set.singleton ephResource)
+              (Set.singleton toConsumeEph)
               (Set.singleton toInitialize));
       };
   in case HasSupply.get toInitialize of
        | Unbound :=
          case maybeDummy of {
-           | nothing := ok tx
+           | nothing := ok tokenCreationTransaction
            | just dummy :=
              throw
                mkDefaultError@{
@@ -84,7 +91,7 @@ initialize
                   | true :=
                     ok
                       composeTransactions@{
-                        tx1 := tx;
+                        tx1 := tokenCreationTransaction;
                         tx2 :=
                           Dummy.finalize@{
                             standardInputs;

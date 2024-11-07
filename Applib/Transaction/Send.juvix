@@ -21,6 +21,7 @@ send
   {R}
   {{Ord R}}
   {{Convertable R}}
+  {{HasNonce R}}
   {{HasOwner R}}
   {{HasQuantity R}}
   {{HasTransferability R}}

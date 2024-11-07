@@ -32,15 +32,14 @@ split
   let
     self := Identity.external (StandardInputs.caller standardInputs);
     owner := HasOwner.get toSplit;
-    toSplitResource := Convertable.toResource toSplit;
-    sum :=
-      for (acc := 0) (quantity in map fst quantitiesAndReceivers) {
-        quantity + acc
+
+    totalQuantity :=
+      for (sum := 0) (quantity in map fst quantitiesAndReceivers) {
+        sum + quantity
       };
 
-    initialPrng := prngInit (StandardInputs.randSeed standardInputs);
-    quantitiesAndReceiversAndNonces :=
-      for (lastPrng, acc := initialPrng
+    quantitiesReceiversNonces :=
+      for (lastPrng, acc := prngInit (StandardInputs.randSeed standardInputs)
           , Set.empty) (pair in quantitiesAndReceivers) {
           case generateNextNonce lastPrng of
             nonce, nextPrng :=
@@ -53,7 +52,7 @@ split
         |> snd;
 
     created :=
-      Set.map ((quantity, receiver), nonce in quantitiesAndReceiversAndNonces) {
+      Set.map ((quantity, receiver), nonce in quantitiesReceiversNonces) {
         toSplit
           |> HasQuantity.set quantity
           |> HasOwner.set receiver
@@ -73,12 +72,12 @@ split
            | true :=
              let
                balance := HasQuantity.get toSplit;
-             in case balance == sum of
+             in case balance == totalQuantity of
                   | false :=
                     throw
                       mkInsufficientHasQuantityError@{
                         limit := balance;
-                        actual := sum;
+                        actual := totalQuantity;
                       }
                   | true :=
                     ok

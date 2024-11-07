@@ -67,16 +67,24 @@ swap
 --- - the calling ;Identity; is not designated intent solver.
 settle
   (standardInputs : StandardInputs)
-  (transactions : List Transaction)
-  (solutions : List Solution)
+  (transactions : Set Transaction)
+  (solutions : Set Solution)
   : Result StandardError Transaction :=
   let
     self := Identity.external (StandardInputs.caller standardInputs);
     actions :=
-      Set.fromList (map (Solution.toAction standardInputs) (solutions));
-  in case
-       find ((/=) self) (map \{s := HasOwner.get (Solution.intent s)} solutions)
-     of
+      Set.map (solution in solutions) {
+        Solution.toAction@{
+          standardInputs;
+          solution;
+        }
+      };
+    intentOwners :=
+      Set.toList
+        Set.map (solution in solutions) {
+          solution |> Solution.intent |> HasOwner.get
+        };
+  in case find ((/=) self) intentOwners of
        | just notMyself :=
          throw
            mkUnauthorizedError@{
@@ -93,5 +101,5 @@ settle
                      Set.singleton (StandardInputs.currentRoot standardInputs);
                    actions;
                  };
-               set := Set.fromList transactions;
+               set := transactions;
              });

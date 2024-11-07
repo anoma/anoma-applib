@@ -17,8 +17,9 @@ transfer
   {R}
   {{Ord R}}
   {{Convertable R}}
-  {{HasTransferability R}}
+  {{HasNonce R}}
   {{HasOwner R}}
+  {{HasTransferability R}}
   {{ActionConvertable R R}}
   (standardInputs : StandardInputs)
   (toTransfer : R)
@@ -26,8 +27,11 @@ transfer
   : Result StandardError Transaction :=
   let
     self := Identity.external (StandardInputs.caller standardInputs);
+    nonce := generateNonce (StandardInputs.randSeed standardInputs);
+
     owner := HasOwner.get toTransfer;
-    transferred : R := HasOwner.set receiver toTransfer;
+    transferred : R :=
+      toTransfer |> HasOwner.set receiver |> HasNonce.set nonce;
   in case HasTransferability.get toTransfer of
        | NonTransferable := throw mkNonTransferableError
        | Transferable :=
