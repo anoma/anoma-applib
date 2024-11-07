@@ -19,6 +19,7 @@ merge
   {R}
   {{Ord R}}
   {{Convertable R}}
+  {{HasNonce R}}
   {{HasOwner R}}
   {{HasTransferability R}}
   {{HasQuantity R}}
@@ -38,12 +39,20 @@ merge
     | t :: _ :=
       let
         self := Identity.external (StandardInputs.caller standardInputs);
+        nonce := generateNonce (StandardInputs.randSeed standardInputs);
+
         expectedKind := HasKind.get t;
         totalQuantity :=
           listFor (acc := 0) (ti in toMerge) {
             HasQuantity.get ti + acc
           };
-        merged := HasOwner.set receiver (HasQuantity.set totalQuantity t);
+
+        merged :=
+          t
+            |> HasOwner.set receiver
+            |> HasQuantity.set totalQuantity
+            |> HasNonce.set nonce;
+
       in case HasTransferability.get t of
            | NonTransferable := throw mkNonTransferableError
            | Transferable :=

@@ -21,6 +21,7 @@ split
   {{Convertable R}}
   {{HasOwner R}}
   {{HasQuantity R}}
+  {{HasNonce R}}
   {{HasTransferability R}}
   {{ActionConvertable R R}}
   (standardInputs : StandardInputs)
@@ -33,16 +34,32 @@ split
     owner := HasOwner.get toSplit;
     toSplitResource := Convertable.toResource toSplit;
     sum :=
-      listFor (acc := 0) (quantity, _ in quantitiesAndReceivers) {
+      for (acc := 0) (quantity in map fst quantitiesAndReceivers) {
         quantity + acc
       };
 
-    balance := HasQuantity.get toSplit;
-    -- TODO Add nonces
+    initialPrng := prngInit (StandardInputs.randSeed standardInputs);
+    quantitiesAndReceiversAndNonces :=
+      for (lastPrng, acc := initialPrng
+          , Set.empty) (pair in quantitiesAndReceivers) {
+          case generateNextNonce lastPrng of
+            nonce, nextPrng :=
+              nextPrng
+                , Set.insert@{
+                    elem := pair, nonce;
+                    set := acc;
+                  }
+        }
+        |> snd;
+
     created :=
-      Set.map (quantity, receiver in Set.fromList quantitiesAndReceivers) {
-        toSplit |> HasOwner.set receiver |> HasQuantity.set quantity
+      Set.map ((quantity, receiver), nonce in quantitiesAndReceiversAndNonces) {
+        toSplit
+          |> HasQuantity.set quantity
+          |> HasOwner.set receiver
+          |> HasNonce.set nonce
       };
+
   in case HasTransferability.get toSplit of
        | NonTransferable := throw mkNonTransferableError
        | Transferable :=
@@ -54,23 +71,25 @@ split
                  actual := owner;
                }
            | true :=
-             case balance == sum of
-               | false :=
-                 throw
-                   mkInsufficientHasQuantityError@{
-                     limit := balance;
-                     actual := sum;
-                   }
-               | true :=
-                 ok
-                   mkTransactionHelper@{
-                     roots :=
-                       Set.singleton
-                         (StandardInputs.currentRoot standardInputs);
-                     actions :=
-                       Set.singleton
-                         (ActionConvertable.toAction
-                           standardInputs
-                           (Set.singleton toSplit)
-                           (created));
-                   };
+             let
+               balance := HasQuantity.get toSplit;
+             in case balance == sum of
+                  | false :=
+                    throw
+                      mkInsufficientHasQuantityError@{
+                        limit := balance;
+                        actual := sum;
+                      }
+                  | true :=
+                    ok
+                      mkTransactionHelper@{
+                        roots :=
+                          Set.singleton
+                            (StandardInputs.currentRoot standardInputs);
+                        actions :=
+                          Set.singleton
+                            (ActionConvertable.toAction
+                              standardInputs
+                              (Set.singleton toSplit)
+                              (created));
+                      };

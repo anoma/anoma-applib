@@ -22,26 +22,6 @@ import Anoma.Builtin.System open;
 
 import Applib.Resource.Traits.Convertable open;
 
--- TODO Move to stdlib
-getMaybe {A} (idx : Nat) (list : List A) : Maybe A :=
-  let
-    indexedList : Map Nat A :=
-      Map.fromList
-        listFor (acc := []) (elem in list) {
-          let
-            i :=
-              case acc of
-                | nil := 0
-                | x :: xs := fst x + 1;
-          in snoc acc (i, elem)
-        };
-  in Map.lookup idx indexedList;
-
-get {A} (idx : Nat) (list : List A) : A :=
-  case getMaybe idx list of
-    | just elem := elem
-    | nothing := failwith "Index out ouf bounds.";
-
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;

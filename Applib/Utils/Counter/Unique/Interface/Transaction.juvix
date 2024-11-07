@@ -19,23 +19,19 @@ import Applib.Utils.Counter.Simple.Interface.Transaction as Simple.Transaction;
 initialize
   (standardInputs : StandardInputs) (consumable : Resource) : Transaction :=
   let
-    nonces :=
-      generateNonces@{
-        n := 2;
-        randSeed := StandardInputs.randSeed standardInputs;
-      };
+    noncePair := generateNoncePair (StandardInputs.randSeed standardInputs);
     ephConsumable := consumable@Resource{ephemeral := true};
     uniqueLabel := createUniqueCounterLabel consumable;
     ephCounter :=
       mkCounter@{
-        nonce := get 0 nonces;
+        nonce := fst noncePair;
         ephemeral := true;
         uniqueLabel;
         count := 0;
       };
     newCounter :=
       mkCounter@{
-        nonce := get 1 nonces;
+        nonce := snd noncePair;
         ephemeral := false;
         uniqueLabel;
         count := 0;
