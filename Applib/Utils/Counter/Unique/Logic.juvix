@@ -18,10 +18,13 @@ counterLogic
   : (publicInputs : Logic.Instance)
     -> (privateInputs : Logic.Witness)
     -> Bool :=
-  Simple.parametrizedCounterLogic@?{
-    initializationLogic;
-    incrementationLogic := Simple.incrementationLogic;
-  };
+  \{publicInputs privateInputs :=
+    Simple.parametrizedCounterLogic@{
+      initializationLogic;
+      incrementationLogic := Simple.incrementationLogic;
+      publicInputs;
+      privateInputs;
+    }};
 
 --- The initialization sub-logic function checking that the quantity equals 1 and
 --- that the nullifier specified in the counter ;Label; is present.
