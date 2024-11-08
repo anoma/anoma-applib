@@ -18,10 +18,13 @@ counterLogic
   : (publicInputs : Logic.Instance)
     -> (privateInputs : Logic.Witness)
     -> Bool :=
-  parametrizedCounterLogic@?{
-    initializationLogic;
-    incrementationLogic;
-  };
+  \{publicInputs privateInputs :=
+    parametrizedCounterLogic@{
+      initializationLogic;
+      incrementationLogic;
+      publicInputs;
+      privateInputs;
+    }};
 
 --- A parametrized counter resource logic accepting different sub-logic function.
 --- @param initializationLogic The initialization sub-logic.
