@@ -2,6 +2,7 @@ module Applib.Utils.Dummy.Transaction.Finalize;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open using {Set};
+import Stdlib.Data.Map as Map;
 
 import Anoma open;
 
@@ -40,8 +41,8 @@ finalize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
                   mkActionHelper@{
                     consumed := Set.singleton dummy;
                     created := Set.singleton dummy@Resource{ephemeral := true};
-                    appData := Set.empty;
-                    customInputs := Set.empty;
+                    appData := Map.empty;
+                    customInputs := Map.empty;
                   };
             }
       };

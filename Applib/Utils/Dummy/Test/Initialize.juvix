@@ -4,6 +4,7 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
 
 import Anoma open;
+import Anoma.Builtin.ByteArray open;
 import Anoma.State.CommitmentTree open;
 
 import Applib.Helpers open;
@@ -15,12 +16,12 @@ standardInputs : StandardInputs :=
   mkStandardInputs@{
     caller := Universal.identity;
     currentRoot := mkRoot 0;
-    randSeed := mkRandSeed 1234;
+    randSeed := mkRandSeed (mkByteArray (replicate 31 0x0 ++ [0x12]));
   };
 
 dummy : Resource :=
   alwaysValidResource@{
-    nonce := mkNonce 0;
+    nonce := mkNonce (mkByteArray (replicate 31 0x0 ++ [0x1]));
   };
 
 main : AnomaTransaction :=

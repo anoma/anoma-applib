@@ -2,7 +2,8 @@ module Applib.Utils.Dummy.Transaction.Initialize;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
-import Stdlib.Data.Set as Set open using {Set};
+import Stdlib.Data.Set as Set;
+import Stdlib.Data.Map as Map;
 
 import Anoma open;
 
@@ -42,8 +43,8 @@ initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
                   mkActionHelper@{
                     consumed := Set.singleton dummy@Resource{ephemeral := true};
                     created := Set.singleton dummy;
-                    appData := Set.empty;
-                    customInputs := Set.empty;
+                    appData := Map.empty;
+                    customInputs := Map.empty;
                   };
             }
       };

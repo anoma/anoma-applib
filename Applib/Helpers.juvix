@@ -26,47 +26,63 @@ isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
 
-module AppDataMap;
-  fromSet (appDataSet : Set AppDataEntry) : Map AppDataKey AppDataValue :=
-    Map.fromList
-      (map (entry in Set.toList appDataSet) {
-        AppDataEntry.key entry, AppDataEntry.value entry
-      });
-
-  toSet (appDataMap : Map AppDataKey AppDataValue) : Set AppDataEntry :=
-    Set.fromList
-      (map (key, value in Map.toList appDataMap) {
-        mkAppDataEntry@{
-          key;
-          value;
-        }
-      });
-end;
-
+-- TODO Move to juvix-arm-specs high-level interface.
 lookupAppData
   {Key Value : Type} (key : Key) (appData : AppData) : Maybe Value :=
-  let
-    appDataAsMap : Map AppDataKey AppDataValue := AppDataMap.fromSet appData;
-  in map
-    (AppDataValue.unAppDataValue >> anomaDecode)
-    (Map.lookup (anomaEncode key |> mkAppDataKey) appDataAsMap);
+  case
+    Map.lookup@{
+      key := anomaEncode key |> mkAppDataKey;
+      map := appData;
+    }
+  of
+    | nothing := nothing
+    | just value := just (value |> AppDataValue.data |> anomaDecode);
 
+-- TODO Move to juvix-arm-specs high-level interface.
 lookupCustomInputs
-  {Key Value : Type}
-  (key : Key)
-  (customInputs : Logic.CustomInputs)
-  : Maybe Value :=
-  lookupAppData@{
-    key;
-    appData := customInputs;
-  };
+  {Key Value : Type} (key : Key) (customInputs : CustomInputs) : Maybe Value :=
+  case
+    Map.lookup@{
+      key := anomaEncode key |> mkCustomInputsKey;
+      map := customInputs;
+    }
+  of
+    | nothing := nothing
+    | just value :=
+      just (value |> CustomInputsValue.unCustomInputsValue |> anomaDecode);
 
-lookupResource
-  {A} (key : A) (customInputs : Logic.CustomInputs) : Maybe Resource :=
+lookupResource {A} (key : A) (customInputs : CustomInputs) : Maybe Resource :=
   lookupCustomInputs@{
     key;
     customInputs;
   };
+
+toAppDataEntry
+  {Key Data : Type}
+  (key : Key)
+  (data : Data)
+  {deletionCriterion : DeletionCriterion := StoreForever}
+  : Pair AppDataKey AppDataValue :=
+
+  mkAppDataKey@{
+    unAppDataKey := anomaEncode key;
+  }
+    , mkAppDataValue@{
+        data := anomaEncode data;
+        deletionCriterion;
+      };
+
+toCustomInputsEntry
+  {Key Value : Type}
+  (key : Key)
+  (value : Value)
+  : Pair CustomInputsKey CustomInputsValue :=
+  mkCustomInputsKey@{
+    unCustomInputsKey := anomaEncode key;
+  }
+    , mkCustomInputsValue@{
+        unCustomInputsValue := anomaEncode value;
+      };
 
 --- Standard inputs to for transaction functions.
 --- NOTE: In the future, this will include more settings such as the information flow control flag.
@@ -80,7 +96,7 @@ type StandardInputs :=
 type TagsAndCustomInputs :=
   mkTagsAndCustomInputs@{
     tags : Set Tag;
-    customInputs : Logic.CustomInputs;
+    customInputs : CustomInputs;
   };
 
 tagsToPair (tags : Set Tag) : Pair (Set Nullifier) (Set Commitment) :=
@@ -118,29 +134,24 @@ computeTags (consumed created : Set Resource) : Set Tag :=
 computeTagsAndCustomInputs
   (consumed created : Set Resource) : TagsAndCustomInputs :=
   let
-    consumed' := Set.toList consumed;
-    created' := Set.toList created;
+    consumed' : List Resource := Set.toList consumed;
+    created' : List Resource := Set.toList created;
 
-    nullifiers' := map (nullifier Universal.nullifierKey) consumed';
-    commitments' := map commitment created';
-
-    -- TODO rename AppDataEntry to customInputs
-    toMapEntry {A} (k : A) (v : Resource) : AppDataEntry :=
-      mkAppDataEntry@{
-        key := k |> anomaEncode |> mkAppDataKey;
-        value := v |> anomaEncode |> mkAppDataValue;
-      };
+    nullifiers' : List Nullifier :=
+      map (nullifier Universal.nullifierKey) consumed';
+    commitments' : List Commitment := map commitment created';
 
     tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
   in mkTagsAndCustomInputs@{
        tags := Set.fromList tags';
        customInputs :=
-         Set.fromList (zipWith toMapEntry tags' (consumed' ++ created'));
+         Map.fromList
+           (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
      };
 
 module ProvingHelpers;
   findProvingKey
-    {T} (key : T) (customInputs : Logic.CustomInputs) : Logic.ProvingKey :=
+    {T} (key : T) (customInputs : CustomInputs) : Logic.ProvingKey :=
     case
       lookupCustomInputs@{
         key;
@@ -223,7 +234,7 @@ open ProvingHelpers;
 mkActionHelper
   (consumed created : Set Resource)
   (appData : AppData)
-  (customInputs : Logic.CustomInputs)
+  (customInputs : CustomInputs)
   {tags : Set Tag := computeTags@{
                        consumed;
                        created;

@@ -4,6 +4,7 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
 
 import Anoma open;
+import Anoma.Builtin.ByteArray open;
 import Anoma.State.CommitmentTree open;
 
 import Applib.Helpers open;
@@ -17,7 +18,7 @@ newRoot : Root := mkRoot 1;
 standardInputs : StandardInputs :=
   PreviousTest.standardInputs@StandardInputs{
     currentRoot := newRoot;
-    randSeed := mkRandSeed 5678;
+    randSeed := mkRandSeed (mkByteArray (replicate 31 0x0 ++ [0x23]));
   };
 
 main : AnomaTransaction :=
