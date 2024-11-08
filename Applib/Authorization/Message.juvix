@@ -106,16 +106,15 @@ module ActionFromConvertable;
           -- Put maps into the custom inputs that map:
           -- - nullifiers to consumed resources
           -- - commitments to created resources
-          nfResMapping := nullifierToResourceMapping consumed;
-          cmResMapping := commitmentToResourceMapping created;
-          customInputs :=
-            Set.union
-              (NullifiersAndCustomInputs.customInputs nfResMapping)
-              (CommitmentsAndCustomInputs.customInputs cmResMapping);
-
-          -- Extract nullifiers and commitments to avoid recomputing them
-          nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-          commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
+          tagsAndCustomInputs :=
+            computeTagsAndCustomInputs@{
+              consumed;
+              created;
+            };
+          tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
+          pair := tagsToPair tags;
+          nullifiers := fst pair;
+          commitments := snd pair;
 
           -- Put signed messages and signatures by the owner in the app data.
           -- The signed messages link back to the original consumed resources, where the signature verification is part of the resource logic requiring the commitments of created resources to be part of the action.
@@ -133,9 +132,9 @@ module ActionFromConvertable;
              consumed;
              created;
              appData;
-             customInputs;
-             maybeNullifiers := just nullifiers;
-             maybeCommitments := just commitments;
+             customInputs :=
+               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
+             tags;
            };
     };
 end;

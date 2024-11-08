@@ -66,17 +66,11 @@ prepareCounterTransaction
     -- Put maps into the custom inputs that map:
     -- - nullifiers to consumed resources
     -- - commitments to created resources
-    nfResMapping := nullifierToResourceMapping consumed;
-    cmResMapping := commitmentToResourceMapping created;
-    customInputs :=
-      Set.union
-        (NullifiersAndCustomInputs.customInputs nfResMapping)
-        (CommitmentsAndCustomInputs.customInputs cmResMapping);
-
-    -- Extract nullifiers and commitments to avoid recomputing them.
-    nullifiers := NullifiersAndCustomInputs.nullifiers nfResMapping;
-    commitments := CommitmentsAndCustomInputs.commitments cmResMapping;
-
+    tagsAndCustomInputs :=
+      computeTagsAndCustomInputs@{
+        consumed;
+        created;
+      };
   in mkTransactionHelper@{
        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
        actions :=
@@ -84,9 +78,9 @@ prepareCounterTransaction
            mkActionHelper@{
              consumed;
              created;
+             tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
              appData := Set.empty;
-             customInputs;
-             maybeNullifiers := just nullifiers;
-             maybeCommitments := just commitments;
+             customInputs :=
+               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
            };
      };

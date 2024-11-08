@@ -77,51 +77,65 @@ type StandardInputs :=
     randSeed : RandSeed;
   };
 
-computableComponentToCustomInputs
-  {A} (f : Resource -> A) (resources : Set Resource) : Logic.CustomInputs :=
-  Set.map (r in resources) {
-    mkAppDataEntry@{
-      key := r |> f |> anomaEncode |> mkAppDataKey;
-      value := r |> anomaEncode |> mkAppDataValue;
-    }
-  };
-
-toMapEntry {A} (k : A) (v : Resource) : AppDataEntry :=
-  mkAppDataEntry@{
-    key := k |> anomaEncode |> mkAppDataKey;
-    value := v |> anomaEncode |> mkAppDataValue;
-  };
-
-type CommitmentsAndCustomInputs :=
-  mkCommitmentsAndCustomInputs@{
-    commitments : Set Commitment;
+type TagsAndCustomInputs :=
+  mkTagsAndCustomInputs@{
+    tags : Set Tag;
     customInputs : Logic.CustomInputs;
   };
 
-type NullifiersAndCustomInputs :=
-  mkNullifiersAndCustomInputs@{
-    nullifiers : Set Nullifier;
-    customInputs : Logic.CustomInputs;
-  };
-
-commitmentToResourceMapping
-  (created : Set Resource) : CommitmentsAndCustomInputs :=
+tagsToPair (tags : Set Tag) : Pair (Set Nullifier) (Set Commitment) :=
   let
-    created' := Set.toList created;
-    commitments' := map commitment created';
-  in mkCommitmentsAndCustomInputs@{
-       commitments := Set.fromList commitments';
-       customInputs := Set.fromList (zipWith toMapEntry commitments' created');
-     };
+    pair :=
+      (for (nfs, cms := [], []) (tag in Set.toList tags) {
+        case tag of
+          | Consumed nf := nfs ++ [nf], cms
+          | Created cm := nfs, cms ++ [cm]
+      });
+  in Set.fromList (fst pair), Set.fromList (snd pair);
 
-nullifierToResourceMapping
-  (consumed : Set Resource) : NullifiersAndCustomInputs :=
+pairtoTags
+  (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
+  Set.union
+    Set.map (nullifier in nullifiers) {
+      Consumed nullifier
+    }
+    Set.map (commitment in commitments) {
+      Created commitment
+    };
+
+computeTags (consumed created : Set Resource) : Set Tag :=
+  let
+    nullifierTags :=
+      Set.map (r in consumed) {
+        Consumed (nullifier Universal.nullifierKey r)
+      };
+    commitmentTags :=
+      Set.map (r in created) {
+        Created (commitment r)
+      };
+  in Set.union nullifierTags commitmentTags;
+
+computeTagsAndCustomInputs
+  (consumed created : Set Resource) : TagsAndCustomInputs :=
   let
     consumed' := Set.toList consumed;
+    created' := Set.toList created;
+
     nullifiers' := map (nullifier Universal.nullifierKey) consumed';
-  in mkNullifiersAndCustomInputs@{
-       nullifiers := Set.fromList nullifiers';
-       customInputs := Set.fromList (zipWith toMapEntry nullifiers' consumed');
+    commitments' := map commitment created';
+
+    -- TODO rename AppDataEntry to customInputs
+    toMapEntry {A} (k : A) (v : Resource) : AppDataEntry :=
+      mkAppDataEntry@{
+        key := k |> anomaEncode |> mkAppDataKey;
+        value := v |> anomaEncode |> mkAppDataValue;
+      };
+
+    tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
+  in mkTagsAndCustomInputs@{
+       tags := Set.fromList tags';
+       customInputs :=
+         Set.fromList (zipWith toMapEntry tags' (consumed' ++ created'));
      };
 
 module ProvingHelpers;
@@ -210,38 +224,17 @@ mkActionHelper
   (consumed created : Set Resource)
   (appData : AppData)
   (customInputs : Logic.CustomInputs)
-  {maybeNullifiers : Maybe (Set Nullifier) := nothing}
-  {maybeCommitments : Maybe (Set Commitment) := nothing}
+  {tags : Set Tag := computeTags@{
+                       consumed;
+                       created;
+                     }}
   : Action :=
   let
-    nullifiers :=
-      case maybeNullifiers of
-        | just nullifiers := nullifiers
-        | nothing :=
-          Set.map (resource in consumed) {
-            nullifier@{
-              nullifierKey := Universal.nullifierKey;
-              resource;
-            }
-          };
-    commitments :=
-      case maybeCommitments of
-        | just commitments := commitments
-        | nothing :=
-          Set.map (resource in created) {
-            commitment@{
-              resource;
-            }
-          };
-    tags : Set Tag :=
-      Set.union
-        Set.map (nullifier in nullifiers) {
-          Consumed nullifier
-        }
-        Set.map (commitment in commitments) {
-          Created commitment
-        };
+    pair := tagsToPair tags;
+    nullifiers := fst pair;
+    commitments := snd pair;
 
+    -- Compute proofs
     logicProofs : Set ProofRecord :=
       Set.map (tag in tags) {
         createLogicProofRecord@{
@@ -262,7 +255,7 @@ mkActionHelper
         }
       };
 
-    -- Populate the compliance proofs (that currently are empty).
+    -- Compute the compliance proofs (that currently are empty).
     -- NOTE: Proof replicas will be deduplicated by ;Set;
     complianceProofs : Set ProofRecord :=
       Set.map (_ in tags) {
