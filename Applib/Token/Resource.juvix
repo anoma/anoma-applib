@@ -104,6 +104,9 @@ instance
 Token-HasLogic : HasLogic Token := TraitFromConvertable.hasLogic {Token};
 
 instance
+Token-HasNonce : HasNonce Token := TraitFromConvertable.hasNonce {Token};
+
+instance
 Token-HasKind : HasKind Token := TraitFromConvertable.hasKind {Token};
 
 instance
