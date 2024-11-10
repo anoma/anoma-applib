@@ -5,16 +5,8 @@ import Stdlib.Debug.Fail open using {failwith};
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 
 import Applib.Identities open;
-import Stdlib.Data.Set as Set open using {
-  Set;
-  empty;
-  size;
-  insert;
-  union;
-  isMember;
-};
+import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
 import Stdlib.Data.Map as Map open using {Map};
-
 import Anoma open;
 import Anoma.State open;
 import Anoma.Builtin.ByteArray open;
