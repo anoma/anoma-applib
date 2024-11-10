@@ -6,6 +6,7 @@ import Anoma open;
 import Applib.Helpers open;
 import Applib.Intent.Asset open;
 import Applib.Resource.Traits open;
+import Applib.Authorization.Check open;
 import Applib.Identities open;
 
 swapIntentLogic
@@ -23,7 +24,12 @@ swapIntentLogic
            | nothing := false
            | just self :=
              case HasEphemerality.get self of {
-               | Ephemeral := true
+               | Ephemeral :=
+                 isAuthorizedBy@{
+                   signer := HasOwner.get self;
+                   origin := tag;
+                   publicInputs;
+                 }
                | NonEphemeral := false
              }
          }
@@ -42,7 +48,7 @@ swapIntentLogic
                           includesAsset@{
                             asset;
                             receiver;
-                            resources := created;
+                            resourcesToCheck := created;
                           }
                         }
                       | All :=
@@ -50,6 +56,6 @@ swapIntentLogic
                           includesAsset@{
                             asset;
                             receiver;
-                            resources := created;
+                            resourcesToCheck := created;
                           }
                         };

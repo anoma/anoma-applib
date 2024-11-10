@@ -294,6 +294,40 @@ emptyTx : Transaction :=
     actions := Set.empty;
   };
 
+--- A helper function preparing the transaction object by creating an action object
+--- containing data required by counter resources.
+--- @param standardInputs The transaction function standard inputs.
+--- @param consumed The consumed resources.
+--- @param created The created resources.
+--- @return The transaction object.
+prepareStandardTransaction
+  (standardInputs : StandardInputs)
+  (consumed created : Set Resource)
+  {appData : AppData := Map.empty}
+  : Transaction :=
+  let
+    -- Put maps into the custom inputs that map:
+    -- - nullifiers to consumed resources
+    -- - commitments to created resources
+    tagsAndCustomInputs :=
+      computeTagsAndCustomInputs@{
+        consumed;
+        created;
+      };
+  in mkTransactionHelper@{
+       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+       actions :=
+         Set.singleton
+           mkActionHelper@{
+             consumed;
+             created;
+             tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
+             appData;
+             customInputs :=
+               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
+           };
+     };
+
 composeAll (txs : Set Transaction) : Transaction :=
   for (acc := emptyTx) (tx in txs) {
     composeTransactions acc tx

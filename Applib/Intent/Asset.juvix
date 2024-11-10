@@ -29,9 +29,9 @@ type QuantifiedAssets :=
 includesAsset
   (asset : Asset)
   (receiver : ExternalIdentity)
-  (resources : Set Resource)
+  (resourcesToCheck : Set Resource)
   : Bool :=
-  any (r in Set.toList resources) {
+  any (r in Set.toList resourcesToCheck) {
     Asset.quantity asset <= Resource.quantity r
       && Asset.kind asset == kind r
       && receiver == HasOwner.get r

@@ -1,7 +1,7 @@
 module Applib.Transaction.Swap;
 
 import Stdlib.Prelude open;
-import Stdlib.Data.Set as Set open using {Set; insert};
+import Stdlib.Data.Set as Set open using {Set};
 
 import Anoma open;
 
@@ -24,23 +24,28 @@ swap
   {{HasTransferability R}}
   {{ActionConvertable R I}}
   (standardInputs : StandardInputs)
-  (toSwap : List R)
+  (toSwap : Set R)
   (intent : I)
   : Result StandardError Transaction :=
   case toSwap of
-    | nil :=
+    | Set.empty :=
       throw
         mkInsufficientElementsError@{
           limit := 1;
           actual := 0;
         }
-    | _ :: _ :=
-      case find ((/=) (Transferable)) (map HasTransferability.get toSwap) of
+    | _ :=
+      case
+        find
+          ((/=) (Transferable))
+          (map HasTransferability.get (Set.toList toSwap))
+      of
         | just _ := throw mkNonTransferableError
         | nothing :=
           let
             self := Identity.external (StandardInputs.caller standardInputs);
-          in case find ((/=) (self)) (map HasOwner.get toSwap) of
+            toSwapOwners := map HasOwner.get (Set.toList toSwap);
+          in case find ((/=) (self)) toSwapOwners of
                | just notMyself :=
                  throw
                    mkUnauthorizedError@{
@@ -57,7 +62,7 @@ swap
                        Set.singleton
                          (ActionConvertable.toAction
                            standardInputs
-                           (Set.fromList toSwap)
+                           (toSwap)
                            (Set.singleton intent));
                    };
 
@@ -95,11 +100,17 @@ settle
          ok
            (composeAll
              Set.insert@{
+               set := transactions;
                elem :=
                  mkTransactionHelper@{
                    roots :=
                      Set.singleton (StandardInputs.currentRoot standardInputs);
-                   actions;
+                   actions :=
+                     Set.map (solution in solutions) {
+                       Solution.toAction@{
+                         standardInputs;
+                         solution;
+                       }
+                     };
                  };
-               set := transactions;
              });

@@ -36,7 +36,7 @@ initialize
         uniqueLabel;
         count := 0;
       };
-  in Simple.Transaction.prepareCounterTransaction@{
+  in prepareStandardTransaction@{
        standardInputs;
        consumed := Set.fromList [consumable; ephCounter];
        created := Set.fromList [ephConsumable; newCounter];
@@ -52,7 +52,7 @@ increment
     | kind currentCounter /= counterKind (Resource.labelRef currentCounter) :=
       failwith "The input resource has wrong kind."
     | else :=
-      Simple.Transaction.prepareCounterTransaction@{
+      prepareStandardTransaction@{
         standardInputs;
         consumed := Set.singleton currentCounter;
         created :=

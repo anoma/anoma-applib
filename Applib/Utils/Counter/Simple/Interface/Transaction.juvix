@@ -16,7 +16,7 @@ import Applib.Utils.Counter.Simple.Count open;
 initialize (standardInputs : StandardInputs) : Transaction :=
   let
     noncePair := generateNoncePair (StandardInputs.randSeed standardInputs);
-  in prepareCounterTransaction@{
+  in prepareStandardTransaction@{
        standardInputs;
        consumed :=
          Set.singleton
@@ -42,7 +42,7 @@ increment
     | kind currentCounter /= counterKind :=
       failwith "The input resource has wrong kind."
     | else :=
-      prepareCounterTransaction@{
+      prepareStandardTransaction@{
         standardInputs;
         consumed := Set.singleton currentCounter;
         created :=
@@ -52,36 +52,3 @@ increment
               count := getCount currentCounter + 1;
             };
       };
-
---- A helper function preparing the transaction object by creating an action object
---- containing data required by counter resources.
---- @param standardInputs The transaction function standard inputs.
---- @param consumed The consumed resources.
---- @param created The created resources.
---- @return The transaction object.
-prepareCounterTransaction
-  (standardInputs : StandardInputs)
-  (consumed created : Set Resource)
-  : Transaction :=
-  let
-    -- Put maps into the custom inputs that map:
-    -- - nullifiers to consumed resources
-    -- - commitments to created resources
-    tagsAndCustomInputs :=
-      computeTagsAndCustomInputs@{
-        consumed;
-        created;
-      };
-  in mkTransactionHelper@{
-       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
-       actions :=
-         Set.singleton
-           mkActionHelper@{
-             consumed;
-             created;
-             tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
-             appData := Map.empty;
-             customInputs :=
-               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
-           };
-     };
