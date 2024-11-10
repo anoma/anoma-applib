@@ -5,13 +5,10 @@ import PackageDescription.V2 open;
 package : Package :=
   defaultPackage@{
     name := "anoma-applib";
-    version := mkVersion 1 0 0;
+    version := mkVersion 0 6 0;
     dependencies :=
       [
         github "anoma" "juvix-stdlib" "v0.8.0";
-        github
-          "anoma"
-          "juvix-arm-specs"
-          "941f6506ef63a96bc2de7350ad3e876232f999bc";
+        github "anoma" "juvix-arm-specs" "v2.0.0-transparent-alpha.0";
       ];
   };

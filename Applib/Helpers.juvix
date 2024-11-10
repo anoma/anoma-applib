@@ -26,31 +26,6 @@ isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
 
--- TODO Move to juvix-arm-specs high-level interface.
-lookupAppData
-  {Key Value : Type} (key : Key) (appData : AppData) : Maybe Value :=
-  case
-    Map.lookup@{
-      key := anomaEncode key |> mkAppDataKey;
-      map := appData;
-    }
-  of
-    | nothing := nothing
-    | just value := just (value |> AppDataValue.data |> anomaDecode);
-
--- TODO Move to juvix-arm-specs high-level interface.
-lookupCustomInputs
-  {Key Value : Type} (key : Key) (customInputs : CustomInputs) : Maybe Value :=
-  case
-    Map.lookup@{
-      key := anomaEncode key |> mkCustomInputsKey;
-      map := customInputs;
-    }
-  of
-    | nothing := nothing
-    | just value :=
-      just (value |> CustomInputsValue.unCustomInputsValue |> anomaDecode);
-
 lookupResource {A} (key : A) (customInputs : CustomInputs) : Maybe Resource :=
   lookupCustomInputs@{
     key;
