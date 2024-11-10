@@ -1,0 +1,36 @@
+module Applib.Resource.Traits.Supply;
+
+import Stdlib.Prelude open;
+import Anoma open;
+
+type Supply :=
+  | Unbound
+  | Capped
+  | Fixed Nullifier;
+
+instance
+Supply-Eq : Eq Supply :=
+  mkEq@{
+    eq : Supply -> Supply -> Bool
+      | Unbound Unbound := true
+      | Capped Capped := true
+      | (Fixed f1) (Fixed f2) := f1 == f2
+      | _ _ := false;
+  };
+
+instance
+Supply-Show : Show Supply :=
+  mkShow
+    \{
+      | Unbound := "Unbound"
+      | Capped := "Capped"
+      | (Fixed f) := "Fixed"
+    --"Fixed (nf: " ++str natToString (anomaEncode f) ++str ")"
+    };
+
+trait
+type HasSupply ResourceT :=
+  mkHasSupply@{
+    get : ResourceT -> Supply;
+    set : Supply -> ResourceT -> ResourceT;
+  };

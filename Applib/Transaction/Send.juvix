@@ -1,0 +1,53 @@
+module Applib.Transaction.Send;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Nat.Ord open using {compare};
+import Anoma open;
+
+import Applib.Transaction.Errors open;
+import Applib.Resource.Traits open;
+import Applib.Transaction.Traits open;
+import Applib.Transaction.Transfer open;
+import Applib.Transaction.Split open;
+import Applib.Helpers open;
+
+--- Sends a ;HasQuantity; of token ;Resource; to a receiver, if the calling ;Identity; is the owner.
+--- If the quantity is lower than of the quantity of the consumed ;Resource;, the function creates
+--- a second ;Resource; with the difference being owned by the caller.
+--- The function returns a ;StandardError; if
+--- - the quantity exceeds the quantity of the resource
+--- - the ;transfer; or ;split; functions return a ;StandardError;.
+send
+  {R}
+  {{Ord R}}
+  {{Convertable R}}
+  {{HasNonce R}}
+  {{HasOwner R}}
+  {{HasQuantity R}}
+  {{HasTransferability R}}
+  {{ActionConvertable R R}}
+  (standardInputs : StandardInputs)
+  (toSend : R)
+  (quantity : Quantity)
+  (receiver : ExternalIdentity)
+  : Result StandardError Transaction :=
+  let
+    self := Identity.external (StandardInputs.caller standardInputs);
+    balance := HasQuantity.get toSend;
+  in case QuantityInternal.compare balance quantity of
+       | LessThan :=
+         throw
+           mkInsufficientHasQuantityError@{
+             limit := balance;
+             actual := quantity;
+           }
+       | Equal := transfer standardInputs toSend receiver
+       | GreaterThan :=
+         let
+           difference : Quantity :=
+             intSubNat
+                 (Quantity.unQuantity balance)
+                 (Quantity.unQuantity quantity)
+               |> toNat
+               |> mkQuantity;
+         in split standardInputs toSend [quantity, receiver; difference, self];

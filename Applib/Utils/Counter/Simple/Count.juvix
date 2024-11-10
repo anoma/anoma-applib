@@ -1,0 +1,11 @@
+module Applib.Utils.Counter.Simple.Count;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Anoma.Builtin.System open;
+
+--- Returns the count of a counter resource.
+--- @param resource The counter resource.
+--- @return The count.
+getCount (counter : Resource) : Nat :=
+  counter |> Resource.valueRef |> lookupFromReferenceChecked |> Value.unValue;

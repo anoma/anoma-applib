@@ -1,0 +1,182 @@
+module Applib.Transaction.Errors;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug open using {failwith};
+
+import Anoma open;
+import Applib.Helpers open;
+import Applib.Authorization.Check open;
+import Applib.Token.Resource open;
+import Applib.Token.Logic open;
+
+type DefaultError := mkDefaultError@{msg : String};
+
+type NonTransferableError := mkNonTransferableError;
+
+type InsufficientElementsError :=
+  mkInsufficientElementsError@{
+    limit : Nat;
+    actual : Nat;
+  };
+
+type InsufficientHasQuantityError :=
+  mkInsufficientHasQuantityError@{
+    limit : Quantity;
+    actual : Quantity;
+  };
+
+type InvalidLogicError :=
+  mkInvalidLogicError@{
+    expected : Nat;
+    actual : Nat;
+  };
+
+type InvalidKindError :=
+  mkInvalidKindError@{
+    expected : Kind;
+    actual : Kind;
+  };
+
+type UnauthorizedError :=
+  mkUnauthorizedError@{
+    expected : ExternalIdentity;
+    actual : ExternalIdentity;
+  };
+
+type StandardError :=
+  | ErrDefault DefaultError
+  | ErrUnauthorized UnauthorizedError
+  | ErrInsufficientHasQuantity InsufficientHasQuantityError
+  | ErrInvalidLogic InvalidLogicError
+  | ErrInvalidKind InvalidKindError
+  | ErrInsufficientElements InsufficientElementsError
+  | ErrNonTransferable NonTransferableError;
+
+trait
+type Throwable E A := mkThrowable@{throw : E -> Result StandardError A};
+
+open Throwable public;
+
+instance
+ErrorThrowable {A} : Throwable DefaultError A :=
+  mkThrowable@{
+    throw (e : DefaultError) : Result StandardError A :=
+      error {_} {A} (ErrDefault e);
+  };
+
+instance
+UnauthorizedThrowable {A} : Throwable UnauthorizedError A :=
+  mkThrowable@{
+    throw (e : UnauthorizedError) : Result StandardError A :=
+      error {_} {A} (ErrUnauthorized e);
+  };
+
+instance
+InsufficientHasQuantityThrowable
+  {A} : Throwable InsufficientHasQuantityError A :=
+  mkThrowable@{
+    throw (e : InsufficientHasQuantityError) : Result StandardError A :=
+      error {_} {A} (ErrInsufficientHasQuantity e);
+  };
+
+instance
+InsufficientElementsThrowable {A} : Throwable InsufficientElementsError A :=
+  mkThrowable@{
+    throw (e : InsufficientElementsError) : Result StandardError A :=
+      error {_} {A} (ErrInsufficientElements e);
+  };
+
+instance
+InvalidLogicThrowable {A} : Throwable InvalidLogicError A :=
+  mkThrowable@{
+    throw (e : InvalidLogicError) : Result StandardError A :=
+      error {_} {A} (ErrInvalidLogic e);
+  };
+
+instance
+InvalidKindThrowable {A} : Throwable InvalidKindError A :=
+  mkThrowable@{
+    throw (e : InvalidKindError) : Result StandardError A :=
+      error {_} {A} (ErrInvalidKind e);
+  };
+
+instance
+NonTransferableThrowable {A} : Throwable NonTransferableError A :=
+  mkThrowable@{
+    throw (e : NonTransferableError) : Result StandardError A :=
+      error {_} {A} (ErrNonTransferable e);
+  };
+
+instance
+StandardError-Show : Show StandardError :=
+  mkShow \{e := "StandardError:\n" ++str Show.show e};
+
+instance
+NonTransferableError-Show : Show NonTransferableError :=
+  mkShow \{e := "NonTransferableError"};
+
+instance
+InsufficientElementsError-Show : Show InsufficientElementsError :=
+  mkShow
+    \{e :=
+      "InsufficientElementsError:\n{"
+        ++str "limit : "
+        ++str (e |> InsufficientElementsError.limit |> Show.show)
+        ++str ", "
+        ++str "actual"
+        ++str (e |> InsufficientElementsError.actual |> Show.show)
+        ++str "}"};
+
+instance
+InsufficientHasQuantityError-Show : Show InsufficientHasQuantityError :=
+  mkShow
+    \{e :=
+      "InsufficientHasQuantityError:\n{"
+        ++str "limit : "
+        ++str (e
+          |> InsufficientHasQuantityError.limit
+          |> Quantity.unQuantity
+          |> Show.show)
+        ++str ", "
+        ++str "actual"
+        ++str (e
+          |> InsufficientHasQuantityError.actual
+          |> Quantity.unQuantity
+          |> Show.show)
+        ++str "}"};
+
+instance
+InvalidLogicError-Show : Show InvalidLogicError :=
+  mkShow
+    \{e :=
+      "InvalidLogicError:\n{"
+        ++str "expected : "
+        ++str (e |> InvalidLogicError.expected |> Show.show)
+        ++str ", "
+        ++str "actual"
+        ++str (e |> InvalidLogicError.actual |> Show.show)
+        ++str "}"};
+
+instance
+InvalidKindError-Show : Show InvalidKindError :=
+  mkShow
+    \{e :=
+      "InvalidLogicError:\n{"
+        ++str "expected : "
+        ++str (e |> InvalidKindError.expected |> Show.show)
+        ++str ", "
+        ++str "actual"
+        ++str (e |> InvalidKindError.actual |> Show.show)
+        ++str "}"};
+
+instance
+UnauthorizedError-Show : Show UnauthorizedError :=
+  mkShow
+    \{e :=
+      "UnauthorizedError:\n{"
+        ++str "expected : "
+        ++str (e |> UnauthorizedError.expected |> Show.show)
+        ++str ", "
+        ++str "actual"
+        ++str (e |> UnauthorizedError.actual |> Show.show)
+        ++str "}"};

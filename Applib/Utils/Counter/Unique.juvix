@@ -1,0 +1,7 @@
+module Applib.Utils.Counter.Unique;
+
+import Applib.Utils.Counter.Unique.Label open public;
+import Applib.Utils.Counter.Unique.Logic open public;
+import Applib.Utils.Counter.Unique.Resource open public;
+import Applib.Utils.Counter.Unique.Interface.Projection open public;
+import Applib.Utils.Counter.Unique.Interface.Transaction open public;

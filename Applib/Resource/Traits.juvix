@@ -1,0 +1,70 @@
+module Applib.Resource.Traits;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Applib.Resource.Traits.Convertable open public;
+import Applib.Resource.Traits.Ephemerality open public;
+import Applib.Resource.Traits.Kind open public;
+import Applib.Resource.Traits.Label open public;
+import Applib.Resource.Traits.Logic open public;
+import Applib.Resource.Traits.Nonce open public;
+import Applib.Resource.Traits.NullifierKey open public;
+import Applib.Resource.Traits.Originator open public;
+import Applib.Resource.Traits.Owner open public;
+import Applib.Resource.Traits.Quantity open public;
+import Applib.Resource.Traits.Supply open public;
+import Applib.Resource.Traits.Transferability open public;
+
+module TraitFromConvertable;
+  hasLogic {R} {{Convertable R}} : HasLogic R :=
+    mkHasLogic@{
+      get (typed : R) : Logic := HasLogic.get (Convertable.toResource typed);
+      set (logic : Logic) (typed : R) : R :=
+        HasLogic.set logic (Convertable.toResource typed)
+          |> Convertable.fromResource;
+    };
+
+  hasNonce {R} {{Convertable R}} : HasNonce R :=
+    mkHasNonce@{
+      get (typed : R) : Nonce := HasNonce.get (Convertable.toResource typed);
+
+      set (nonce : Nonce) (typed : R) : R :=
+        HasNonce.set nonce (Convertable.toResource typed)
+          |> Convertable.fromResource;
+    };
+
+  hasKind {R} {{Convertable R}} : HasKind R :=
+    mkHasKind@{
+      get (typed : R) : Kind := HasKind.get (Convertable.toResource typed);
+    };
+
+  hasQuantity {R} {{Convertable R}} : HasQuantity R :=
+    mkHasQuantity@{
+      get (typed : R) : Quantity :=
+        HasQuantity.get (Convertable.toResource typed);
+
+      set (quantity : Quantity) (typed : R) : R :=
+        HasQuantity.set quantity (Convertable.toResource typed)
+          |> Convertable.fromResource;
+    };
+
+  hasEphemerality {R} {{Convertable R}} : HasEphemerality R :=
+    mkHasEphemerality@{
+      get (typed : R) : Ephemerality :=
+        HasEphemerality.get (Convertable.toResource typed);
+
+      set (ephemerality : Ephemerality) (typed : R) : R :=
+        HasEphemerality.set ephemerality (Convertable.toResource typed)
+          |> Convertable.fromResource;
+    };
+
+  hasOwner {R} {{Convertable R}} : HasOwner R :=
+    mkHasOwner@{
+      get (typed : R) : ExternalIdentity :=
+        HasOwner.get (Convertable.toResource typed);
+
+      set (owner : ExternalIdentity) (typed : R) : R :=
+        HasOwner.set owner (Convertable.toResource typed)
+          |> Convertable.fromResource;
+    };
+end;

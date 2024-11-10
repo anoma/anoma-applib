@@ -1,0 +1,21 @@
+module Applib.Token.Transaction;
+
+import Applib.Resource.Traits open;
+import Applib.Transaction.Traits open;
+
+import Applib.Token.Resource open;
+import Applib.Intent.Swap.Resource open;
+import Applib.Authorization.Message open;
+
+--- Instantiates the ;ActionConvertable; trait by defining `toAction`.
+instance
+Token-Token-ActionConvertable : ActionConvertable Token Token :=
+  ActionFromConvertable.actionWithAuthorizationAppData {Token} {Token};
+
+instance
+Token-SwapIntent-ActionConvertable : ActionConvertable Token SwapIntent :=
+  ActionFromConvertable.actionWithAuthorizationAppData {Token} {SwapIntent};
+
+instance
+SwapIntent-Token-ActionConvertable : ActionConvertable SwapIntent Token :=
+  ActionFromConvertable.actionWithAuthorizationAppData {SwapIntent} {Token};

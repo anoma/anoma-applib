@@ -1,0 +1,50 @@
+module Applib.Utils.Dummy.Transaction.Initialize;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
+import Stdlib.Data.Set as Set;
+import Stdlib.Data.Map as Map;
+
+import Anoma open;
+
+import Applib.Identities open;
+import Applib.Utils.Dummy.Resource open;
+import Applib.Transaction.Errors open;
+import Applib.Helpers open;
+
+-- TODO Use generic initialize.
+initialize (standardInputs : StandardInputs) (dummy : Resource) : Transaction :=
+  let
+    expectedKind :=
+      KindInternal.kind@{
+        logicRef := BindingReference.compute alwaysValidLogic;
+        labelRef := BindingReference.compute emptyLabel;
+      };
+    currentKind :=
+      kind@{
+        resource := dummy;
+      };
+  in "DEBUG: Evaluating `Applib.Utils.Dummy.Transaction.initialize`"
+    >-> fromResult
+      case currentKind == expectedKind of {
+        | false :=
+          throw
+            mkInvalidKindError@{
+              expected := expectedKind;
+              actual := currentKind;
+            }
+        | true :=
+          ok
+            mkTransactionHelper@{
+              roots :=
+                Set.singleton (StandardInputs.currentRoot standardInputs);
+              actions :=
+                Set.singleton
+                  mkActionHelper@{
+                    consumed := Set.singleton dummy@Resource{ephemeral := true};
+                    created := Set.singleton dummy;
+                    appData := Map.empty;
+                    customInputs := Map.empty;
+                  };
+            }
+      };

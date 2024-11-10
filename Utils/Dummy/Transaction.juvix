@@ -1,4 +1,0 @@
-module Utils.Dummy.Transaction;
-
-import Utils.Dummy.Transaction.Initialize open public;
-import Utils.Dummy.Transaction.Finalize open public;

@@ -1,0 +1,13 @@
+module Applib.Transaction.Traits;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open using {Set};
+import Anoma open;
+import Applib.Helpers open;
+
+trait
+type ActionConvertable R1 R2 :=
+  mkActionConvertable@{toAction : (standardInputs : StandardInputs)
+    -> (consumed : Set R1)
+    -> (created : Set R2)
+    -> Action};

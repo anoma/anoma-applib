@@ -1,0 +1,129 @@
+module Applib.Resource.Standards.ValueMap;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Stdlib.Data.Set as Set open using {Set};
+import Stdlib.Data.Map as Map open using {Map};
+import Anoma.Builtin.System open;
+
+type ValueMapKey := mkValueMapKey@{unValueMapKey : Nat};
+-- Could be a different type (e.g., sha256 hash)
+
+type ValueMapValue := mkValueMapValue@{unValueMapValue : Nat};
+
+toValueMapKey {A} (argument : A) : ValueMapKey :=
+  argument |> anomaEncode |> mkValueMapKey;
+
+fromValueMapKey {A} (key : ValueMapKey) : A :=
+  key |> ValueMapKey.unValueMapKey |> anomaDecode;
+
+toValueMapValue {A} (argument : A) : ValueMapValue :=
+  argument |> anomaEncode |> mkValueMapValue;
+
+fromValueMapValue {A} (value : ValueMapValue) : A :=
+  value |> ValueMapValue.unValueMapValue |> anomaDecode;
+
+type ValueMapEntry :=
+  mkValueMapEntry@{
+    key : ValueMapKey;
+    value : ValueMapValue;
+  };
+
+valueMapEntrytoPair {A} {B} (valueMapEntry : ValueMapEntry) : Pair A B :=
+  let
+    key :=
+      valueMapEntry
+        |> ValueMapEntry.key
+        |> ValueMapKey.unValueMapKey
+        |> anomaDecode;
+    value :=
+      valueMapEntry
+        |> ValueMapEntry.value
+        |> ValueMapValue.unValueMapValue
+        |> anomaDecode;
+  in key, value;
+
+ValueMap : Type := Set ValueMapEntry;
+
+lookupValueMapMaybe
+  {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : Maybe B :=
+  let
+    converted : Map A B :=
+      Map.fromList
+        (map (entry in Set.toList valueMap) {
+          valueMapEntrytoPair entry
+        });
+  in Map.lookup key converted;
+
+lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : B :=
+  case
+    lookupValueMapMaybe@{
+      key;
+      valueMap;
+    }
+  of
+    | just value := value
+    | nothing := failwith "ValueMapKey not found";
+
+--- A module implementing traits for ;ValueMapKey;.
+module ValueMapKeyInternal;
+  --- Compares two ;ValueMapKey;s.
+  compare (lhs rhs : ValueMapKey) : Ordering :=
+    Ord.cmp (ValueMapKey.unValueMapKey lhs) (ValueMapKey.unValueMapKey rhs);
+
+  --- Implements the ;Ord; trait for ;ValueMapKey;.
+  instance
+  ValueMapKey-Ord : Ord ValueMapKey := mkOrd compare;
+
+  --- Implements the ;Eq; trait for ;ValueMapKey;.
+  instance
+  ValueMapKey-Eq : Eq ValueMapKey := fromOrdToEq;
+end;
+
+--- A module implementing traits for ;ValueMapValue;.
+module ValueMapValueInternal;
+  --- Compares two ;ValueMapValue;s.
+  compare (lhs rhs : ValueMapValue) : Ordering :=
+    Ord.cmp
+      (ValueMapValue.unValueMapValue lhs)
+      (ValueMapValue.unValueMapValue rhs);
+
+  --- Implements the ;Ord; trait for ;ValueMapValue;.
+  instance
+  ValueMapValue-Ord : Ord ValueMapValue := mkOrd compare;
+
+  --- Implements the ;Eq; trait for ;ValueMapValue;.
+  instance
+  ValueMapValue-Eq : Eq ValueMapValue := fromOrdToEq;
+end;
+
+--- A module implementing traits for ;ValueMapEntry;.
+module ValueMapEntryInternal;
+  --- Compares two ;ValueMapEntry;s.
+  compare (lhs rhs : ValueMapEntry) : Ordering :=
+    let
+      prod (entry : ValueMapEntry) : _ :=
+        ValueMapEntry.key entry, ValueMapEntry.value entry;
+    in Ord.cmp (prod lhs) (prod rhs);
+
+  --- Implements the ;Ord; trait for ;ValueMapEntry;.
+  instance
+  ValueMapEntry-Ord : Ord ValueMapEntry := mkOrd compare;
+
+  --- Implements the ;Eq; trait for ;ValueMapEntry;.
+  instance
+  ValueMapEntry-Eq : Eq ValueMapEntry := fromOrdToEq;
+end;
+
+insertValueMap
+  (key : ValueMapKey)
+  (value : ValueMapValue)
+  (valueMap : ValueMap)
+  : ValueMap :=
+  Set.insert
+    mkValueMapEntry@{
+      key;
+      value;
+    }
+    valueMap;

@@ -1,0 +1,38 @@
+module Applib.Utils.Dummy.Resource;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open;
+
+import Anoma open;
+import Anoma.Builtin.System open;
+
+import Applib.Resource.Standards.ValueMap open;
+import Applib.Resource.Standards.Ownership open;
+import Applib.Identities open;
+
+alwaysValidLogic
+  (publicInputs : Logic.Instance) (privateInputs : Logic.Witness) : Bool :=
+  "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidLogic`" >-> true;
+
+emptyLabel : Label := mkLabel 0;
+
+dummyValueMapKey : ValueMapKey := toValueMapKey "dummyKey";
+
+alwaysValidResource
+  (nonce : Nonce)
+  {quantity : Quantity := 1}
+  {dummyValue : String := "dummyValue"}
+  {ephemeral : Bool := false}
+  : Resource :=
+  "DEBUG: Evaluating `Applib.Utils.Dummy.alwaysValidResource`"
+    >-> mkResource@{
+          logicRef := BindingReference.compute alwaysValidLogic;
+          labelRef := BindingReference.compute emptyLabel;
+          valueRef :=
+            BindingReference.compute (mkValue (anomaEncode dummyValue));
+          quantity;
+          ephemeral;
+          nullifierKeyCommitment := Universal.nullifierKeyCommitment;
+          nonce;
+          randSeed := UnusedRandSeed;
+        };

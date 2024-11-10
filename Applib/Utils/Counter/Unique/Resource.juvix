@@ -1,0 +1,43 @@
+module Applib.Utils.Counter.Unique.Resource;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open;
+
+import Anoma open;
+import Anoma.Builtin.System open;
+
+import Applib.Identities open;
+import Applib.Utils.Counter.Unique.Logic open;
+import Applib.Utils.Counter.Unique.Label open;
+
+--- Constructs a counter with unique label and a quantity of 1 that can be consumed by the universal identity (and everyone who has composed their identity with it).
+--- @param uniqueLabel The unique ;CounterLabel;.
+--- @param count The intial count.
+--- @param ephemeral Whether the resource is ephemeral or not.
+--- @return The constructed counter resource.
+mkCounter
+  (nonce : Nonce)
+  (uniqueLabel : CounterLabel)
+  {count : Nat := 0}
+  {ephemeral : Bool := false}
+  : Resource :=
+  mkResource@{
+    logicRef := BindingReference.compute (counterLogic);
+    labelRef :=
+      BindingReference.compute (uniqueLabel |> anomaEncode |> mkLabel);
+    valueRef := BindingReference.compute (count |> mkValue);
+    quantity := 1;
+    ephemeral;
+    nullifierKeyCommitment := Universal.nullifierKeyCommitment;
+    nonce;
+    randSeed := UnusedRandSeed;
+  };
+
+--- Returns the counter kind.
+--- @param labelRef The binding reference to the label.
+--- @return The counter kind.
+counterKind (labelRef : LabelRef) : Kind :=
+  KindInternal.kind@{
+    logicRef := BindingReference.compute (counterLogic);
+    labelRef;
+  };

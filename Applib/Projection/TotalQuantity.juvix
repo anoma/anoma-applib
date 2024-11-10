@@ -1,0 +1,12 @@
+module Applib.Projection.TotalQuantity;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open using {Set};
+
+import Anoma open;
+
+--- Returns the total quantity of a ;Resource; ;Set;.
+totalQuantity (resources : Set Resource) : Quantity :=
+  for (sum := 0) (r in Set.toList resources) {
+    sum + Resource.quantity r
+  };

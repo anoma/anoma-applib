@@ -1,0 +1,29 @@
+module Applib.Utils.Dummy.Test.Finalize;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
+
+import Anoma open;
+import Anoma.Builtin.ByteArray open;
+import Anoma.State.CommitmentTree open;
+
+import Applib.Helpers open;
+import Applib.Identities open;
+import Applib.Utils.Dummy.Resource open;
+import Applib.Utils.Dummy.Transaction.Finalize open;
+import Applib.Utils.Dummy.Test.Initialize as PreviousTest;
+
+newRoot : Root := mkRoot 1;
+
+standardInputs : StandardInputs :=
+  PreviousTest.standardInputs@StandardInputs{
+    currentRoot := newRoot;
+    randSeed := mkRandSeed (mkByteArray (replicate 31 0x0 ++ [0x23]));
+  };
+
+main : AnomaTransaction :=
+  toAnomaTransaction
+    finalize@{
+      standardInputs;
+      dummy := PreviousTest.dummy;
+    };

@@ -1,0 +1,311 @@
+module Applib.Helpers;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open using {failwith};
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+
+import Applib.Identities open;
+import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
+import Stdlib.Data.Map as Map open using {Map};
+import Anoma open;
+import Anoma.State open;
+import Anoma.Builtin.ByteArray open;
+import Anoma.Builtin.System open;
+
+import Applib.Resource.Traits.Convertable open;
+
+isNullifierPresent
+  (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
+  Set.isMember nullifier nullifierSet;
+
+lookupResource {A} (key : A) (customInputs : CustomInputs) : Maybe Resource :=
+  lookupCustomInputs@{
+    key;
+    customInputs;
+  };
+
+toAppDataEntry
+  {Key Data : Type}
+  (key : Key)
+  (data : Data)
+  {deletionCriterion : DeletionCriterion := StoreForever}
+  : Pair AppDataKey AppDataValue :=
+
+  mkAppDataKey@{
+    unAppDataKey := anomaEncode key;
+  }
+    , mkAppDataValue@{
+        data := anomaEncode data;
+        deletionCriterion;
+      };
+
+toCustomInputsEntry
+  {Key Value : Type}
+  (key : Key)
+  (value : Value)
+  : Pair CustomInputsKey CustomInputsValue :=
+  mkCustomInputsKey@{
+    unCustomInputsKey := anomaEncode key;
+  }
+    , mkCustomInputsValue@{
+        unCustomInputsValue := anomaEncode value;
+      };
+
+--- Standard inputs to for transaction functions.
+--- NOTE: In the future, this will include more settings such as the information flow control flag.
+type StandardInputs :=
+  mkStandardInputs@{
+    caller : Identity;
+    currentRoot : CommitmentTree.Root;
+    randSeed : RandSeed;
+  };
+
+type TagsAndCustomInputs :=
+  mkTagsAndCustomInputs@{
+    tags : Set Tag;
+    customInputs : CustomInputs;
+  };
+
+tagsToPair (tags : Set Tag) : Pair (Set Nullifier) (Set Commitment) :=
+  let
+    pair :=
+      (for (nfs, cms := [], []) (tag in Set.toList tags) {
+        case tag of
+          | Consumed nf := nfs ++ [nf], cms
+          | Created cm := nfs, cms ++ [cm]
+      });
+  in Set.fromList (fst pair), Set.fromList (snd pair);
+
+pairtoTags
+  (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
+  Set.union
+    Set.map (nullifier in nullifiers) {
+      Consumed nullifier
+    }
+    Set.map (commitment in commitments) {
+      Created commitment
+    };
+
+computeTags (consumed created : Set Resource) : Set Tag :=
+  let
+    nullifierTags :=
+      Set.map (r in consumed) {
+        Consumed (nullifier Universal.nullifierKey r)
+      };
+    commitmentTags :=
+      Set.map (r in created) {
+        Created (commitment r)
+      };
+  in Set.union nullifierTags commitmentTags;
+
+computeTagsAndCustomInputs
+  (consumed created : Set Resource) : TagsAndCustomInputs :=
+  let
+    consumed' : List Resource := Set.toList consumed;
+    created' : List Resource := Set.toList created;
+
+    nullifiers' : List Nullifier :=
+      map (nullifier Universal.nullifierKey) consumed';
+    commitments' : List Commitment := map commitment created';
+
+    tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
+  in mkTagsAndCustomInputs@{
+       tags := Set.fromList tags';
+       customInputs :=
+         Map.fromList
+           (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
+     };
+
+module ProvingHelpers;
+  findProvingKey
+    {T} (key : T) (customInputs : CustomInputs) : Logic.ProvingKey :=
+    case
+      lookupCustomInputs@{
+        key;
+        Value := Resource;
+        customInputs;
+      }
+    of
+      | just resource := Logic.mkProvingKey resource
+      | nothing :=
+        failwith
+          "Error. The proving key could not be found. This should never happen.";
+
+  createLogicProofRecord
+    (tag : Tag)
+    (publicInputs : Logic.Instance)
+    (privateInputs : Logic.Witness)
+    : ProofRecord :=
+    let
+      customInputs := Logic.Witness.customInputs privateInputs;
+      provingKey :=
+        case tag of
+          | Consumed nf := findProvingKey nf customInputs
+          | Created cm := findProvingKey cm customInputs;
+      proof : Logic.Proof :=
+        Logic.prove@{
+          provingKey;
+          publicInputs;
+          privateInputs;
+        };
+      verifyingKey := Logic.mkVerifyingKey unit;
+      proofRecord := Logic.mkProofRecord proof verifyingKey publicInputs;
+    in LogicProofRecord proofRecord;
+
+  emptyComplianceProofRecord : Compliance.ProofRecord :=
+    let
+      verifyingKey := Compliance.mkVerifyingKey unit;
+      provingKey := Compliance.mkProvingKey unit;
+      publicInputs := Compliance.mkInstance unit;
+      privateInputs := Compliance.mkWitness unit;
+      proof :=
+        Compliance.prove@{
+          provingKey;
+          publicInputs;
+          privateInputs;
+        };
+    in Compliance.mkProofRecord proof verifyingKey publicInputs;
+
+  createComplianceProofRecord : ProofRecord :=
+    ComplianceProofRecord emptyComplianceProofRecord;
+
+  emptyDeltaProofRecord : Delta.ProofRecord :=
+    let
+      verifyingKey := Delta.mkVerifyingKey unit;
+      provingKey := Delta.mkProvingKey unit;
+      publicInputs := Delta.mkInstance unit;
+      privateInputs := Delta.mkWitness unit;
+      proof :=
+        Delta.prove@{
+          provingKey;
+          publicInputs;
+          privateInputs;
+        };
+    in Delta.mkProofRecord proof verifyingKey publicInputs;
+
+  createDeltaProofRecord : ProofRecord :=
+    DeltaProofRecord emptyDeltaProofRecord;
+end;
+
+open ProvingHelpers;
+
+--- Helps with the creation of an action ;Action;.
+--- @param identity The identity to derive the nullifier key from.
+--- @param consumed The resources being consumed in this action.
+--- @param created The resources being created in this action.
+--- @param appData The app data of the action.
+--- @param customInputs The custom inputs of the action.
+--- @param maybeNullifiers Optional nullifiers to avoid recomputation.
+--- @param maybeCommitments Optional commitments to avoid recomputation.
+--- @return The action object.
+mkActionHelper
+  (consumed created : Set Resource)
+  (appData : AppData)
+  (customInputs : CustomInputs)
+  {tags : Set Tag := computeTags@{
+                       consumed;
+                       created;
+                     }}
+  : Action :=
+  let
+    pair := tagsToPair tags;
+    nullifiers := fst pair;
+    commitments := snd pair;
+
+    -- Compute proofs
+    logicProofs : Set ProofRecord :=
+      Set.map (tag in tags) {
+        createLogicProofRecord@{
+          tag;
+          publicInputs :=
+            Logic.mkInstance@{
+              tag;
+              commitments;
+              nullifiers;
+              appData;
+            };
+          privateInputs :=
+            Logic.mkWitness@{
+              created;
+              consumed;
+              customInputs;
+            };
+        }
+      };
+
+    -- Compute the compliance proofs (that currently are empty).
+    -- NOTE: Proof replicas will be deduplicated by ;Set;
+    complianceProofs : Set ProofRecord :=
+      Set.map (_ in tags) {
+        createComplianceProofRecord
+      };
+  in mkAction@{
+       commitments;
+       nullifiers;
+       proofRecords := Set.union logicProofs complianceProofs;
+       appData;
+     };
+
+mkTransactionHelper
+  (roots : Set CommitmentTree.Root) (actions : Set Action) : Transaction :=
+  mkTransaction@{
+    roots;
+    actions;
+    delta := Delta.zero;
+    deltaProofRecord := emptyDeltaProofRecord;
+  };
+
+emptyTx : Transaction :=
+  mkTransactionHelper@{
+    roots := Set.empty;
+    actions := Set.empty;
+  };
+
+--- A helper function preparing the transaction object by creating an action object
+--- containing data required by counter resources.
+--- @param standardInputs The transaction function standard inputs.
+--- @param consumed The consumed resources.
+--- @param created The created resources.
+--- @return The transaction object.
+prepareStandardTransaction
+  (standardInputs : StandardInputs)
+  (consumed created : Set Resource)
+  {appData : AppData := Map.empty}
+  : Transaction :=
+  let
+    -- Put maps into the custom inputs that map:
+    -- - nullifiers to consumed resources
+    -- - commitments to created resources
+    tagsAndCustomInputs :=
+      computeTagsAndCustomInputs@{
+        consumed;
+        created;
+      };
+  in mkTransactionHelper@{
+       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+       actions :=
+         Set.singleton
+           mkActionHelper@{
+             consumed;
+             created;
+             tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
+             appData;
+             customInputs :=
+               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
+           };
+     };
+
+composeAll (txs : Set Transaction) : Transaction :=
+  for (acc := emptyTx) (tx in txs) {
+    composeTransactions acc tx
+  };
+
+fromResult
+  {ErrorType}
+  {DataType}
+  {{Show ErrorType}}
+  (result : Result ErrorType DataType)
+  : DataType :=
+  case result of
+    | ok data := data
+    | error err := failwith (Show.show err);

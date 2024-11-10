@@ -1,0 +1,54 @@
+module Applib.Utils.Counter.Simple.Interface.Transaction;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open using {failwith};
+import Stdlib.Data.Set as Set open using {Set};
+import Stdlib.Data.Map as Map;
+import Anoma open;
+import Applib.Helpers open;
+import Applib.Utils.Counter.Simple.Resource open;
+import Applib.Utils.Counter.Simple.Logic open;
+import Applib.Utils.Counter.Simple.Count open;
+
+--- Initializes a counter that can be incremented by everyone.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object initializing a counter.
+initialize (standardInputs : StandardInputs) : Transaction :=
+  let
+    noncePair := generateNoncePair (StandardInputs.randSeed standardInputs);
+  in prepareStandardTransaction@{
+       standardInputs;
+       consumed :=
+         Set.singleton
+           mkCounter@{
+             nonce := fst noncePair;
+             ephemeral := true;
+           };
+       created :=
+         Set.singleton
+           mkCounter@{
+             nonce := snd noncePair;
+             ephemeral := false;
+           };
+     };
+
+--- Increments the counter value by 1.
+--- @param currentCounter The current counter to increment.
+--- @param standardInputs The transaction function standard inputs.
+--- @return The transaction object incrementing a counter.
+increment
+  (standardInputs : StandardInputs) (currentCounter : Resource) : Transaction :=
+  if
+    | kind currentCounter /= counterKind :=
+      failwith "The input resource has wrong kind."
+    | else :=
+      prepareStandardTransaction@{
+        standardInputs;
+        consumed := Set.singleton currentCounter;
+        created :=
+          Set.singleton
+            mkCounter@{
+              nonce := generateNonce (StandardInputs.randSeed standardInputs);
+              count := getCount currentCounter + 1;
+            };
+      };

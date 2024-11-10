@@ -1,0 +1,19 @@
+module Applib.Resource.Traits.Nonce;
+
+import Stdlib.Prelude open;
+import Anoma open;
+
+trait
+type HasNonce ResourceT :=
+  mkHasNonce@{
+    get : ResourceT -> Nonce;
+    set : Nonce -> ResourceT -> ResourceT;
+  };
+
+instance
+Resource-HasNonce : HasNonce Resource :=
+  mkHasNonce@{
+    get (resource : Resource) : Nonce := Resource.nonce resource;
+    set (nonce : Nonce) (resource : Resource) : Resource :=
+      resource@Resource{nonce := nonce};
+  };

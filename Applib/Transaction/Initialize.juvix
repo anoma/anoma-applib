@@ -1,0 +1,100 @@
+module Applib.Transaction.Initialize;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open using {Set};
+import Anoma open;
+
+import Applib.Helpers open;
+import Applib.Transaction.Errors open;
+import Applib.Resource.Traits open;
+import Applib.Transaction.Traits open;
+import Applib.Utils.Dummy.Transaction as Dummy open using {finalize};
+import Applib.Identities open;
+
+--- Initializes a ;Convertable; typed ;Resource;.
+--- For tokens with fixed supply, a dummy is required.
+--- The function returns a ;StandardError; if
+--- - a dummy is provided for tokens with ;Unbound; supply.
+--- - no dummy is provided for tokens with ;Fixed; supply.
+--- - the supply type is ;Capped; which is not supported.
+initialize
+  {R}
+  {{Ord R}}
+  {{Convertable R}}
+  {{HasOwner R}}
+  {{HasSupply R}}
+  {{HasEphemerality R}}
+  {{HasNonce R}}
+  {{ActionConvertable R R}}
+  (standardInputs : StandardInputs)
+  (toInitialize : R)
+  (maybeDummy : Maybe Resource)
+  : Result StandardError Transaction :=
+  let
+    self := Identity.external (StandardInputs.caller standardInputs);
+    nonce := generateNonce (StandardInputs.randSeed standardInputs);
+
+    toConsumeEph : R :=
+      toInitialize
+        |> HasEphemerality.set Ephemeral
+        |> HasOwner.set self
+        |> HasNonce.set nonce;
+
+    tokenCreationTransaction :=
+      mkTransactionHelper@{
+        roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+        actions :=
+          Set.singleton
+            (ActionConvertable.toAction
+              standardInputs
+              (Set.singleton toConsumeEph)
+              (Set.singleton toInitialize));
+      };
+  in case HasSupply.get toInitialize of
+       | Unbound :=
+         case maybeDummy of {
+           | nothing := ok tokenCreationTransaction
+           | just dummy :=
+             throw
+               mkDefaultError@{
+                 msg :=
+                   "A dummy resource is only required for resources with fixed supply.";
+               }
+         }
+       | Capped :=
+         throw
+           mkDefaultError@{
+             msg := "Tokens with capped supply are not supported yet.";
+           }
+       | Fixed expectedNullifier :=
+         case maybeDummy of
+           | nothing :=
+             throw
+               mkDefaultError@{
+                 msg :=
+                   "A resource to consume must be provided whose nullifier is referenced in the fixed supply type.";
+               }
+           | just dummy :=
+             let
+               actualNullifier :=
+                 nullifier@{
+                   resource := dummy;
+                   nullifierKey := Universal.nullifierKey;
+                 };
+             in case actualNullifier == expectedNullifier of
+                  | false :=
+                    throw
+                      mkDefaultError@{
+                        msg :=
+                          "The provided resource's nullifier does not match the one referenced in the fixed supply type.";
+                      }
+                  | true :=
+                    ok
+                      composeTransactions@{
+                        tx1 := tokenCreationTransaction;
+                        tx2 :=
+                          Dummy.finalize@{
+                            standardInputs;
+                            dummy;
+                          };
+                      };

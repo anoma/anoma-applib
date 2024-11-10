@@ -13,19 +13,14 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v3
-
-      - name: Download latest nightly Juvix binary
+      - name: Download the Juvix binary
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
-          repo: anoma/juvix-nightly-builds
+          repo: anoma/juvix
           cache: enable
-
       - name: Clean
         run: juvix clean --global && juvix dependencies update 
-        
-      - name: Run TokenLogic Test
-        run: juvix eval Token/Tests/TokenLogic.juvix
-
-      # NOTE: Skipped because of performance issues of `anomaDecode`
-      #- name: Run Swap Test
-      #  run: juvix eval Token/Tests/Swap.juvix
+      - name: Type Check
+        run: juvix typecheck
+      - name: Format Check
+        run: juvix format

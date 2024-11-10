@@ -1,0 +1,47 @@
+module Applib.Intent.Swap.Solution;
+
+import Stdlib.Prelude open;
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Stdlib.Data.Set as Set open using {Set};
+import Anoma open;
+
+import Applib.Transaction.Traits open;
+import Applib.Token.Transaction open;
+import Applib.Token.Resource open;
+import Applib.Intent.Swap.Resource open;
+import Applib.Helpers open;
+
+module Solution;
+  -- TODO generalize
+  type Solution :=
+    mk@{
+      intent : SwapIntent;
+      created : Set Token;
+    };
+
+  toAction (standardInputs : StandardInputs) (solution : Solution) : Action :=
+    let
+      consumed := Set.singleton (Solution.intent solution);
+      created := Solution.created solution;
+    in ActionConvertable.toAction standardInputs consumed created;
+
+  module SolutionInternal;
+    --- Compares two ;Solution; objects.
+    compare (lhs rhs : Solution) : Ordering :=
+      let
+        prod (s : Solution) : _ := Solution.intent s, Solution.created s;
+      in Ord.cmp (prod lhs) (prod rhs);
+
+    --- Implements the ;Ord; trait for ;Solution;.
+    instance
+    SwapIntent-Ord : Ord Solution := mkOrd compare;
+
+    --- Implements the ;Eq; trait for ;Solution;.
+    instance
+    SwapIntent-Eq : Eq Solution := fromOrdToEq;
+  end;
+
+  open Solution public;
+end;
+
+open Solution using {Solution} public;

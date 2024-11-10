@@ -1,0 +1,61 @@
+--- A DSL for constructing intents
+module Applib.Intent.DSL;
+
+import Stdlib.Prelude open hiding {for; any; all};
+import Anoma open;
+
+import Applib.Intent.Asset open;
+
+type Intention :=
+  | Want
+  | Give;
+
+type Clause :=
+  mkClause@{
+    lhs : Pair Intention QuantifiedAssets;
+    rhs : QuantifiedAssets;
+  };
+
+syntax operator of_ additive;
+
+syntax alias of_ := mkAsset;
+
+any (as : List Asset) : QuantifiedAssets :=
+  mkQuantifiedAssets@{
+    quantifier := Any;
+    assets := as;
+  };
+
+all (as : List Asset) : QuantifiedAssets :=
+  mkQuantifiedAssets@{
+    quantifier := All;
+    assets := as;
+  };
+
+exactly (a : Asset) : QuantifiedAssets :=
+  mkQuantifiedAssets@{
+    quantifier := All;
+    assets := [a];
+  };
+
+want (a : QuantifiedAssets) : Pair Intention QuantifiedAssets := Want, a;
+
+give (a : QuantifiedAssets) : Pair Intention QuantifiedAssets := Give, a;
+
+syntax operator for pair;
+
+for (l : Pair Intention QuantifiedAssets) (qs : QuantifiedAssets) : Clause :=
+  mkClause@{
+    lhs := l;
+    rhs := qs;
+  };
+
+intent (clauses : List Clause) : Resource := mkIntent clauses;
+
+axiom mkIntent : List Clause -> Resource;
+
+A : Kind := mkKind 1;
+
+B : Kind := mkKind 1;
+
+aliceIntentClause : QuantifiedAssets := any [5 of_ A; 3 of_ B];

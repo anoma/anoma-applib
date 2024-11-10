@@ -1,6 +1,0 @@
-module Utils.Dummy.Logic;
-
-import Stdlib.Prelude open;
-import Anoma open;
-
-alwaysTrueLogic (self : Resource) (tx : Transaction) : Bool := true;

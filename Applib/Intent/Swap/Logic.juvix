@@ -1,0 +1,61 @@
+module Applib.Intent.Swap.Logic;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open using {Set};
+import Anoma open;
+import Applib.Helpers open;
+import Applib.Intent.Asset open;
+import Applib.Resource.Traits open;
+import Applib.Authorization.Check open;
+import Applib.Identities open;
+
+swapIntentLogic
+  (want : QuantifiedAssets)
+  (receiver : ExternalIdentity)
+  (publicInputs : Logic.Instance)
+  (privateInputs : Logic.Witness)
+  : Bool :=
+  let
+    tag := Logic.Instance.tag publicInputs;
+    customInputs := Logic.Witness.customInputs privateInputs;
+  in case tag of
+       | Consumed nullifier :=
+         case lookupResource nullifier customInputs of {
+           | nothing := false
+           | just self :=
+             case HasEphemerality.get self of {
+               | Ephemeral :=
+                 isAuthorizedBy@{
+                   signer := HasOwner.get self;
+                   origin := tag;
+                   publicInputs;
+                 }
+               | NonEphemeral := false
+             }
+         }
+       | Created commitment :=
+         case lookupResource commitment customInputs of
+           | nothing := false
+           | just self :=
+             case HasEphemerality.get self of
+               | NonEphemeral := true
+               | Ephemeral :=
+                 let
+                   created := Logic.Witness.created privateInputs;
+                 in case QuantifiedAssets.quantifier want of
+                      | Any :=
+                        any (asset in QuantifiedAssets.assets want) {
+                          includesAsset@{
+                            asset;
+                            receiver;
+                            resourcesToCheck := created;
+                          }
+                        }
+                      | All :=
+                        all (asset in QuantifiedAssets.assets want) {
+                          includesAsset@{
+                            asset;
+                            receiver;
+                            resourcesToCheck := created;
+                          }
+                        };

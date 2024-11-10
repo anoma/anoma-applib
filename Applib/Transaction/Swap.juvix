@@ -1,0 +1,116 @@
+module Applib.Transaction.Swap;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Set as Set open using {Set};
+
+import Anoma open;
+
+import Applib.Transaction.Errors open;
+import Applib.Resource.Traits open;
+import Applib.Transaction.Traits open;
+import Applib.Intent.Swap.Solution open;
+import Applib.Helpers open;
+
+--- Swaps a list of ;Convertable; typed ;Resource;s via an intent of type `I`.
+--- The function returns a ;StandardError; if the ;Convertable; typed ;Resource;s are
+--- - non-transferable
+--- - not owned by the calling ;Identity;.
+swap
+  {R I}
+  {{Ord R}}
+  {{Ord I}}
+  {{Convertable R}}
+  {{HasOwner R}}
+  {{HasTransferability R}}
+  {{ActionConvertable R I}}
+  (standardInputs : StandardInputs)
+  (toSwap : Set R)
+  (intent : I)
+  : Result StandardError Transaction :=
+  case toSwap of
+    | Set.empty :=
+      throw
+        mkInsufficientElementsError@{
+          limit := 1;
+          actual := 0;
+        }
+    | _ :=
+      case
+        find
+          ((/=) (Transferable))
+          (map HasTransferability.get (Set.toList toSwap))
+      of
+        | just _ := throw mkNonTransferableError
+        | nothing :=
+          let
+            self := Identity.external (StandardInputs.caller standardInputs);
+            toSwapOwners := map HasOwner.get (Set.toList toSwap);
+          in case find ((/=) (self)) toSwapOwners of
+               | just notMyself :=
+                 throw
+                   mkUnauthorizedError@{
+                     expected := self;
+                     actual := notMyself;
+                   }
+               | nothing :=
+                 ok
+                   mkTransactionHelper@{
+                     roots :=
+                       Set.singleton
+                         (StandardInputs.currentRoot standardInputs);
+                     actions :=
+                       Set.singleton
+                         (ActionConvertable.toAction
+                           standardInputs
+                           (toSwap)
+                           (Set.singleton intent));
+                   };
+
+--- Settles a ;List; of swap ;Transaction;s by composing them with
+--- ;Transaction;s obtained from a ;List; of ;Solution;s.
+--- The function returns a ;StandardError; if
+--- - the calling ;Identity; is not designated intent solver.
+settle
+  (standardInputs : StandardInputs)
+  (transactions : Set Transaction)
+  (solutions : Set Solution)
+  : Result StandardError Transaction :=
+  let
+    self := Identity.external (StandardInputs.caller standardInputs);
+    actions :=
+      Set.map (solution in solutions) {
+        Solution.toAction@{
+          standardInputs;
+          solution;
+        }
+      };
+    intentOwners :=
+      Set.toList
+        Set.map (solution in solutions) {
+          solution |> Solution.intent |> HasOwner.get
+        };
+  in case find ((/=) self) intentOwners of
+       | just notMyself :=
+         throw
+           mkUnauthorizedError@{
+             expected := self;
+             actual := notMyself;
+           }
+       | nothing :=
+         ok
+           (composeAll
+             Set.insert@{
+               set := transactions;
+               elem :=
+                 mkTransactionHelper@{
+                   roots :=
+                     Set.singleton (StandardInputs.currentRoot standardInputs);
+                   actions :=
+                     Set.map (solution in solutions) {
+                       Solution.toAction@{
+                         standardInputs;
+                         solution;
+                       }
+                     };
+                 };
+             });
