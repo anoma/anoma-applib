@@ -9,6 +9,6 @@ package : Package :=
     dependencies :=
       [
         github "anoma" "juvix-stdlib" "v0.8.0";
-        github "anoma" "juvix-arm-specs" "v2.0.0-transparent-alpha.0";
+        github "anoma" "juvix-arm-specs" "v2.0.0-transparent-alpha.1";
       ];
   };

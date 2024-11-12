@@ -1,4 +1,4 @@
-name: Test anoma-app-lib
+name: Test anoma-applib
 
 on:
   push:
@@ -17,6 +17,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
           repo: anoma/juvix
+          tag: v0.6.8
           cache: enable
       - name: Clean
         run: juvix clean --global && juvix dependencies update 
