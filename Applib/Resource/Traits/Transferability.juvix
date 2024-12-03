@@ -1,7 +1,6 @@
 module Applib.Resource.Traits.Transferability;
 
 import Stdlib.Prelude open;
-import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 
 module Transferability;
   type Transferability :=
@@ -25,20 +24,11 @@ open Transferability using {
   Transferable;
 } public;
 
-instance
-Transferability-Ord : Ord Transferability :=
-  -- lexicographical ordering
-  mkOrd@{
-    cmp (t1 t2 : Transferability) : Ordering :=
-      case t1, t1 of
-        | Transferable, Transferable := Equal
-        | NonTransferable, NonTransferable := Equal
-        | NonTransferable, Transferable := LessThan
-        | Transferable, NonTransferable := GreaterThan;
-  };
+deriving instance
+Transferability-Ord : Ord Transferability;
 
-instance
-Transferability-Eq : Eq Transferability := fromOrdToEq;
+deriving instance
+Transferability-Eq : Eq Transferability;
 
 instance
 Transferability-Show : Show Transferability :=

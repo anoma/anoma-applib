@@ -1,7 +1,6 @@
 module Applib.Intent.Swap.Solution;
 
 import Stdlib.Prelude open;
-import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 
@@ -25,21 +24,11 @@ module Solution;
       created := Solution.created solution;
     in ActionConvertable.toAction standardInputs consumed created;
 
-  module SolutionInternal;
-    --- Compares two ;Solution; objects.
-    compare (lhs rhs : Solution) : Ordering :=
-      let
-        prod (s : Solution) : _ := Solution.intent s, Solution.created s;
-      in Ord.cmp (prod lhs) (prod rhs);
+  deriving instance
+  SwapIntent-Ord : Ord Solution;
 
-    --- Implements the ;Ord; trait for ;Solution;.
-    instance
-    SwapIntent-Ord : Ord Solution := mkOrd compare;
-
-    --- Implements the ;Eq; trait for ;Solution;.
-    instance
-    SwapIntent-Eq : Eq Solution := fromOrdToEq;
-  end;
+  deriving instance
+  SwapIntent-Eq : Eq Solution;
 
   open Solution public;
 end;

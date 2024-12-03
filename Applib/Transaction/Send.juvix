@@ -34,7 +34,7 @@ send
   let
     self := Identity.external (StandardInputs.caller standardInputs);
     balance := HasQuantity.get toSend;
-  in case QuantityInternal.compare balance quantity of
+  in case Ord.cmp balance quantity of
        | LessThan :=
          throw
            mkInsufficientHasQuantityError@{

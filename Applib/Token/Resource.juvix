@@ -1,7 +1,6 @@
 module Applib.Token.Resource;
 
 import Stdlib.Prelude open;
-import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Stdlib.Data.Set as Set open using {Set};
 
 import Anoma open;
@@ -14,7 +13,10 @@ import Applib.Identities open;
 import Applib.Resource.Standards.Ownership open;
 
 module Token;
-  type Token := mk@{resource : Resource};
+  type Token :=
+    mk@{
+      resource : Resource;
+    };
 
   create
     (nonce : Nonce)
@@ -45,19 +47,11 @@ module Token;
         randSeed := UnusedRandSeed;
       };
 
-  module TokenInternal;
-    --- Compares two ;Token; objects.
-    compare (lhs rhs : Token) : Ordering :=
-      Ord.cmp (Token.resource lhs) (Token.resource rhs);
+  deriving instance
+  Token-Ord : Ord Token;
 
-    --- Implements the ;Ord; trait for ;Token;.
-    instance
-    Token-Ord : Ord Token := mkOrd compare;
-
-    --- Implements the ;Eq; trait for ;Token;.
-    instance
-    Token-Eq : Eq Token := fromOrdToEq;
-  end;
+  deriving instance
+  Token-Eq : Eq Token;
 
   open Token public;
 end;

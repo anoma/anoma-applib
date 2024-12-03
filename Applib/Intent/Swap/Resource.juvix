@@ -1,7 +1,6 @@
 module Applib.Intent.Swap.Resource;
 
 import Stdlib.Prelude open;
-import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Stdlib.Data.Set as Set open using {Set};
 import Anoma open;
 import Anoma.Builtin.System open;
@@ -13,7 +12,10 @@ import Applib.Intent.Swap.Logic open;
 import Applib.Resource.Standards.Ownership open;
 
 module SwapIntent;
-  type SwapIntent := mk@{resource : Resource};
+  type SwapIntent :=
+    mk@{
+      resource : Resource;
+    };
 
   create
     (nonce : Nonce)
@@ -38,19 +40,11 @@ module SwapIntent;
         randSeed := UnusedRandSeed;
       };
 
-  module SwapIntentInternal;
-    --- Compares two ;SwapIntent; objects.
-    compare (lhs rhs : SwapIntent) : Ordering :=
-      Ord.cmp (SwapIntent.resource lhs) (SwapIntent.resource rhs);
+  deriving instance
+  SwapIntent-Ord : Ord SwapIntent;
 
-    --- Implements the ;Ord; trait for ;SwapIntent;.
-    instance
-    SwapIntent-Ord : Ord SwapIntent := mkOrd compare;
-
-    --- Implements the ;Eq; trait for ;SwapIntent;.
-    instance
-    SwapIntent-Eq : Eq SwapIntent := fromOrdToEq;
-  end;
+  deriving instance
+  SwapIntent-Eq : Eq SwapIntent;
 
   open SwapIntent public;
 end;

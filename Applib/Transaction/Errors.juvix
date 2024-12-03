@@ -9,7 +9,10 @@ import Applib.Authorization.Check open;
 import Applib.Token.Resource open;
 import Applib.Token.Logic open;
 
-type DefaultError := mkDefaultError@{msg : String};
+type DefaultError :=
+  mkDefaultError@{
+    msg : String;
+  };
 
 type NonTransferableError := mkNonTransferableError;
 
@@ -53,7 +56,10 @@ type StandardError :=
   | ErrNonTransferable NonTransferableError;
 
 trait
-type Throwable E A := mkThrowable@{throw : E -> Result StandardError A};
+type Throwable E A :=
+  mkThrowable@{
+    throw : E -> Result StandardError A;
+  };
 
 open Throwable public;
 

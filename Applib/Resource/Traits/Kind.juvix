@@ -7,7 +7,10 @@ instance
 Kind-Show : Show Kind := mkShow \{k := natToString (Kind.unKind k)};
 
 trait
-type HasKind ResourceT := mkHasKind@{get : ResourceT -> Kind};
+type HasKind ResourceT :=
+  mkHasKind@{
+    get : ResourceT -> Kind;
+  };
 --set : Kind -> ResourceT -> ResourceT
 
 instance

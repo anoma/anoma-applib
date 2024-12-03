@@ -2,7 +2,6 @@ module Applib.Helpers;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
-import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 
 import Applib.Identities open;
 import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};

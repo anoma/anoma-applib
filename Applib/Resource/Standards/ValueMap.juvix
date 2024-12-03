@@ -2,15 +2,20 @@ module Applib.Resource.Standards.ValueMap;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open;
-import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Stdlib.Data.Set as Set open using {Set};
 import Stdlib.Data.Map as Map open using {Map};
 import Anoma.Builtin.System open;
 
-type ValueMapKey := mkValueMapKey@{unValueMapKey : Nat};
+type ValueMapKey :=
+  mkValueMapKey@{
+    unValueMapKey : Nat;
+  };
 -- Could be a different type (e.g., sha256 hash)
 
-type ValueMapValue := mkValueMapValue@{unValueMapValue : Nat};
+type ValueMapValue :=
+  mkValueMapValue@{
+    unValueMapValue : Nat;
+  };
 
 toValueMapKey {A} (argument : A) : ValueMapKey :=
   argument |> anomaEncode |> mkValueMapKey;
@@ -66,55 +71,23 @@ lookupValueMap {A} {B} {{Ord A}} (key : A) (valueMap : ValueMap) : B :=
     | just value := value
     | nothing := failwith "ValueMapKey not found";
 
---- A module implementing traits for ;ValueMapKey;.
-module ValueMapKeyInternal;
-  --- Compares two ;ValueMapKey;s.
-  compare (lhs rhs : ValueMapKey) : Ordering :=
-    Ord.cmp (ValueMapKey.unValueMapKey lhs) (ValueMapKey.unValueMapKey rhs);
+deriving instance
+ValueMapKey-Ord : Ord ValueMapKey;
 
-  --- Implements the ;Ord; trait for ;ValueMapKey;.
-  instance
-  ValueMapKey-Ord : Ord ValueMapKey := mkOrd compare;
+deriving instance
+ValueMapKey-Eq : Eq ValueMapKey;
 
-  --- Implements the ;Eq; trait for ;ValueMapKey;.
-  instance
-  ValueMapKey-Eq : Eq ValueMapKey := fromOrdToEq;
-end;
+deriving instance
+ValueMapValue-Ord : Ord ValueMapValue;
 
---- A module implementing traits for ;ValueMapValue;.
-module ValueMapValueInternal;
-  --- Compares two ;ValueMapValue;s.
-  compare (lhs rhs : ValueMapValue) : Ordering :=
-    Ord.cmp
-      (ValueMapValue.unValueMapValue lhs)
-      (ValueMapValue.unValueMapValue rhs);
+deriving instance
+ValueMapValue-Eq : Eq ValueMapValue;
 
-  --- Implements the ;Ord; trait for ;ValueMapValue;.
-  instance
-  ValueMapValue-Ord : Ord ValueMapValue := mkOrd compare;
+deriving instance
+ValueMapEntry-Ord : Ord ValueMapEntry;
 
-  --- Implements the ;Eq; trait for ;ValueMapValue;.
-  instance
-  ValueMapValue-Eq : Eq ValueMapValue := fromOrdToEq;
-end;
-
---- A module implementing traits for ;ValueMapEntry;.
-module ValueMapEntryInternal;
-  --- Compares two ;ValueMapEntry;s.
-  compare (lhs rhs : ValueMapEntry) : Ordering :=
-    let
-      prod (entry : ValueMapEntry) : _ :=
-        ValueMapEntry.key entry, ValueMapEntry.value entry;
-    in Ord.cmp (prod lhs) (prod rhs);
-
-  --- Implements the ;Ord; trait for ;ValueMapEntry;.
-  instance
-  ValueMapEntry-Ord : Ord ValueMapEntry := mkOrd compare;
-
-  --- Implements the ;Eq; trait for ;ValueMapEntry;.
-  instance
-  ValueMapEntry-Eq : Eq ValueMapEntry := fromOrdToEq;
-end;
+deriving instance
+ValueMapEntry-Eq : Eq ValueMapEntry;
 
 insertValueMap
   (key : ValueMapKey)
