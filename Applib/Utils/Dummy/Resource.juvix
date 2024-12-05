@@ -16,8 +16,6 @@ alwaysValidLogic
 
 emptyLabel : Label := mkLabel 0;
 
-dummyValueMapKey : ValueMapKey := toValueMapKey "dummyKey";
-
 alwaysValidResource
   (nonce : Nonce)
   {quantity : Quantity := 1}
