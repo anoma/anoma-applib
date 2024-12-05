@@ -39,7 +39,8 @@ split
       };
 
     quantitiesReceiversNonces :=
-      for (lastPrng, acc := prngInit (StandardInputs.randSeed standardInputs)
+      for
+        (lastPrng, acc := prngInit (StandardInputs.randSeed standardInputs)
           , Set.empty) (pair in quantitiesAndReceivers) {
           case generateNextNonce lastPrng of
             nonce, nextPrng :=

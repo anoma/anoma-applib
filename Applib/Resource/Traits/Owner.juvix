@@ -2,6 +2,7 @@ module Applib.Resource.Traits.Owner;
 
 import Stdlib.Prelude open;
 import Stdlib.Data.Set as Set open;
+import Stdlib.Data.Map as Map open;
 import Anoma open;
 import Anoma.Builtin.System open;
 import Applib.Identities open;
@@ -24,12 +25,12 @@ Resource-HasOwner : HasOwner Resource :=
     --- @return The owner ;ExternalIdentity;.
     get (resource : Resource) : ExternalIdentity :=
       case
-        lookupValueMapMaybe@{
+        Map.lookup@{
           key := ownershipStandardKey;
-          valueMap := HasValueMap.get resource;
+          map := HasValueMap.get resource;
         }
       of
-        | just value := anomaDecode value
+        | just value := anomaDecode (ValueMapValue.unValueMapValue value)
         | nothing := Zero.externalIdentity;
 
     --- Sets the owner ;ExternalIdentity; of a resource.
@@ -38,13 +39,10 @@ Resource-HasOwner : HasOwner Resource :=
     --- @return The updated resource.
     set (owner : ExternalIdentity) (resource : Resource) : Resource :=
       HasValueMap.set
-        Set.insert@{
-          elem :=
-            mkValueMapEntry@{
-              key := ownershipStandardKey;
-              value := toValueMapValue owner;
-            };
-          set := HasValueMap.get resource;
+        Map.insert@{
+          key := ownershipStandardKey;
+          elem := toValueMapValue owner;
+          map := HasValueMap.get resource;
         }
         resource;
   };
