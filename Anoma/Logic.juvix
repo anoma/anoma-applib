@@ -1,12 +1,4 @@
 module Anoma.Logic;
 
-import BaseLayer.ResourceMachine as B;
-
-open B using {
-  Instance;
-  module Instance;
-  Witness;
-  module Witness;
-} public;
-
-syntax alias Logic := B.Resource-Logic;
+import Anoma.Logic.Types open public;
+import Anoma.Logic.ProvingSystem open public;

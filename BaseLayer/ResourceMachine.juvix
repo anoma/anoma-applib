@@ -22,9 +22,9 @@ type Resource :=
 positive
 type Instance :=
   mkInstance@{
-    tag : Nat;
     commitments : List Nat;
     nullifiers : List Nat;
+    tag : Nat;
     appData : Nat;
   };
 

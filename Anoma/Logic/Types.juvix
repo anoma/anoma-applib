@@ -1,0 +1,16 @@
+module Anoma.Logic.Types;
+
+import Anoma.Resource.Object open using {Resource};
+
+import BaseLayer.ResourceMachine as B;
+
+open B using {Proof; Logic-Proof; Compliance-Proof; mkProofCompliance; proofLogic; proofCompliance} public;
+
+open B using {Instance; mkInstance; module Instance; Witness; mkWitness; module Witness} public;
+
+syntax alias Logic := B.Resource-Logic;
+
+type ProvingKey :=
+  mkProvingKey@{
+    unProvingKey : Resource;
+  };
