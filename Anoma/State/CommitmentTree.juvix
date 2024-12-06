@@ -1,0 +1,21 @@
+module Anoma.State.CommitmentTree;
+
+import Stdlib.Prelude open;
+
+--- A state root of the commitment tree.
+type Root :=
+  mkRoot@{
+    unRoot : Nat;
+  };
+
+--- A path in the commitment tree.
+type Path :=
+  mkPath@{
+    unPath : List Nat;
+  };
+
+deriving instance
+Root-Ord : Ord Root;
+
+deriving instance
+Root-Eq : Eq Root;

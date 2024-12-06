@@ -1,0 +1,102 @@
+module Anoma.Builtin.System;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.ByteArray open;
+
+module Internal;
+  syntax alias PublicKey := ByteArray;
+  syntax alias PrivateKey := ByteArray;
+
+  syntax alias Signature := ByteArray;
+  syntax alias SignedMessage := ByteArray;
+end;
+
+--- Encodes a value into a natural number.
+builtin anoma-encode
+axiom anomaEncode
+  : {Value : Type}
+    -- | The value to encode.
+    -> Value
+    -- | The encoded natural number.
+    -> Nat;
+
+--- Decodes a value from a natural number.
+builtin anoma-decode
+axiom anomaDecode
+  : {Value : Type}
+    -- | The natural number to decode.
+    -> Nat
+    -- | The decoded value.
+    -> Value;
+
+--- Signs a message with a private key and returns a signed message.
+builtin anoma-sign
+axiom anomaSign
+  : {Message : Type}
+    -- | The message to sign.
+    -> Message
+    -- | The signing private key.
+    -> Internal.PrivateKey
+    -- | The resulting signed message.
+    -> Internal.SignedMessage;
+
+--- Signs a message with a private key and returns the signature.
+builtin anoma-sign-detached
+axiom anomaSignDetached
+  : {Message : Type}
+    -- | The message to sign.
+    -> Message
+    -- | The signing private key.
+    -> Internal.PrivateKey
+    -- The resulting signature
+    -> Internal.Signature;
+
+--- Verifies a signature against a message and public key.
+builtin anoma-verify-detached
+axiom anomaVerifyDetached
+  : {Message : Type}
+    -- | The signature to verify.
+    -> Internal.Signature
+    -- | The message to verify against.
+    -> Message
+    -- | The signer public key to verify against.
+    -> Internal.PublicKey
+    -- | The verification result.
+    -> Bool;
+
+--- Verifies a signature against a message and public key and return the message on success.
+builtin anoma-verify-with-message
+axiom anomaVerifyWithMessage
+  : {Message : Type}
+    -- | The signed message to verify.
+    -> Internal.SignedMessage
+    -- | The signer public key to verify against.
+    -> Internal.PublicKey
+    -- | The original message.
+    -> Maybe Message;
+
+--- A type describing a pure pseudo-random number generator (PRNG).
+builtin anoma-random-generator
+axiom PseudoRandomNumberGenerator : Type;
+
+syntax alias PRNG := PseudoRandomNumberGenerator;
+
+--- Creates and initializes a pure PRNG with a seed.
+--- @param The seed.
+--- @return The initialized PRNG.
+-- TODO Conversion should be handled on the base layer.
+-- builtin anoma-random-generator-init
+axiom pseudoRandomNumberGeneratorInit : ByteArray -> PRNG;
+
+--- Returns two distinct PRNGs.
+--- @param The generator to split.
+--- @return A pair of two distinct PRNGs.
+builtin anoma-random-generator-split
+axiom pseudoRandomNumberGeneratorSplit : PRNG -> Pair PRNG PRNG;
+
+--- Generates a random number and returns the a
+--- @param The number of output bytes to generate.
+--- @param The generator to use.
+--- @return A pair containing the random number and the advanced PRNG.
+builtin anoma-random-next-bytes
+axiom pseudoRandomNumberGeneratorNextBytes : Nat -> PRNG -> Pair ByteArray PRNG;
