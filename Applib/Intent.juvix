@@ -1,5 +1,0 @@
-module Applib.Intent;
-
-import Applib.Intent.Asset as Asset public;
-import Applib.Intent.DSL as DSL public;
-import Applib.Intent.Swap as Swap public;

@@ -6,7 +6,7 @@ import Anoma.Primitives.FixedSize open;
 
 import BaseLayer.ResourceMachine as B;
 
-open B using {Delta; Kind} public;
+open B using {Kind} public;
 
 --- A fixed-size data type encoding the quantity of a resource.
 type Quantity :=
@@ -61,13 +61,13 @@ type Value :=
 --- The resource commitment type.
 type Commitment :=
   mkCommitment@{
-    unCommitment : ByteArray;
+    unCommitment : Nat;
   };
 
 --- The resource nullifier type.
 type Nullifier :=
   mkNullifier@{
-    unNullifier : ByteArray;
+    unNullifier : Nat;
   };
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource

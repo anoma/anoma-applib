@@ -1,0 +1,5 @@
+module Anoma.Transaction.Action;
+
+import BaseLayer.ResourceMachine as B;
+
+open B using {Action; module Action} public;

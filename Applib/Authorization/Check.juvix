@@ -17,7 +17,7 @@ import Stdlib.Data.Set as Set open using {Set};
 isAuthorizedBy
   (signer : ExternalIdentity)
   (origin : Tag)
-  (publicInputs : Logic.Instance)
+  (publicInputs : Instance)
   : Bool :=
   case
     lookupAppData@{

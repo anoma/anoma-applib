@@ -1,0 +1,16 @@
+module Anoma.Resource.Tag;
+
+import Stdlib.Prelude open;
+import Anoma.Resource.Object open using {Resource};
+import Anoma.Resource.Types open using {Commitment; Nullifier};
+
+--- The reference to the ;Resource;.
+type Tag :=
+  | Created Commitment
+  | Consumed Nullifier;
+
+deriving instance
+Tag-Ord : Ord Tag;
+
+deriving instance
+Tag-Eq : Eq Tag;
