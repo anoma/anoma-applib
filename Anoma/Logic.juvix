@@ -3,10 +3,10 @@ module Anoma.Logic;
 import BaseLayer.ResourceMachine as B;
 
 open B using {
-  Public-Inputs;
-  module Public-Inputs;
-  Private-Inputs;
-  module Private-Inputs;
-};
+  Instance;
+  module Instance;
+  Witness;
+  module Witness;
+} public;
 
 syntax alias Logic := B.Resource-Logic;

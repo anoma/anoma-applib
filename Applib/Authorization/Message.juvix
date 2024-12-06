@@ -36,7 +36,7 @@ checkResourceRelationship
     && Set.isSubset (ResourceRelationship.mustBeConsumed message) nullifiers
     && Set.isSubset (ResourceRelationship.mustBeCreated message) commitments;
 
---- Creates an ;AppData; entry consisting of a ;ResourceRelationship; message and corresponding ;Signature; as the ;AppDataValue; and the resource ;Tag; value as the ;AppDataKey;.
+-- --- Creates an ;AppData; entry consisting of a ;ResourceRelationship; message and corresponding ;Signature; as the ;AppDataValue; and the resource ;Tag; value as the ;AppDataKey;.
 --- @param identity The identity to derive the nullifier key from.
 --- @param origin The resource performing the check.
 --- @param mustBeConsumed The resources that must be consumed.

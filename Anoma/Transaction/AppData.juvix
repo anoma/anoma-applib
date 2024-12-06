@@ -30,8 +30,8 @@ type AppDataValue :=
     deletionCriterion : DeletionCriterion;
   };
 
---- A type describing an app data map.
-AppData : Type := Map AppDataKey AppDataValue;
+-- A type describing an app data map.
+-- AppData : Type := Nat;
 
 deriving instance
 DeletionCriterion-Ord : Ord DeletionCriterion;
@@ -51,13 +51,13 @@ AppDataValue-Ord : Ord AppDataValue;
 deriving instance
 AppDataValue-Eq : Eq AppDataValue;
 
-lookupAppData
-  {Key Value : Type} (key : Key) (appData : AppData) : Maybe Value :=
-  case
-    Map.lookup@{
-      key := anomaEncode key |> mkAppDataKey;
-      map := appData;
-    }
-  of
-    | nothing := nothing
-    | just value := just (value |> AppDataValue.data |> anomaDecode);
+-- lookupAppData
+--   {Key Value : Type} (key : Key) (appData : AppData) : Maybe Value :=
+--   case
+--     Map.lookup@{
+--       key := anomaEncode key |> mkAppDataKey;
+--       map := appData;
+--     }
+--   of
+--     | nothing := nothing
+--     | just value := just (value |> AppDataValue.data |> anomaDecode);
