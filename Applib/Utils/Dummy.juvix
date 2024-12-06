@@ -1,4 +1,0 @@
-module Applib.Utils.Dummy;
-
-import Applib.Utils.Dummy.Resource open public;
-import Applib.Utils.Dummy.Transaction open public;

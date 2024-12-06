@@ -1,0 +1,3 @@
+module Anoma.Resource;
+
+import Anoma.Resource.Types open public;

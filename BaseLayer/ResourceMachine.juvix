@@ -1,4 +1,4 @@
-module Base.ResourceMachine;
+module BaseLayer.ResourceMachine;
 
 import Stdlib.Prelude open;
 

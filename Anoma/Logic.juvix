@@ -1,0 +1,12 @@
+module Anoma.Logic;
+
+import BaseLayer.ResourceMachine as B;
+
+open B using {
+  Public-Inputs;
+  module Public-Inputs;
+  Private-Inputs;
+  module Private-Inputs;
+};
+
+syntax alias Logic := B.Resource-Logic;

@@ -1,7 +1,7 @@
-module Base.TransactionRequest;
+module BaseLayer.TransactionRequest;
 
 import Stdlib.Prelude open;
-import Base.ResourceMachine open;
+import BaseLayer.ResourceMachine open;
 
 type TransactionCandidate :=
   mkTransactionCandidate@{
