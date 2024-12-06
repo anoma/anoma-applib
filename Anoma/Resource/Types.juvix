@@ -4,11 +4,27 @@ import Stdlib.Prelude open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Primitives.FixedSize open;
 
+import BaseLayer.ResourceMachine as B;
+
+open B using {Delta; Kind} public;
+
 --- A fixed-size data type encoding the quantity of a resource.
 type Quantity :=
   mkQuantity@{
     unQuantity : Nat;
   };
+
+instance
+FromNaturalQuantityI : FromNatural Quantity := mkFromNatural mkQuantity;
+
+instance
+NaturalQuantityI : Natural Quantity := mkNatural@{
+ + : Quantity -> Quantity -> Quantity
+  | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.+ b);
+
+ * : Quantity -> Quantity -> Quantity
+  | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.* b)
+};
 
 --- A fixed-size data type encoding the public commitment to the private nullifier key.
 type NullifierKeyCommitment :=
@@ -20,7 +36,7 @@ type NullifierKeyCommitment :=
 --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
 type Nonce :=
   mkNonce@{
-    unNonce : ByteArray;
+    unNonce : Nat;
   };
 
 --- A fixed-size data type encoding a randomness seed.
@@ -40,12 +56,6 @@ type Label :=
 type Value :=
   mkValue@{
     unValue : Nat;
-  };
-
---- The resource kind type.
-type Kind :=
-  mkKind@{
-    unKind : Nat;
   };
 
 --- The resource commitment type.
@@ -104,23 +114,6 @@ Nonce-Ord : Ord Nonce;
 
 deriving instance
 Nonce-Eq : Eq Nonce;
-
-instance
-Quantity-Natural : Natural Quantity :=
-  mkNatural@{
-    + (b1 b2 : Quantity) : Quantity :=
-      mkQuantity
-        ((Natural.+) (Quantity.unQuantity b1) (Quantity.unQuantity b2));
-    * (b1 b2 : Quantity) : Quantity :=
-      mkQuantity
-        ((Natural.*) (Quantity.unQuantity b1) (Quantity.unQuantity b2));
-  };
-
-instance
-Quantity-FromNatural : FromNatural Quantity :=
-  mkFromNatural@{
-    fromNat (n : Nat) : Quantity := mkQuantity n;
-  };
 
 instance
 RandSeed-FixedSize : FixedSize RandSeed := mkFixedSize 32;

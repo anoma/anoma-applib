@@ -1,0 +1,17 @@
+module Anoma.Resource.Computable;
+
+import Stdlib.Prelude open;
+import Anoma.Resource.Types open;
+import Anoma.Resource.Object open;
+
+builtin anoma-resource-commitment
+axiom commitment : Resource -> Nat;
+
+builtin anoma-resource-nullifier
+axiom nullifier : Resource -> Nat;
+
+builtin anoma-resource-kind
+axiom kind : Resource -> Kind;
+
+builtin anoma-resource-delta
+axiom resource-delta : Resource -> Delta;

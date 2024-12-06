@@ -13,7 +13,7 @@ type HasNonce ResourceT :=
 instance
 Resource-HasNonce : HasNonce Resource :=
   mkHasNonce@{
-    get (resource : Resource) : Nonce := Resource.nonce resource;
+    get (resource : Resource) : Nonce := mkNonce (Resource.nonce resource);
     set (nonce : Nonce) (resource : Resource) : Resource :=
-      resource@Resource{nonce := nonce};
+      resource@Resource{nonce := Nonce.unNonce nonce};
   };

@@ -1,0 +1,40 @@
+module Anoma.Identity.Object;
+
+import Stdlib.Prelude open;
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Anoma.Identity.External open;
+import Anoma.Identity.Internal open;
+
+--- A record describing an identity.
+--- NOTE: For the private testnet, this deviates from the specs https://specs.anoma.net/v2/system_architecture/identity/identity.html.
+type Identity :=
+  mkIdentity@{
+    external : ExternalIdentity;
+    internal : InternalIdentity;
+  };
+
+module IdentityInternal;
+  --- Compares two ;Identity; objects.
+  compare (lhs rhs : Identity) : Ordering :=
+    Ord.cmp (Identity.external lhs) (Identity.external rhs);
+
+  --- Implements the ;Ord; trait for ;Identity;.
+  instance
+  Identity-Ord : Ord Identity := mkOrd compare;
+
+  --- Implements the ;Eq; trait for ;Identity;.
+  instance
+  Identity-Eq : Eq Identity := fromOrdToEq;
+end;
+
+instance
+Identity-Show : Show Identity :=
+  mkShow
+    \{id :=
+      "{"
+        ++str "external : "
+        ++str (id |> Identity.external |> Show.show)
+        ++str ", "
+        ++str "internal : "
+        ++str (id |> Identity.internal |> Show.show)
+        ++str "}"};

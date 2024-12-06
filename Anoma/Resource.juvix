@@ -1,3 +1,5 @@
 module Anoma.Resource;
 
 import Anoma.Resource.Types open public;
+import Anoma.Resource.Computable open public;
+import Anoma.Resource.Object open public;
