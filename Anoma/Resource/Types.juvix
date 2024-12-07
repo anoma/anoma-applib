@@ -136,6 +136,11 @@ Nonce-Eq : Eq Nonce;
 instance
 RandSeed-FixedSize : FixedSize RandSeed := mkFixedSize 32;
 
+instance
+RandSeetFromNaturalI : FromNatural RandSeed := mkFromNatural@{
+    fromNat (n : Nat) : RandSeed := mkRandSeed (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
+};
+
 deriving instance
 RandSeed-Ord : Ord RandSeed;
 

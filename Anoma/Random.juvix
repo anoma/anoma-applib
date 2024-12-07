@@ -16,13 +16,14 @@ import Anoma.Resource.Types open using {
   module RandSeed;
   nonceFrom32SizedByteArray;
 };
+import Anoma.Builtin.ByteArray open;
 
 --- Creates and initializes a pure PRNG with a seed.
 --- @param seed The seed.
 --- @return The initialized PRNG.
 {-# inline: true #-}
 pseudoRandomNumberGeneratorInit (randSeed : RandSeed) : PRNG :=
-  SystemBuiltins.pseudoRandomNumberGeneratorInit (RandSeed.unRandSeed randSeed);
+  SystemBuiltins.pseudoRandomNumberGeneratorInit (toAnomaContents (RandSeed.unRandSeed randSeed));
 
 syntax alias prngInit := pseudoRandomNumberGeneratorInit;
 
