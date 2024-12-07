@@ -3,10 +3,16 @@ module Anoma.Resource.Types;
 import Stdlib.Prelude open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Primitives.FixedSize open;
+import Anoma.Builtin.System open;
 
 import BaseLayer.ResourceMachine as B;
 
 open B using {Kind} public;
+
+instance
+KindEq : Eq Kind := mkEq@{
+  eq (a b : Kind) : Bool := anomaEncode a == anomaEncode b;
+};
 
 --- A fixed-size data type encoding the quantity of a resource.
 type Quantity :=
@@ -31,6 +37,8 @@ type NullifierKeyCommitment :=
   mkNullifierKeyCommitment@{
     unNullifierKeyCommitment : ByteArray;
   };
+
+open NullifierKeyCommitment public;
 
 --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
 --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
