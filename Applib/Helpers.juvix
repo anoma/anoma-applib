@@ -10,6 +10,7 @@ import Anoma open;
 import Anoma.State open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Builtin.System open;
+import BaseLayer.ResourceMachine as BaseLayer;
 
 import Applib.Resource.Traits.Convertable open;
 
@@ -61,19 +62,16 @@ type StandardInputs :=
 
 type TagsAndCustomInputs :=
   mkTagsAndCustomInputs@{
-    tags : Set Tag;
+    tags : List Tag;
     customInputs : CustomInputs;
   };
 
-tagsToPair (tags : Set Tag) : Pair (Set Nullifier) (Set Commitment) :=
-  let
-    pair :=
-      (for (nfs, cms := [], []) (tag in Set.toList tags) {
+tagsToPair (tags : List Tag) : Pair (List Nullifier) (List Commitment) :=
+      for (nfs, cms := [], []) (tag in tags) {
         case tag of
           | Consumed nf := nfs ++ [nf], cms
           | Created cm := nfs, cms ++ [cm]
-      });
-  in Set.fromList (fst pair), Set.fromList (snd pair);
+      };
 
 pairtoTags
   (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
@@ -85,23 +83,23 @@ pairtoTags
       Created commitment
     };
 
-computeTags (consumed created : Set Resource) : Set Tag :=
+computeTags (consumed created : List Resource) : List Tag :=
   let
     nullifierTags :=
-      Set.map (r in consumed) {
+      map (r in consumed) {
         Consumed (nullifier r)
       };
     commitmentTags :=
-      Set.map (r in created) {
+      map (r in created) {
         Created (commitment r)
       };
-  in Set.union nullifierTags commitmentTags;
+  in nullifierTags ++ commitmentTags;
 
 computeTagsAndCustomInputs
-  (consumed created : Set Resource) : TagsAndCustomInputs :=
+  (consumed created : List Resource) : TagsAndCustomInputs :=
   let
-    consumed' : List Resource := Set.toList consumed;
-    created' : List Resource := Set.toList created;
+    consumed' : List Resource := consumed;
+    created' : List Resource := created;
 
     nullifiers' : List Nullifier :=
       map nullifier consumed';
@@ -109,47 +107,47 @@ computeTagsAndCustomInputs
 
     tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
   in mkTagsAndCustomInputs@{
-       tags := Set.fromList tags';
+       tags := tags';
        customInputs :=
          Map.fromList
            (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
      };
 
--- module ProvingHelpers;
---   findProvingKey
---     {T} (key : T) (customInputs : CustomInputs) : Logic.ProvingKey :=
---     case
---       lookupCustomInputs@{
---         key;
---         Value := Resource;
---         customInputs;
---       }
---     of
---       | just resource := Logic.mkProvingKey resource
---       | nothing :=
---         failwith
---           "Error. The proving key could not be found. This should never happen.";
+module ProvingHelpers;
+  findProvingKey
+    {T} (key : T) (customInputs : CustomInputs) : Logic.ProvingKey :=
+    case
+      lookupCustomInputs@{
+        key;
+        Value := Resource;
+        customInputs;
+      }
+    of
+      | just resource := Logic.mkProvingKey resource
+      | nothing :=
+        failwith
+          "Error. The proving key could not be found. This should never happen.";
 
---   createLogicProofRecord
---     (tag : Tag)
---     (publicInputs : Logic.Instance)
---     (privateInputs : Logic.Witness)
---     : ProofRecord :=
---     let
---       customInputs := Logic.Witness.customInputs privateInputs;
---       provingKey :=
---         case tag of
---           | Consumed nf := findProvingKey nf customInputs
---           | Created cm := findProvingKey cm customInputs;
---       proof : Logic.Proof :=
---         Logic.prove@{
---           provingKey;
---           publicInputs;
---           privateInputs;
---         };
---       verifyingKey := Logic.mkVerifyingKey unit;
---       proofRecord := Logic.mkProofRecord proof verifyingKey publicInputs;
---     in LogicProofRecord proofRecord;
+  createLogicProofRecord
+    (tag : Tag)
+    (publicInputs : Logic.Instance)
+    (privateInputs : Logic.Witness)
+    : ProofRecord :=
+    let
+      customInputs := Logic.Witness.customInputs privateInputs;
+      provingKey :=
+        case tag of
+          | Consumed nf := findProvingKey nf (anomaDecode customInputs)
+          | Created cm := findProvingKey cm (anomaDecode customInputs);
+      proof : Logic.Proof :=
+        Logic.prove@{
+          resource := provingKey;
+          publicInputs;
+          privateInputs;
+        };
+      verifyingKey := unit;
+      proofRecord := Logic.mkProofRecord proof verifyingKey publicInputs;
+    in LogicProofRecord proofRecord;
 
 --   emptyComplianceProofRecord : Compliance.ProofRecord :=
 --     let
@@ -184,9 +182,9 @@ computeTagsAndCustomInputs
 
 --   createDeltaProofRecord : ProofRecord :=
 --     DeltaProofRecord emptyDeltaProofRecord;
--- end;
+end;
 
--- open ProvingHelpers;
+open ProvingHelpers;
 
 -- Helps with the creation of an action ;Action;.
 -- @param identity The identity to derive the nullifier key from.
@@ -200,16 +198,16 @@ computeTagsAndCustomInputs
 mkActionHelper
   (consumed created : List Resource)
   (appData : Nat)
-  (customInputs : CustomInputs)
-  {tags : Set Tag := computeTags@{
+  (custom : CustomInputs)
+  {tags : List Tag := computeTags@{
                        consumed;
                        created;
                      }}
   : Action :=
   let
-    pair := tagsToPair tags;
-    nullifiers := fst pair;
-    commitments := snd pair;
+    (nullifiers, commitments) := tagsToPair tags;
+    rawNfs := map unNullifier nullifiers;
+    rawCms := map unCommitment commitments;
 
     -- Compute proofs
     logicProofs : List ProofRecord :=
@@ -218,37 +216,38 @@ mkActionHelper
           tag;
           publicInputs :=
             Logic.mkInstance@{
-              tag;
-              commitments;
-              nullifiers;
+              tag := tagToNat tag;
+              commitments := rawCms;
+              nullifiers := rawNfs;
               appData;
             };
           privateInputs :=
             Logic.mkWitness@{
               created;
               consumed;
-              customInputs;
+              customInputs := anomaEncode custom;
             };
         }
       };
-
-    -- Compute the compliance proofs (that currently are empty).
-    -- NOTE: Proof replicas will be deduplicated by ;Set;
-    complianceProofs : Set ProofRecord :=
-      Set.map (_ in tags) {
-        createComplianceProofRecord
-      };
+   complianceProofs := []
   in mkAction@{
-       commitments;
-       nullifiers;
-       proofRecords := Set.union logicProofs complianceProofs;
-       appData;
+       commitments := rawCms;
+       nullifiers := rawNfs;
+       proofs := map proofRecordToProof (logicProofs ++ complianceProofs);
+       app-data := appData;
      };
+
+logicProofRecordToProof (p : Logic.ProofRecord)  : Logic.Proof := Logic.ProofRecord.proof p;
+
+proofRecordToProof : ProofRecord -> Logic.Proof
+ | ComplianceProofRecord := failwith "proofRecordToProof"
+  | (LogicProofRecord logProof) :=  logicProofRecordToProof logProof
+  | DeltaProofRecord := failwith "proofRecordToProof";
 
 mkTransactionHelper
   (roots : List CommitmentTree.Root) (actions : List Action) : Transaction :=
   mkTransaction@{
-    roots;
+    roots := map CommitmentTree.unRoot roots;
     actions;
     delta := Delta.zero;
     delta-proof := 0;
@@ -268,8 +267,8 @@ emptyTx : Transaction :=
 --- @return The transaction object.
 prepareStandardTransaction
   (standardInputs : StandardInputs)
-  (consumed created : Set Resource)
-  {appData : Nat := Map.empty}
+  (consumed created : List Resource)
+  {appData : Nat := anomaEncode emptyCustomInputs}
   : Transaction :=
   let
     -- Put maps into the custom inputs that map:
@@ -281,17 +280,15 @@ prepareStandardTransaction
         created;
       };
   in mkTransactionHelper@{
-       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+       roots := [StandardInputs.currentRoot standardInputs];
        actions :=
-         Set.singleton
-           mkActionHelper@{
+           [mkActionHelper@{
              consumed;
              created;
              tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
              appData;
-             customInputs :=
-               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
-           };
+             custom := TagsAndCustomInputs.customInputs tagsAndCustomInputs;
+           }];
      };
 
 -- composeAll (txs : Set Transaction) : Transaction :=

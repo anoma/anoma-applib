@@ -23,6 +23,8 @@ type CustomInputsValue :=
 --- A type describing a map of custom inputs.
 CustomInputs : Type := Map CustomInputsKey CustomInputsValue;
 
+emptyCustomInputs : CustomInputs := Map.empty;
+
 deriving instance
 CustomInputsKey-Ord : Ord CustomInputsKey;
 
