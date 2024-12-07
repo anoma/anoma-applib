@@ -12,23 +12,6 @@ type Signature :=
   };
 
 {-# inline: true #-}
-verify
-  : {Message : Type}
-    -- | The signature to verify.
-    -> (signature : Signature)
-    -- | The message to verify against.
-    -> (message : Message)
-    -- | The signer external identity to verify against.
-    -> (signer : ExternalIdentity)
-    -- | The verification result.
-    -> Bool
-  | (mkSignature signature) message externalIdentity :=
-    SystemBuiltins.anomaVerifyDetached
-      signature
-      message
-      (ExternalIdentity.unExternalIdentity externalIdentity);
-
-{-# inline: true #-}
 sign
   : {Message : Type}
     -- | The message to sign.
@@ -42,49 +25,3 @@ sign
         message
         (InternalIdentity.unInternalIdentity internalIdentity)
       |> mkSignature;
-
---- TODO Consider deleting the definitions below.
-module NonDetached;
-  type SignedMessage :=
-    mkSignedMessage@{
-      unSignedMessage : ByteArray;
-    };
-
-  {-# inline: true #-}
-  verify
-    (signedMessage : SignedMessage)
-    (externalIdentity : ExternalIdentity)
-    : Bool :=
-    case verifyWithMessage {Unit} signedMessage externalIdentity of
-      | just _ := true
-      | nothing := false;
-
-  {-# inline: true #-}
-  verifyWithMessage
-    : {Message : Type}
-      -- | The signed message to verify.
-      -> (signedMessage : SignedMessage)
-      -- | The signer external identity to verify against.
-      -> (signer : ExternalIdentity)
-      -- | The original message.
-      -> Maybe Message
-    | (mkSignedMessage signedMessage) externalIdentity :=
-      SystemBuiltins.anomaVerifyWithMessage
-        signedMessage
-        (ExternalIdentity.unExternalIdentity externalIdentity);
-
-  {-# inline: true #-}
-  sign
-    : {Message : Type}
-      -- | The message to sign.
-      -> (message : Message)
-      -- | The signing internal identity.
-      -> (signer : InternalIdentity)
-      -- | The resulting signed message.
-      -> SignedMessage
-    | message internalIdentity :=
-      SystemBuiltins.anomaSign
-          message
-          (InternalIdentity.unInternalIdentity internalIdentity)
-        |> mkSignedMessage;
-end;
