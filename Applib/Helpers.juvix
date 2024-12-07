@@ -249,7 +249,7 @@ mkTransactionHelper
   mkTransaction@{
     roots := map CommitmentTree.unRoot roots;
     actions;
-    delta := Delta.zero;
+    delta := BaseLayer.zeroDelta;
     delta-proof := 0;
   };
 
