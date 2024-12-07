@@ -5,6 +5,7 @@ module Anoma;
 import Anoma.Resource open public;
 import Anoma.Transaction open public;
 import Anoma.Identity open public;
+import Anoma.Builtin.System open public;
 -- import Anoma.Generic.ProofRecord open public;
 -- import Anoma.Compliance as Compliance public;
 import Anoma.Logic as Logic public;

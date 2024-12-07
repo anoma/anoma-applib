@@ -8,6 +8,6 @@ package : Package :=
     version := mkVersion 0 6 0;
     dependencies :=
       [
-        github "anoma" "juvix-stdlib" "fde9ac23534fe1c0ba3f69714233dbd1d3934a9c";
+        defaultStdlib;
       ];
   };

@@ -64,11 +64,15 @@ type Commitment :=
     unCommitment : Nat;
   };
 
+open Commitment public;
+
 --- The resource nullifier type.
 type Nullifier :=
   mkNullifier@{
     unNullifier : Nat;
   };
+
+open Nullifier public;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 type NullifierKey :=
