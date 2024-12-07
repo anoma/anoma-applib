@@ -47,6 +47,12 @@ type Nonce :=
     unNonce : Nat;
   };
 
+nonceFromNat : Nat -> Nonce := mkNonce;
+
+nonceFrom32SizedByteArray : ByteArray -> Nonce := toAnomaContents >> nonceFromNat;
+
+nonceToNat : Nonce -> Nat := Nonce.unNonce;
+
 --- A fixed-size data type encoding a randomness seed.
 --- NOTE: This seed provides pseudo randomness and cannot be expected to provide true randomness.
 type RandSeed :=

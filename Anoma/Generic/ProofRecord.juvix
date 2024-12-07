@@ -1,0 +1,13 @@
+module Anoma.Generic.ProofRecord;
+
+import Stdlib.Prelude open;
+
+import Anoma.Logic.Types as Logic;
+import Anoma.Delta.Types as Delta;
+import Anoma.Utils open;
+
+--- A wrapper type for all of the supported proof record types.
+type ProofRecord :=
+  | ComplianceProofRecord
+  | LogicProofRecord Logic.ProofRecord
+  | DeltaProofRecord;
