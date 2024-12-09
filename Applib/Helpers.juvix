@@ -18,17 +18,40 @@ fromJust {A} : Maybe A -> A
   | nothing := failwith "fromJust"
   | (just x) := x;
 
-findResourceByTag (tag : Tag) (privateInputs : Logic.Witness) : Resource :=
+findResourceByNullifier
+  (nf : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
   let
-    hasCommitment (cm : Commitment) (r : Resource) : Bool := commitment r == cm;
-    hasNullifier (nf : Nullifier) (r : Resource) : Bool := nullifier r == nf;
-    getCreated (cm : Commitment) : Resource :=
-      fromJust (find (hasCommitment cm) (Logic.Witness.created privateInputs));
-    getConsumed (nf : Nullifier) : Resource :=
-      fromJust (find (hasNullifier nf) (Logic.Witness.consumed privateInputs));
-  in case tag of
-       | Created cm := getCreated cm
-       | Consumed nf := getConsumed nf;
+    hasNullifier (nf : Nat) (r : Resource) : Bool := base-nullifier r == nf;
+    getConsumed (nf : Nat) : Maybe Resource :=
+      find (hasNullifier nf) (Logic.Witness.consumed privateInputs);
+  in getConsumed nf;
+
+findResourceByCommitment
+  (cm : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  let
+    hasCommitment (cm : Nat) (r : Resource) : Bool := base-commitment r == cm;
+    getCreated (cm : Nat) : Maybe Resource :=
+      find (hasCommitment cm) (Logic.Witness.created privateInputs);
+  in getCreated cm;
+
+type ResourceStatus :=
+  | NonExisting
+  | CreatedRes Resource
+  | ConsumedRes Resource;
+
+fromStatus (status : ResourceStatus) : Resource :=
+  case status of
+    | CreatedRes r := r
+    | ConsumedRes r := r
+    | NonExisting := failwith "resource does not exist";
+
+findResource (tag : Nat) (privateInputs : Logic.Witness) : ResourceStatus :=
+  case findResourceByNullifier tag privateInputs of
+    | just consumed := ConsumedRes consumed
+    | nothing :=
+      case findResourceByCommitment tag privateInputs of
+        | just created := CreatedRes created
+        | nothing := NonExisting;
 
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
@@ -138,7 +161,8 @@ module ProvingHelpers;
       proof : Logic.Proof :=
         Logic.prove@{
           provingKey :=
-            Logic.mkProvingKey (findResourceByTag tag privateInputs);
+            Logic.mkProvingKey
+              (fromStatus (findResource (tagToNat tag) privateInputs));
           publicInputs;
           privateInputs;
         };
