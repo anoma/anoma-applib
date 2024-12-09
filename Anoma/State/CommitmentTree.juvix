@@ -15,6 +15,7 @@ type Path :=
   mkPath@{
     unPath : List Nat;
   };
+
 open Path public;
 
 deriving instance

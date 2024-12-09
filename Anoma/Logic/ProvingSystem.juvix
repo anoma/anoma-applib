@@ -9,4 +9,5 @@ prove
   (provingKey : ProvingKey)
   (publicInputs : Instance)
   (privateInputs : Witness)
-  : Proof := proofLogic (ProvingKey.unProvingKey provingKey) (publicInputs, privateInputs);
+  : Proof :=
+  proofLogic (ProvingKey.unProvingKey provingKey) (publicInputs, privateInputs);

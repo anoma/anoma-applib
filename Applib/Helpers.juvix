@@ -164,10 +164,11 @@ mkActionHelper
   {custom : CustomInputs := Map.empty}
   : Action :=
   let
-  tags := computeTags@{
-                        consumed;
-                        created;
-                      };
+    tags :=
+      computeTags@{
+        consumed;
+        created;
+      };
     (nullifiers', commitments') := tagsToPair tags;
     nullifiers := map Nullifier.unNullifier nullifiers';
     commitments := map Commitment.unCommitment commitments';
@@ -179,7 +180,7 @@ mkActionHelper
           tag;
           publicInputs :=
             Logic.mkInstance@{
-              tag := (tagToNat tag);
+              tag := tagToNat tag;
               commitments;
               nullifiers;
               appData;

@@ -76,67 +76,67 @@ mkResourceRelationshipAppDataEntry
 --   import Applib.Resource.Traits.Convertable open;
 --   import Applib.Transaction.Traits open;
 
-  -- --- Instantiates the ;ActionConvertable; trait with a parametrized function accepting `ConsumedTypedResource` and `CreatedTypedResource` being required to implement the ;Ord; and ;Convertable; traits.
-  -- --- The underlying inmplementation converts the typed resources to standard ;Resource;s and creates an ;Action; with
-  -- --- - authorization ;AppData; containing an ;AppData; entry for every consumed ;Resource;.
-  -- --- - custom inputs (;CustomInputs;) containing entries mapping nullifiers to consumed resources and commitments to created resources.
-  -- actionWithAuthorizationAppData
-  --   {ConsumedTypedResource CreatedTypedResource}
-  --   {{Ord ConsumedTypedResource}}
-  --   {{Ord CreatedTypedResource}}
-  --   {{Convertable ConsumedTypedResource}}
-  --   {{Convertable CreatedTypedResource}}
-  --   : ActionConvertable ConsumedTypedResource CreatedTypedResource :=
-  --   mkActionConvertable@{
-  --     toAction
-  --       (standardInputs : StandardInputs)
-  --       (consumedResources : Set ConsumedTypedResource)
-  --       (createdResources : Set CreatedTypedResource)
-  --       : Action :=
-  --       let
-  --         -- Convert typed resources to resources.
-  --         consumed :=
-  --           Set.map (r in consumedResources) {
-  --             Convertable.toResource r
-  --           };
-  --         created :=
-  --           Set.map (r in createdResources) {
-  --             Convertable.toResource r
-  --           };
+-- --- Instantiates the ;ActionConvertable; trait with a parametrized function accepting `ConsumedTypedResource` and `CreatedTypedResource` being required to implement the ;Ord; and ;Convertable; traits.
+-- --- The underlying inmplementation converts the typed resources to standard ;Resource;s and creates an ;Action; with
+-- --- - authorization ;AppData; containing an ;AppData; entry for every consumed ;Resource;.
+-- --- - custom inputs (;CustomInputs;) containing entries mapping nullifiers to consumed resources and commitments to created resources.
+-- actionWithAuthorizationAppData
+--   {ConsumedTypedResource CreatedTypedResource}
+--   {{Ord ConsumedTypedResource}}
+--   {{Ord CreatedTypedResource}}
+--   {{Convertable ConsumedTypedResource}}
+--   {{Convertable CreatedTypedResource}}
+--   : ActionConvertable ConsumedTypedResource CreatedTypedResource :=
+--   mkActionConvertable@{
+--     toAction
+--       (standardInputs : StandardInputs)
+--       (consumedResources : Set ConsumedTypedResource)
+--       (createdResources : Set CreatedTypedResource)
+--       : Action :=
+--       let
+--         -- Convert typed resources to resources.
+--         consumed :=
+--           Set.map (r in consumedResources) {
+--             Convertable.toResource r
+--           };
+--         created :=
+--           Set.map (r in createdResources) {
+--             Convertable.toResource r
+--           };
 
-  --         -- Put maps into the custom inputs that map:
-  --         -- - nullifiers to consumed resources
-  --         -- - commitments to created resources
-  --         tagsAndCustomInputs :=
-  --           computeTagsAndCustomInputs@{
-  --             consumed;
-  --             created;
-  --           };
-  --         tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
-  --         pair := tagsToPair tags;
-  --         nullifiers := fst pair;
-  --         commitments := snd pair;
+--         -- Put maps into the custom inputs that map:
+--         -- - nullifiers to consumed resources
+--         -- - commitments to created resources
+--         tagsAndCustomInputs :=
+--           computeTagsAndCustomInputs@{
+--             consumed;
+--             created;
+--           };
+--         tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
+--         pair := tagsToPair tags;
+--         nullifiers := fst pair;
+--         commitments := snd pair;
 
-  --         -- Put signed messages and signatures by the owner in the app data.
-  --         -- The signed messages link back to the original consumed resources, where the signature verification is part of the resource logic requiring the commitments of created resources to be part of the action.
-  --         appData :=
-  --           Set.map (nullifier in nullifiers) {
-  --               mkResourceRelationshipAppDataEntry@{
-  --                 signer :=
-  --                   Identity.internal (StandardInputs.caller standardInputs);
-  --                 origin := Consumed nullifier;
-  --                 mustBeConsumed := Set.empty;
-  --                 mustBeCreated := commitments;
-  --               }
-  --             }
-  --             |> Map.fromSet;
-  --       in mkActionHelper@{
-  --            consumed;
-  --            created;
-  --            appData;
-  --            customInputs :=
-  --              TagsAndCustomInputs.customInputs tagsAndCustomInputs;
-  --            tags;
-  --          };
-  --   };
+--         -- Put signed messages and signatures by the owner in the app data.
+--         -- The signed messages link back to the original consumed resources, where the signature verification is part of the resource logic requiring the commitments of created resources to be part of the action.
+--         appData :=
+--           Set.map (nullifier in nullifiers) {
+--               mkResourceRelationshipAppDataEntry@{
+--                 signer :=
+--                   Identity.internal (StandardInputs.caller standardInputs);
+--                 origin := Consumed nullifier;
+--                 mustBeConsumed := Set.empty;
+--                 mustBeCreated := commitments;
+--               }
+--             }
+--             |> Map.fromSet;
+--       in mkActionHelper@{
+--            consumed;
+--            created;
+--            appData;
+--            customInputs :=
+--              TagsAndCustomInputs.customInputs tagsAndCustomInputs;
+--            tags;
+--          };
+--   };
 -- end;

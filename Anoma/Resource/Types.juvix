@@ -10,9 +10,10 @@ import BaseLayer.ResourceMachine as B;
 open B using {Kind} public;
 
 instance
-KindEq : Eq Kind := mkEq@{
-  eq (a b : Kind) : Bool := anomaEncode a == anomaEncode b;
-};
+KindEq : Eq Kind :=
+  mkEq@{
+    eq (a b : Kind) : Bool := anomaEncode a == anomaEncode b;
+  };
 
 --- A fixed-size data type encoding the quantity of a resource.
 type Quantity :=
@@ -24,13 +25,14 @@ instance
 FromNaturalQuantityI : FromNatural Quantity := mkFromNatural mkQuantity;
 
 instance
-NaturalQuantityI : Natural Quantity := mkNatural@{
- + : Quantity -> Quantity -> Quantity
-  | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.+ b);
+NaturalQuantityI : Natural Quantity :=
+  mkNatural@{
+    + : Quantity -> Quantity -> Quantity
+      | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.+ b);
 
- * : Quantity -> Quantity -> Quantity
-  | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.* b)
-};
+    * : Quantity -> Quantity -> Quantity
+      | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.* b);
+  };
 
 --- A fixed-size data type encoding the public commitment to the private nullifier key.
 type NullifierKeyCommitment :=
@@ -49,7 +51,8 @@ type Nonce :=
 
 nonceFromNat : Nat -> Nonce := mkNonce;
 
-nonceFrom32SizedByteArray : ByteArray -> Nonce := toAnomaContents >> nonceFromNat;
+nonceFrom32SizedByteArray : ByteArray -> Nonce :=
+  toAnomaContents >> nonceFromNat;
 
 nonceToNat : Nonce -> Nat := Nonce.unNonce;
 
@@ -137,9 +140,11 @@ instance
 RandSeed-FixedSize : FixedSize RandSeed := mkFixedSize 32;
 
 instance
-RandSeetFromNaturalI : FromNatural RandSeed := mkFromNatural@{
-    fromNat (n : Nat) : RandSeed := mkRandSeed (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
-};
+RandSeetFromNaturalI : FromNatural RandSeed :=
+  mkFromNatural@{
+    fromNat (n : Nat) : RandSeed :=
+      mkRandSeed (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
+  };
 
 deriving instance
 RandSeed-Ord : Ord RandSeed;

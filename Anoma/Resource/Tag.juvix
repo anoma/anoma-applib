@@ -10,8 +10,8 @@ type Tag :=
   | Consumed Nullifier;
 
 tagToNat : Tag -> Nat
- | (Created x) := unCommitment x
- | (Consumed x) := unNullifier x;
+  | (Created x) := unCommitment x
+  | (Consumed x) := unNullifier x;
 
 deriving instance
 Tag-Ord : Ord Tag;

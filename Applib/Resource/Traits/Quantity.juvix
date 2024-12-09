@@ -13,7 +13,8 @@ type HasQuantity T :=
 instance
 Resource-HasQuantity : HasQuantity Resource :=
   mkHasQuantity@{
-    get (resource : Resource) : Quantity := mkQuantity (Resource.quantity resource);
+    get (resource : Resource) : Quantity :=
+      mkQuantity (Resource.quantity resource);
     set (quantity : Quantity) (resource : Resource) : Resource :=
       resource@Resource{quantity := Quantity.unQuantity quantity};
   };

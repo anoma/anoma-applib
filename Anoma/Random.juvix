@@ -23,7 +23,8 @@ import Anoma.Builtin.ByteArray open;
 --- @return The initialized PRNG.
 {-# inline: true #-}
 pseudoRandomNumberGeneratorInit (randSeed : RandSeed) : PRNG :=
-  SystemBuiltins.pseudoRandomNumberGeneratorInit (toAnomaContents (RandSeed.unRandSeed randSeed));
+  SystemBuiltins.pseudoRandomNumberGeneratorInit
+    (toAnomaContents (RandSeed.unRandSeed randSeed));
 
 syntax alias prngInit := pseudoRandomNumberGeneratorInit;
 
@@ -81,7 +82,8 @@ generateNextNonce (generator : PRNG) : Pair Nonce PRNG :=
 --- @return A pair containing the nonces and the advanced PRNG.
 generateNextNonces (n : Nat) (generator : PRNG) : Pair (List Nonce) PRNG :=
   let
-    pair : Pair (List ByteArray) PRNG := prngNextNBytes n  (FixedSize.byteSize {Nonce}) generator;
+    pair : Pair (List ByteArray) PRNG :=
+      prngNextNBytes n (FixedSize.byteSize {Nonce}) generator;
     nonces := map nonceFrom32SizedByteArray (fst pair);
   in nonces, snd pair;
 

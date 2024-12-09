@@ -19,12 +19,12 @@ builtin anoma-bytearray-from-anoma-contents
 axiom fromAnomaContents : Nat -> Nat -> ByteArray;
 
 instance
-  ByteArray-Ord : Ord ByteArray :=
-    let
-      prod (b : ByteArray) : _ := size b, toAnomaContents b;
-    in mkOrd@{
-         cmp (lhs rhs : ByteArray) : Ordering := Ord.cmp (prod lhs) (prod rhs);
-       };
+ByteArray-Ord : Ord ByteArray :=
+  let
+    prod (b : ByteArray) : _ := size b, toAnomaContents b;
+  in mkOrd@{
+       cmp (lhs rhs : ByteArray) : Ordering := Ord.cmp (prod lhs) (prod rhs);
+     };
 
 instance
 ByteArray-Eq : Eq ByteArray := fromOrdToEq;

@@ -19,4 +19,3 @@ import Anoma.Random open public;
 import Anoma.Utils as Utils public;
 
 import Anoma.Builtin.System open using {anomaEncode; anomaDecode} public;
-

@@ -13,8 +13,7 @@ type HasLogic ResourceT :=
 instance
 Resource-HasLogic : HasLogic Resource :=
   mkHasLogic@{
-    get (resource : Resource) : Logic :=
-      resource |> Resource.logic;
+    get (resource : Resource) : Logic := resource |> Resource.logic;
 
     set (logic : Logic) (resource : Resource) : Resource :=
       resource@Resource{logic};

@@ -6,8 +6,5 @@ package : Package :=
   defaultPackage@{
     name := "anoma-applib";
     version := mkVersion 0 6 0;
-    dependencies :=
-      [
-        defaultStdlib;
-      ];
+    dependencies := [defaultStdlib];
   };
