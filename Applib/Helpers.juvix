@@ -14,6 +14,22 @@ import BaseLayer.ResourceMachine as BaseLayer;
 
 import Applib.Resource.Traits.Convertable open;
 
+fromJust {A} : Maybe A -> A
+  | nothing := failwith "fromJust"
+  | (just x) := x;
+
+findResourceByTag (tag : Tag) (privateInputs : Logic.Witness) : Resource :=
+  let
+    hasCommitment (cm : Commitment) (r : Resource) : Bool := commitment r == cm;
+    hasNullifier (nf : Nullifier) (r : Resource) : Bool := nullifier r == nf;
+    getCreated (cm : Commitment) : Resource :=
+      fromJust (find (hasCommitment cm) (Logic.Witness.created privateInputs));
+    getConsumed (nf : Nullifier) : Resource :=
+      fromJust (find (hasNullifier nf) (Logic.Witness.consumed privateInputs));
+  in case tag of
+       | Created cm := getCreated cm
+       | Consumed nf := getConsumed nf;
+
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
@@ -67,11 +83,11 @@ type TagsAndCustomInputs :=
   };
 
 tagsToPair (tags : List Tag) : Pair (List Nullifier) (List Commitment) :=
-      for (nfs, cms := [], []) (tag in tags) {
-        case tag of
-          | Consumed nf := nfs ++ [nf], cms
-          | Created cm := nfs, cms ++ [cm]
-      };
+  for (nfs, cms := [], []) (tag in tags) {
+    case tag of
+      | Consumed nf := nfs ++ [nf], cms
+      | Created cm := nfs, cms ++ [cm]
+  };
 
 pairtoTags
   (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
@@ -101,8 +117,7 @@ computeTagsAndCustomInputs
     consumed' : List Resource := consumed;
     created' : List Resource := created;
 
-    nullifiers' : List Nullifier :=
-      map nullifier consumed';
+    nullifiers' : List Nullifier := map nullifier consumed';
     commitments' : List Commitment := map commitment created';
 
     tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
@@ -134,14 +149,10 @@ module ProvingHelpers;
     (privateInputs : Logic.Witness)
     : ProofRecord :=
     let
-      customInputs := Logic.Witness.customInputs privateInputs;
-      provingKey :=
-        case tag of
-          | Consumed nf := findProvingKey nf (anomaDecode customInputs)
-          | Created cm := findProvingKey cm (anomaDecode customInputs);
       proof : Logic.Proof :=
         Logic.prove@{
-          resource := provingKey;
+          provingKey :=
+            Logic.mkProvingKey (findResourceByTag tag privateInputs);
           publicInputs;
           privateInputs;
         };
@@ -197,17 +208,17 @@ open ProvingHelpers;
 -- @return The action object.
 mkActionHelper
   (consumed created : List Resource)
-  (appData : Nat)
-  (custom : CustomInputs)
-  {tags : List Tag := computeTags@{
-                       consumed;
-                       created;
-                     }}
+  {appData : Nat := 0}
+  {custom : CustomInputs := Map.empty}
   : Action :=
   let
-    (nullifiers, commitments) := tagsToPair tags;
-    rawNfs := map unNullifier nullifiers;
-    rawCms := map unCommitment commitments;
+  tags : List Tag := computeTags@{
+                        consumed;
+                        created;
+                      };
+    (nullifiers', commitments') := tagsToPair tags;
+    nullifiers := map Nullifier.unNullifier nullifiers';
+    commitments := map Commitment.unCommitment commitments';
 
     -- Compute proofs
     logicProofs : List ProofRecord :=
@@ -216,9 +227,9 @@ mkActionHelper
           tag;
           publicInputs :=
             Logic.mkInstance@{
-              tag := tagToNat tag;
-              commitments := rawCms;
-              nullifiers := rawNfs;
+              tag := (tagToNat tag);
+              commitments;
+              nullifiers;
               appData;
             };
           privateInputs :=
@@ -229,19 +240,21 @@ mkActionHelper
             };
         }
       };
-   complianceProofs := []
+
+    complianceProofs : List ProofRecord := [];
   in mkAction@{
-       commitments := rawCms;
-       nullifiers := rawNfs;
+       commitments;
+       nullifiers;
        proofs := map proofRecordToProof (logicProofs ++ complianceProofs);
        app-data := appData;
      };
 
-logicProofRecordToProof (p : Logic.ProofRecord)  : Logic.Proof := Logic.ProofRecord.proof p;
+logicProofRecordToProof (p : Logic.ProofRecord) : Logic.Proof :=
+  Logic.ProofRecord.proof p;
 
 proofRecordToProof : ProofRecord -> Logic.Proof
- | ComplianceProofRecord := failwith "proofRecordToProof"
-  | (LogicProofRecord logProof) :=  logicProofRecordToProof logProof
+  | (LogicProofRecord logProof) := logicProofRecordToProof logProof
+  | ComplianceProofRecord := failwith "proofRecordToProof"
   | DeltaProofRecord := failwith "proofRecordToProof";
 
 mkTransactionHelper
@@ -268,7 +281,7 @@ emptyTx : Transaction :=
 prepareStandardTransaction
   (standardInputs : StandardInputs)
   (consumed created : List Resource)
-  {appData : Nat := anomaEncode emptyCustomInputs}
+  {appData : Nat := 0}
   : Transaction :=
   let
     -- Put maps into the custom inputs that map:
@@ -282,13 +295,14 @@ prepareStandardTransaction
   in mkTransactionHelper@{
        roots := [StandardInputs.currentRoot standardInputs];
        actions :=
-           [mkActionHelper@{
+         [
+           mkActionHelper@{
              consumed;
              created;
-             tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
              appData;
              custom := TagsAndCustomInputs.customInputs tagsAndCustomInputs;
-           }];
+           };
+         ];
      };
 
 -- composeAll (txs : Set Transaction) : Transaction :=
