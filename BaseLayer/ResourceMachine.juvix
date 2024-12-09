@@ -58,21 +58,21 @@ ShowKindI : Show Kind :=
   };
 
 builtin anoma-resource-delta
-axiom resource-delta : Resource -> Delta;
+axiom resourceDelta : Resource -> Delta;
 
-type Logic-Proof : Type :=
+type LogicProof : Type :=
   mkLogicProof@{
     resource : Resource;
     inputs : Pair Instance Witness;
   };
 
-Compliance-Proof : Type := Nat;
+ComplianceProof : Type := Nat;
 
 type Proof :=
   | proofCompliance
   | proofLogic Resource (Pair Instance Witness);
 
-mkProofCompliance (_ : Compliance-Proof) : Proof := proofCompliance;
+mkProofCompliance (_ : ComplianceProof) : Proof := proofCompliance;
 
 mkProofLogic
   (resource : Resource)
@@ -110,13 +110,13 @@ axiom addDelta : Delta -> Delta -> Delta;
 builtin anoma-sub-delta
 axiom subDelta : Delta -> Delta -> Delta;
 
-Commitment-Root : Type := Nat;
+CommitmentRoot : Type := Nat;
 
 module Transaction;
   type Transaction :=
     mkTransaction@{
       --- root set for spent resources
-      roots : List Commitment-Root;
+      roots : List CommitmentRoot;
       actions : List Action;
       delta : Delta;
       deltaProof : Nat;
@@ -134,4 +134,4 @@ module Transaction;
 
 end;
 
-open Transaction using {Transaction; mkTransaction} public;
+open Transaction using {Transaction; mkTransaction; compose} public;

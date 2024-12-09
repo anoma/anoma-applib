@@ -10,8 +10,8 @@ import BaseLayer.ResourceMachine as B;
 
 open B using {
   Proof;
-  Logic-Proof;
-  Compliance-Proof;
+  LogicProof;
+  ComplianceProof;
   mkProofCompliance;
   proofLogic;
   proofCompliance;

@@ -235,7 +235,7 @@ proofRecordToProof : ProofRecord -> Logic.Proof
   | DeltaProofRecord := failwith "proofRecordToProof";
 
 mkTransactionHelper
-  (roots : List CommitmentTree.Root) (actions : List Action) : Transaction :=
+  {roots : List CommitmentTree.Root := []} (actions : List Action) : Transaction :=
   mkTransaction@{
     roots := map CommitmentTree.unRoot roots;
     actions;
@@ -282,10 +282,10 @@ prepareStandardTransaction
          ];
      };
 
--- composeAll (txs : Set Transaction) : Transaction :=
---   for (acc := emptyTx) (tx in txs) {
---     composeTransactions acc tx
---   };
+ composeAll (txs : Set Transaction) : Transaction :=
+   for (acc := emptyTx) (tx in txs) {
+     BaseLayer.compose acc tx
+   };
 
 fromResult
   {ErrorType}
