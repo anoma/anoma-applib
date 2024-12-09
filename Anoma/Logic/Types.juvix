@@ -63,7 +63,7 @@ module Proper;
        };
 end;
 
-syntax alias Logic := B.Resource-Logic;
+syntax alias Logic := B.Logic;
 
 type ProvingKey :=
   mkProvingKey@{

@@ -164,7 +164,7 @@ mkActionHelper
   {custom : CustomInputs := Map.empty}
   : Action :=
   let
-  tags : List Tag := computeTags@{
+  tags := computeTags@{
                         consumed;
                         created;
                       };
@@ -198,7 +198,7 @@ mkActionHelper
        commitments;
        nullifiers;
        proofs := map proofRecordToProof (logicProofs ++ complianceProofs);
-       app-data := appData;
+       appData := appData;
      };
 
 logicProofRecordToProof (p : Logic.ProofRecord) : Logic.Proof :=
@@ -215,7 +215,7 @@ mkTransactionHelper
     roots := map CommitmentTree.unRoot roots;
     actions;
     delta := BaseLayer.zeroDelta;
-    delta-proof := 0;
+    deltaProof := 0;
   };
 
 emptyTx : Transaction :=

@@ -2,21 +2,21 @@ module BaseLayer.ResourceMachine;
 
 import Stdlib.Prelude open;
 
-Resource-Logic : Type := Instance -> Witness -> Bool;
+Logic : Type := Instance -> Witness -> Bool;
 
 builtin anoma-resource
 type Resource :=
   mkResource@{
     label : Nat;
-    logic : Resource-Logic;
+    logic : Logic;
     ephemeral : Bool;
     quantity : Nat;
-    data : Nat;
+    value : Nat;
     --- 256 bits
-    nullifier-key : Nat;
+    nullifierKeyCommitment : Nat;
     --- nonce for commitments 256 bits
     nonce : Nat;
-    rseed : Nat;
+    randSeed : Nat;
   };
 
 positive
@@ -86,7 +86,7 @@ type Action :=
     commitments : List Nat;
     nullifiers : List Nat;
     proofs : List Proof;
-    app-data : Nat;
+    appData : Nat;
   };
 
 builtin anoma-action-delta
@@ -119,7 +119,7 @@ module Transaction;
       roots : List Commitment-Root;
       actions : List Action;
       delta : Delta;
-      delta-proof : Nat;
+      deltaProof : Nat;
     };
 
   open Transaction public;
@@ -129,7 +129,7 @@ module Transaction;
       roots := roots tx1 ++ roots tx2;
       actions := actions tx1 ++ actions tx2;
       delta := addDelta (delta tx1) (delta tx2);
-      delta-proof := 0;
+      deltaProof := 0;
     };
 
 end;
