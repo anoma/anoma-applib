@@ -129,20 +129,6 @@ computeTagsAndCustomInputs
      };
 
 module ProvingHelpers;
-  findProvingKey
-    {T} (key : T) (customInputs : CustomInputs) : Logic.ProvingKey :=
-    case
-      lookupCustomInputs@{
-        key;
-        Value := Resource;
-        customInputs;
-      }
-    of
-      | just resource := Logic.mkProvingKey resource
-      | nothing :=
-        failwith
-          "Error. The proving key could not be found. This should never happen.";
-
   createLogicProofRecord
     (tag : Tag)
     (publicInputs : Logic.Instance)
@@ -159,40 +145,6 @@ module ProvingHelpers;
       verifyingKey := unit;
       proofRecord := Logic.mkProofRecord proof verifyingKey publicInputs;
     in LogicProofRecord proofRecord;
-
---   emptyComplianceProofRecord : Compliance.ProofRecord :=
---     let
---       verifyingKey := Compliance.mkVerifyingKey unit;
---       provingKey := Compliance.mkProvingKey unit;
---       publicInputs := Compliance.mkInstance unit;
---       privateInputs := Compliance.mkWitness unit;
---       proof :=
---         Compliance.prove@{
---           provingKey;
---           publicInputs;
---           privateInputs;
---         };
---     in Compliance.mkProofRecord proof verifyingKey publicInputs;
-
---   createComplianceProofRecord : ProofRecord :=
---     ComplianceProofRecord emptyComplianceProofRecord;
-
---   emptyDeltaProofRecord : Delta.ProofRecord :=
---     let
---       verifyingKey := Delta.mkVerifyingKey unit;
---       provingKey := Delta.mkProvingKey unit;
---       publicInputs := Delta.mkInstance unit;
---       privateInputs := Delta.mkWitness unit;
---       proof :=
---         Delta.prove@{
---           provingKey;
---           publicInputs;
---           privateInputs;
---         };
---     in Delta.mkProofRecord proof verifyingKey publicInputs;
-
---   createDeltaProofRecord : ProofRecord :=
---     DeltaProofRecord emptyDeltaProofRecord;
 end;
 
 open ProvingHelpers;
