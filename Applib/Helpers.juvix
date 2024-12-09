@@ -95,7 +95,7 @@ toCustomInputsEntry
 type StandardInputs :=
   mkStandardInputs@{
     caller : Identity;
-    currentRoot : CommitmentTree.Root;
+    -- currentRoot : CommitmentTree.Root;
     randSeed : RandSeed;
   };
 
@@ -270,7 +270,7 @@ prepareStandardTransaction
         created;
       };
   in mkTransactionHelper@{
-       roots := [StandardInputs.currentRoot standardInputs];
+       roots :=  []; --[StandardInputs.currentRoot standardInputs];
        actions :=
          [
            mkActionHelper@{
