@@ -95,7 +95,7 @@ toCustomInputsEntry
 type StandardInputs :=
   mkStandardInputs@{
     caller : Identity;
-    -- currentRoot : CommitmentTree.Root;
+    currentRoot : CommitmentTree.Root;
     randSeed : RandSeed;
   };
 
@@ -235,7 +235,9 @@ proofRecordToProof : ProofRecord -> Logic.Proof
   | DeltaProofRecord := failwith "proofRecordToProof";
 
 mkTransactionHelper
-  {roots : List CommitmentTree.Root := []} (actions : List Action) : Transaction :=
+  {roots : List CommitmentTree.Root := []}
+  (actions : List Action)
+  : Transaction :=
   mkTransaction@{
     roots := map CommitmentTree.unRoot roots;
     actions;
@@ -270,7 +272,7 @@ prepareStandardTransaction
         created;
       };
   in mkTransactionHelper@{
-       roots :=  []; --[StandardInputs.currentRoot standardInputs];
+       roots := [StandardInputs.currentRoot standardInputs];
        actions :=
          [
            mkActionHelper@{
@@ -282,10 +284,10 @@ prepareStandardTransaction
          ];
      };
 
- composeAll (txs : Set Transaction) : Transaction :=
-   for (acc := emptyTx) (tx in txs) {
-     BaseLayer.compose acc tx
-   };
+composeAll (txs : Set Transaction) : Transaction :=
+  for (acc := emptyTx) (tx in txs) {
+    BaseLayer.compose acc tx
+  };
 
 fromResult
   {ErrorType}
