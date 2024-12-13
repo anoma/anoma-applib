@@ -1,0 +1,124 @@
+module Anoma.Random;
+
+import Stdlib.Prelude open;
+import Anoma.Primitives.FixedSize open;
+import Anoma.Builtin.ByteArray as ByteArray open using {ByteArray; mkByteArray};
+import Anoma.Builtin.System as SystemBuiltins;
+import Anoma.Builtin.System open using {
+  PseudoRandomNumberGenerator;
+  PRNG;
+} public;
+import Anoma.Resource.Types open using {
+  Nonce;
+  mkNonce;
+  RandSeed;
+  mkRandSeed;
+  module RandSeed;
+  nonceFrom32SizedByteArray;
+};
+import Anoma.Builtin.ByteArray open;
+
+--- Creates and initializes a pure PRNG with a seed.
+--- @param seed The seed.
+--- @return The initialized PRNG.
+{-# inline: true #-}
+pseudoRandomNumberGeneratorInit (randSeed : RandSeed) : PRNG :=
+  SystemBuiltins.pseudoRandomNumberGeneratorInit
+    (toAnomaContents (RandSeed.unRandSeed randSeed));
+
+syntax alias prngInit := pseudoRandomNumberGeneratorInit;
+
+--- Returns two distinct PRNGs.
+--- @param generator The generator to split.
+--- @return A pair of two distinct PRNGs.
+{-# inline: true #-}
+pseudoRandomNumberGeneratorSplit (generator : PRNG) : Pair PRNG PRNG :=
+  SystemBuiltins.pseudoRandomNumberGeneratorSplit generator;
+
+syntax alias prngSplit := pseudoRandomNumberGeneratorSplit;
+
+--- Generates pseudo-random bytes ;ByteArray; of the specified size and returns the updated PRNG.
+--- @param bytesSize The number of output bytes to generate.
+--- @param generator The generator to use.
+--- @return A pair containing the random number and the advanced PRNG.
+{-# inline: true #-}
+pseudoRandomNumberGeneratorNextBytes
+  (bytesSize : Nat) (generator : PRNG) : Pair ByteArray PRNG :=
+  SystemBuiltins.pseudoRandomNumberGeneratorNextBytes bytesSize generator;
+
+syntax alias prngNextBytes := pseudoRandomNumberGeneratorNextBytes;
+
+--- Generate a ;List; of `n` pseudo-random ;ByteArray;s of size `bytesSize` starting
+--- with a given `generator`.
+--- @param n The the number of nonces to generate.
+--- @param generator The generator to use.
+--- @return A pair containing the random byte arrays and the advanced PRNG.
+pseudoRandomNumberGeneratorNextNBytes
+  (n : Nat) (bytesSize : Nat) (generator : PRNG) : Pair (List ByteArray) PRNG :=
+  let
+    update (acc : Pair (List ByteArray) PRNG) : Pair (List ByteArray) PRNG :=
+      let
+        next :=
+          prngNextBytes@{
+            bytesSize;
+            generator := snd acc;
+          };
+      in fst next :: fst acc, snd next;
+  in iterate n update ([], generator);
+
+syntax alias prngNextNBytes := pseudoRandomNumberGeneratorNextNBytes;
+
+--- Generates a pseudo-random nonce ;Nonce; and returns the updated PRNG.
+--- @param generator The generator to use.
+--- @return A pair containing the random number and the advanced PRNG.
+generateNextNonce (generator : PRNG) : Pair Nonce PRNG :=
+  first
+    nonceFrom32SizedByteArray
+    (prngNextBytes (FixedSize.byteSize {Nonce}) generator);
+
+--- Generates a ;List; of pseudo-random nonces ;Nonce; and returns the updated PRNG.
+--- @param n The the number of nonces to generate.
+--- @param generator The generator to use.
+--- @return A pair containing the nonces and the advanced PRNG.
+generateNextNonces (n : Nat) (generator : PRNG) : Pair (List Nonce) PRNG :=
+  let
+    pair : Pair (List ByteArray) PRNG :=
+      prngNextNBytes n (FixedSize.byteSize {Nonce}) generator;
+    nonces := map nonceFrom32SizedByteArray (fst pair);
+  in nonces, snd pair;
+
+--- Generates a pseudo-random nonce from a randomness seed.
+--- @param randSeed The randomness seed for the PRNG.
+--- @return The nonce.
+generateNonce (randSeed : RandSeed) : Nonce :=
+  fst
+    generateNextNonce@{
+      generator := prngInit randSeed;
+    };
+
+--- Generates a pair of pseudo-random nonces from a randomness seed.
+--- @param randSeed The randomness seed for the PRNG.
+--- @return The pair of nonces.
+generateNoncePair (randSeed : RandSeed) : Pair Nonce Nonce :=
+  let
+    nonceAndPrng := generateNextNonce (prngInit (randSeed));
+    nonce1 := fst nonceAndPrng;
+    nonce2 := fst (generateNextNonce (snd nonceAndPrng));
+  in nonce1, nonce2;
+
+--- Generates a list of pseudo-random nonces from a randomness seed.
+--- @param n The the number of nonces to generate.
+--- @param randSeed The randomness seed for the PRNG.
+--- @return The list of nonces.
+generateNonces (n : Nat) (randSeed : RandSeed) : List Nonce :=
+  fst
+    generateNextNonces@{
+      n;
+      generator := prngInit randSeed;
+    };
+
+UnusedRandSeed : RandSeed :=
+  mkRandSeed
+    ByteArray.zero@{
+      length := FixedSize.byteSize {RandSeed};
+    };

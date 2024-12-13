@@ -1,0 +1,50 @@
+module Anoma.Transaction.CustomInputs;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Map as Map open using {Map};
+import Anoma.Builtin.ByteArray open using {ByteArray};
+import Anoma.Builtin.System open using {anomaEncode; anomaDecode};
+import Anoma.Utils open;
+
+--- A data type encoding the lookup key of custom inputs .
+--- TODO Add an equivalent to `anomaEncode` and `anomaDecode` to be able to change this to ;ByteArray;.
+type CustomInputsKey :=
+  mkCustomInputsKey@{
+    unCustomInputsKey : Nat;
+  };
+
+--- A data type encoding the lookup value of custom inputs.
+--- TODO Add an equivalent to `anomaEncode` and `anomaDecode` to be able to change this to ;ByteArray;.
+type CustomInputsValue :=
+  mkCustomInputsValue@{
+    unCustomInputsValue : Nat;
+  };
+
+--- A type describing a map of custom inputs.
+CustomInputs : Type := Map CustomInputsKey CustomInputsValue;
+
+emptyCustomInputs : CustomInputs := Map.empty;
+
+deriving instance
+CustomInputsKey-Ord : Ord CustomInputsKey;
+
+deriving instance
+CustomInputsKey-Eq : Eq CustomInputsKey;
+
+deriving instance
+CustomInputsValue-Ord : Ord CustomInputsValue;
+
+deriving instance
+CustomInputsValue-Eq : Eq CustomInputsValue;
+
+lookupCustomInputs
+  {Key Value : Type} (key : Key) (customInputs : CustomInputs) : Maybe Value :=
+  case
+    Map.lookup@{
+      key := anomaEncode key |> mkCustomInputsKey;
+      map := customInputs;
+    }
+  of
+    | nothing := nothing
+    | just value :=
+      just (value |> CustomInputsValue.unCustomInputsValue |> anomaDecode);

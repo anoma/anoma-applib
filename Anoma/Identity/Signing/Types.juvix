@@ -1,0 +1,27 @@
+module Anoma.Identity.Signing.Types;
+
+import Stdlib.Prelude open;
+import Anoma.Identity.Internal open;
+import Anoma.Identity.External open;
+import Anoma.Builtin.ByteArray as ByteArray open;
+import Anoma.Builtin.System as SystemBuiltins open;
+
+type Signature :=
+  mkSignature@{
+    unSignature : ByteArray;
+  };
+
+{-# inline: true #-}
+sign
+  : {Message : Type}
+    -- | The message to sign.
+    -> (message : Message)
+    -- | The signing internal identity.
+    -> (signer : InternalIdentity)
+    -- | The resulting signature
+    -> Signature
+  | message internalIdentity :=
+    SystemBuiltins.anomaSign
+        message
+        (InternalIdentity.unInternalIdentity internalIdentity)
+      |> mkSignature;

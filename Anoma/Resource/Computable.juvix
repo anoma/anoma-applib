@@ -1,0 +1,22 @@
+module Anoma.Resource.Computable;
+
+import Stdlib.Prelude open;
+import Anoma.Resource.Types open;
+import Anoma.Resource.Object open;
+import Anoma.Delta.Types open;
+
+builtin anoma-resource-commitment
+axiom base-commitment : Resource -> Nat;
+
+builtin anoma-resource-nullifier
+axiom base-nullifier : Resource -> Nat;
+
+nullifier : Resource -> Nullifier := base-nullifier >> mkNullifier;
+
+commitment : Resource -> Commitment := base-commitment >> mkCommitment;
+
+builtin anoma-resource-kind
+axiom kind : Resource -> Kind;
+
+builtin anoma-resource-delta
+axiom resource-delta : Resource -> Delta;

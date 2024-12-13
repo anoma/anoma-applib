@@ -1,12 +1,14 @@
 module Applib.Resource.Standards.Ownership;
 
 import Anoma open;
+import Stdlib.Data.Map as Map;
 import Applib.Resource.Standards.ValueMap open;
 
 ownershipStandardKey : ValueMapKey := toValueMapKey "owner";
 
-ownershipValueMapEntry (owner : ExternalIdentity) : ValueMapEntry :=
-  mkValueMapEntry@{
+ownershipValueMapEntry (owner : ExternalIdentity) : ValueMap :=
+  Map.insert@{
     key := ownershipStandardKey;
-    value := toValueMapValue owner;
+    elem := toValueMapValue owner;
+    map := Map.empty;
   };

@@ -5,9 +5,7 @@ import Stdlib.Debug open using {failwith};
 
 import Anoma open;
 import Applib.Helpers open;
-import Applib.Authorization.Check open;
-import Applib.Token.Resource open;
-import Applib.Token.Logic open;
+-- import Applib.Authorization.Check open;
 
 type DefaultError :=
   mkDefaultError@{

@@ -1,0 +1,54 @@
+module Anoma.Delta.Types;
+
+import Stdlib.Prelude open;
+-- import Anoma.Math open;
+import Anoma.Utils open;
+import Anoma.Builtin.System open;
+
+import BaseLayer.ResourceMachine as B;
+
+open B using {Delta} public;
+
+type VerifyingKey :=
+  mkVerifyingKey@{
+    unVerifyingKey : UNUSED;
+  };
+
+type ProvingKey :=
+  mkProvingKey@{
+    unProvingKey : UNUSED;
+  };
+
+type Instance :=
+  mkInstance@{
+    unInstance : UNUSED;
+  };
+
+type Witness :=
+  mkWitness@{
+    unWitness : UNUSED;
+  };
+
+--- The ;Delta; value zero.
+zero : Delta := STILL_MISSING_ANOMA_BUILTIN;
+
+--- Adds two ;Delta; values.
+addDelta (d1 d2 : Delta) : Delta := ANOMA_BACKEND_IMPLEMENTATION;
+
+deriving instance
+VerifyingKey-Ord : Ord VerifyingKey;
+
+deriving instance
+VerifyingKey-Eq : Eq VerifyingKey;
+
+deriving instance
+Instance-Ord : Ord Instance;
+
+deriving instance
+Instance-Eq : Eq Instance;
+
+deriving instance
+Witness-Ord : Ord Witness;
+
+deriving instance
+Witness-Eq : Eq Witness;

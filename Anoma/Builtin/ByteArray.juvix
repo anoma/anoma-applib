@@ -1,0 +1,37 @@
+module Anoma.Builtin.ByteArray;
+
+import Stdlib.Prelude open;
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+
+builtin bytearray
+axiom ByteArray : Type;
+
+builtin bytearray-from-list-byte
+axiom mkByteArray : List Byte -> ByteArray;
+
+builtin bytearray-length
+axiom size : ByteArray -> Nat;
+
+builtin anoma-bytearray-to-anoma-contents
+axiom toAnomaContents : ByteArray -> Nat;
+
+builtin anoma-bytearray-from-anoma-contents
+axiom fromAnomaContents : Nat -> Nat -> ByteArray;
+
+instance
+ByteArray-Ord : Ord ByteArray :=
+  let
+    prod (b : ByteArray) : _ := size b, toAnomaContents b;
+  in mkOrd@{
+       cmp (lhs rhs : ByteArray) : Ordering := Ord.cmp (prod lhs) (prod rhs);
+     };
+
+instance
+ByteArray-Eq : Eq ByteArray := fromOrdToEq;
+
+zero (length : Nat) : ByteArray :=
+  mkByteArray
+    replicate@{
+      resultLength := length;
+      value := 0x0;
+    };

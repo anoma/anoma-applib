@@ -4,16 +4,17 @@ import Stdlib.Prelude open;
 import Anoma open;
 
 trait
-type HasQuantity ResourceT :=
+type HasQuantity T :=
   mkHasQuantity@{
-    get : ResourceT -> Quantity;
-    set : Quantity -> ResourceT -> ResourceT;
+    get : T -> Quantity;
+    set : Quantity -> T -> T;
   };
 
 instance
 Resource-HasQuantity : HasQuantity Resource :=
   mkHasQuantity@{
-    get (resource : Resource) : Quantity := Resource.quantity resource;
+    get (resource : Resource) : Quantity :=
+      mkQuantity (Resource.quantity resource);
     set (quantity : Quantity) (resource : Resource) : Resource :=
-      resource@Resource{quantity := quantity};
+      resource@Resource{quantity := Quantity.unQuantity quantity};
   };

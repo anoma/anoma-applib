@@ -1,0 +1,137 @@
+module BaseLayer.ResourceMachine;
+
+import Stdlib.Prelude open;
+
+Logic : Type := Instance -> Witness -> Bool;
+
+builtin anoma-resource
+type Resource :=
+  mkResource@{
+    label : Nat;
+    logic : Logic;
+    ephemeral : Bool;
+    quantity : Nat;
+    value : Nat;
+    --- 256 bits
+    nullifierKeyCommitment : Nat;
+    --- nonce for commitments 256 bits
+    nonce : Nat;
+    randSeed : Nat;
+  };
+
+positive
+type Instance :=
+  mkInstance@{
+    commitments : List Nat;
+    nullifiers : List Nat;
+    tag : Nat;
+    appData : Nat;
+  };
+
+positive
+type Witness :=
+  mkWitness@{
+    created : List Resource;
+    consumed : List Resource;
+    customInputs : Nat;
+  };
+
+builtin anoma-delta
+axiom Delta : Type;
+
+builtin anoma-kind
+axiom Kind : Type;
+
+builtin anoma-resource-commitment
+axiom commitment : Resource -> Nat;
+
+builtin anoma-resource-nullifier
+axiom nullifier : Resource -> Nat;
+
+builtin anoma-resource-kind
+axiom kind : Resource -> Kind;
+
+instance
+ShowKindI : Show Kind :=
+  mkShow@{
+    show (_ : Kind) : String := "<kind>";
+  };
+
+builtin anoma-resource-delta
+axiom resourceDelta : Resource -> Delta;
+
+type LogicProof : Type :=
+  mkLogicProof@{
+    resource : Resource;
+    inputs : Pair Instance Witness;
+  };
+
+ComplianceProof : Type := Nat;
+
+type Proof :=
+  | proofCompliance
+  | proofLogic Resource (Pair Instance Witness);
+
+mkProofCompliance (_ : ComplianceProof) : Proof := proofCompliance;
+
+mkProofLogic
+  (resource : Resource)
+  (publicInputs : Instance)
+  (privateInputs : Witness)
+  : Proof := proofLogic resource (publicInputs, privateInputs);
+
+builtin anoma-action
+type Action :=
+  mkAction@{
+    commitments : List Nat;
+    nullifiers : List Nat;
+    proofs : List Proof;
+    appData : Nat;
+  };
+
+builtin anoma-action-delta
+axiom actionDelta : Action -> Delta;
+
+builtin anoma-actions-delta
+axiom actionsDelta : List Action -> Delta;
+
+builtin anoma-prove-action
+axiom proveAction : Action -> Nat;
+
+builtin anoma-prove-delta
+axiom proveDelta : Delta -> Nat;
+
+builtin anoma-zero-delta
+axiom zeroDelta : Delta;
+
+builtin anoma-add-delta
+axiom addDelta : Delta -> Delta -> Delta;
+
+builtin anoma-sub-delta
+axiom subDelta : Delta -> Delta -> Delta;
+
+CommitmentRoot : Type := Nat;
+
+module Transaction;
+  type Transaction :=
+    mkTransaction@{
+      --- root set for spent resources
+      roots : List CommitmentRoot;
+      actions : List Action;
+      delta : Delta;
+      deltaProof : Nat;
+    };
+
+  open Transaction public;
+
+  compose (tx1 tx2 : Transaction) : Transaction :=
+    mkTransaction@{
+      roots := roots tx1 ++ roots tx2;
+      actions := actions tx1 ++ actions tx2;
+      delta := addDelta (delta tx1) (delta tx2);
+      deltaProof := 0;
+    };
+
+end;
+
+open Transaction using {Transaction; mkTransaction; compose} public;

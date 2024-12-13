@@ -8,15 +8,8 @@ type Supply :=
   | Capped
   | Fixed Nullifier;
 
-instance
-Supply-Eq : Eq Supply :=
-  mkEq@{
-    eq : Supply -> Supply -> Bool
-      | Unbound Unbound := true
-      | Capped Capped := true
-      | (Fixed f1) (Fixed f2) := f1 == f2
-      | _ _ := false;
-  };
+deriving instance
+Supply-Eq : Eq Supply;
 
 instance
 Supply-Show : Show Supply :=

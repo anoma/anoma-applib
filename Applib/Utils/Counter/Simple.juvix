@@ -1,6 +1,0 @@
-module Applib.Utils.Counter.Simple;
-
-import Applib.Utils.Counter.Simple.Logic open public;
-import Applib.Utils.Counter.Simple.Resource open public;
-import Applib.Utils.Counter.Simple.Interface.Transaction open public;
-import Applib.Utils.Counter.Simple.Interface.Projection open public;

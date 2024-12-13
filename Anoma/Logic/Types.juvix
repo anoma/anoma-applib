@@ -1,0 +1,78 @@
+module Anoma.Logic.Types;
+
+import Anoma.Resource.Object open using {Resource};
+import Anoma.Resource.Tag open;
+import Anoma.Resource.Computable open;
+import Stdlib.Prelude open;
+import Stdlib.Debug open;
+
+import BaseLayer.ResourceMachine as B;
+
+open B using {
+  Proof;
+  LogicProof;
+  ComplianceProof;
+  mkProofCompliance;
+  proofLogic;
+  proofCompliance;
+} public;
+
+open B using {
+  Instance;
+  mkInstance;
+  module Instance;
+  Witness;
+  mkWitness;
+  module Witness;
+} public;
+
+syntax alias BaseLayerInstance := B.Instance;
+
+module Proper;
+  type Instance :=
+    mkInstance@{
+      commitments : List Nat;
+      nullifiers : List Nat;
+      tag : Tag;
+      appData : Nat;
+    };
+
+  fromBaseLayerInstance (b : B.Instance) (w : Witness) : Instance :=
+    let
+      btag := B.Instance.tag b;
+      isCommit (r : Resource) : Bool := base-commitment r == btag;
+      isNullifier (r : Resource) : Bool := base-nullifier r == btag;
+      findCommit : Maybe Resource := find isCommit (Witness.created w);
+      tag :=
+        case findCommit of
+          | just createdResource := Created (commitment createdResource)
+          | nothing :=
+            let
+              findNullifier : Maybe Resource :=
+                find isNullifier (Witness.consumed w);
+            in case findNullifier of
+                 | nothing :=
+                   failwith
+                     "impossible: tag didn't match any nullifier or commitment"
+                 | just consumedRes := Consumed (nullifier consumedRes);
+    in mkInstance@{
+         commitments := B.Instance.commitments b;
+         nullifiers := B.Instance.nullifiers b;
+         appData := B.Instance.appData b;
+         tag;
+       };
+end;
+
+syntax alias Logic := B.Logic;
+
+type ProvingKey :=
+  mkProvingKey@{
+    unProvingKey : Resource;
+  };
+
+type ProofRecord :=
+  mkProofRecord@{
+    proof : Proof;
+    verifyingKeyUNUSED : Unit;
+    instance : Instance;
+  };
