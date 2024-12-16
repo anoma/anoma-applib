@@ -1,0 +1,23 @@
+module Applib.Data.AnomaMap;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Map as Map open using {Map};
+import Anoma.Builtin.System open using {anomaEncode; anomaDecode};
+
+-- TODO add size
+
+module Private;
+  type AnomaMap := mkAnoma (Map Nat Nat);
+end;
+
+open Private using {AnomaMap} public;
+
+empty : AnomaMap := Private.mkAnoma Map.empty;
+
+lookup {Key Value : Type} : Key -> AnomaMap -> Maybe Value
+  | key (Private.mkAnoma a) :=
+    Map.lookup (anomaEncode key) a |> map anomaDecode;
+
+insert {Key Value : Type} : Key -> Value -> AnomaMap -> AnomaMap
+  | k v (Private.mkAnoma a) :=
+    Private.mkAnoma (Map.insert (anomaEncode k) (anomaEncode v) a);
