@@ -183,10 +183,7 @@ open ProvingHelpers;
 -- @param maybeCommitments Optional commitments to avoid recomputation.
 -- @return The action object.
 mkActionHelper
-  (consumed created : List Resource)
-  {appData : Nat := 0}
-  {custom : CustomInputs := Map.empty}
-  : Action :=
+  (consumed created : List Resource) {appData : Nat := 0} : Action :=
   let
     tags :=
       computeTags@{
@@ -213,7 +210,7 @@ mkActionHelper
             Logic.mkWitness@{
               created;
               consumed;
-              customInputs := anomaEncode custom;
+              customInputs := 0;
             };
         }
       };
@@ -262,27 +259,10 @@ prepareStandardTransaction
   (consumed created : List Resource)
   {appData : Nat := 0}
   : Transaction :=
-  let
-    -- Put maps into the custom inputs that map:
-    -- - nullifiers to consumed resources
-    -- - commitments to created resources
-    tagsAndCustomInputs :=
-      computeTagsAndCustomInputs@{
-        consumed;
-        created;
-      };
-  in mkTransactionHelper@{
-       roots := [StandardInputs.currentRoot standardInputs];
-       actions :=
-         [
-           mkActionHelper@{
-             consumed;
-             created;
-             appData;
-             custom := TagsAndCustomInputs.customInputs tagsAndCustomInputs;
-           };
-         ];
-     };
+  mkTransactionHelper@{
+    roots := [StandardInputs.currentRoot standardInputs];
+    actions := [mkActionHelper consumed created {appData}];
+  };
 
 composeAll (txs : Set Transaction) : Transaction :=
   for (acc := emptyTx) (tx in txs) {
