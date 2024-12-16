@@ -27,43 +27,49 @@ toNullifierKeyCommitment (identity : Identity) : NullifierKeyCommitment :=
 --- The ;Identity; generated from the seed `0x0000000000000000000000000000000000000000000000000000000000000000`
 --- (see, e.g., https://cyphr.me/ed25519_tool/ed.html) in little-endian byte order.
 module Universal;
+  bytes : List Byte :=
+    [
+      0x3b;
+      0x6a;
+      0x27;
+      0xbc;
+      0xce;
+      0xb6;
+      0xa4;
+      0x2d;
+      0x62;
+      0xa3;
+      0xa8;
+      0xd0;
+      0x2a;
+      0x6f;
+      0xd;
+      0x73;
+      0x65;
+      0x32;
+      0x15;
+      0x77;
+      0x1d;
+      0xe2;
+      0x43;
+      0xa6;
+      0x3a;
+      0xc0;
+      0x48;
+      0xa1;
+      0x8b;
+      0x59;
+      0xda;
+      0x29;
+    ];
+
+  pub : ByteArray := mkByteArray bytes;
+
+  secret : ByteArray := mkByteArray (replicate 32 0x0 ++ bytes);
+
   identity : Identity :=
     let
-      pubKeyBytes :=
-        [
-          0x3b;
-          0x6a;
-          0x27;
-          0xbc;
-          0xce;
-          0xb6;
-          0xa4;
-          0x2d;
-          0x62;
-          0xa3;
-          0xa8;
-          0xd0;
-          0x2a;
-          0x6f;
-          0xd;
-          0x73;
-          0x65;
-          0x32;
-          0x15;
-          0x77;
-          0x1d;
-          0xe2;
-          0x43;
-          0xa6;
-          0x3a;
-          0xc0;
-          0x48;
-          0xa1;
-          0x8b;
-          0x59;
-          0xda;
-          0x29;
-        ];
+      pubKeyBytes := bytes;
     in mkIdentity@{
          external := mkExternalIdentity (mkByteArray pubKeyBytes);
          internal :=
