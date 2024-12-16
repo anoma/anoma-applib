@@ -42,19 +42,23 @@ type NullifierKeyCommitment :=
 
 open NullifierKeyCommitment public;
 
+module Nonce;
 --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
 --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
-type Nonce :=
-  mkNonce@{
-    unNonce : Nat;
-  };
+type Nonce := mkNonce ByteArray;
 
-nonceFromNat : Nat -> Nonce := mkNonce;
+size : Nat := 32;
 
-nonceFrom32SizedByteArray : ByteArray -> Nonce :=
-  toAnomaContents >> nonceFromNat;
+fromNat : Nat -> Nonce := fromAnomaContents size >> mkNonce;
 
-nonceToNat : Nonce -> Nat := Nonce.unNonce;
+from32SizedByteArray : ByteArray -> Nonce := mkNonce;
+
+toNat : Nonce -> Nat
+  | (mkNonce nonce) := toAnomaContents nonce;
+
+end;
+
+open Nonce using {Nonce} public;
 
 --- A fixed-size data type encoding a randomness seed.
 --- NOTE: This seed provides pseudo randomness and cannot be expected to provide true randomness.
