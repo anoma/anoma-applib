@@ -47,12 +47,6 @@ isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
 
-lookupResource {A} (key : A) (customInputs : CustomInputs) : Maybe Resource :=
-  lookupCustomInputs@{
-    key;
-    customInputs;
-  };
-
 toAppDataEntry
   {Key Data : Type}
   (key : Key)
@@ -67,19 +61,6 @@ toAppDataEntry
         data := anomaEncode data;
         deletionCriterion;
       };
-
-toCustomInputsEntry
-  {Key Value : Type}
-  (key : Key)
-  (value : Value)
-  : Pair CustomInputsKey CustomInputsValue :=
-  mkCustomInputsKey@{
-    unCustomInputsKey := anomaEncode key;
-  }
-    , mkCustomInputsValue@{
-        unCustomInputsValue := anomaEncode value;
-      };
-
 --- Standard inputs to for transaction functions.
 --- NOTE: In the future, this will include more settings such as the information flow control flag.
 type StandardInputs :=
@@ -87,12 +68,6 @@ type StandardInputs :=
     caller : Identity;
     currentRoot : CommitmentTree.Root;
     randSeed : RandSeed;
-  };
-
-type TagsAndCustomInputs :=
-  mkTagsAndCustomInputs@{
-    tags : List Tag;
-    customInputs : CustomInputs;
   };
 
 mkActionHelper
