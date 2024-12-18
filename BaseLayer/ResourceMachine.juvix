@@ -25,7 +25,7 @@ type Instance :=
     commitments : List Nat;
     nullifiers : List Nat;
     tag : Nat;
-    appData : Nat;
+    app-data : Nat;
   };
 
 positive
@@ -86,7 +86,7 @@ type Action :=
     commitments : List Nat;
     nullifiers : List Nat;
     proofs : List Proof;
-    appData : Nat;
+    app-data : Nat;
   };
 
 builtin anoma-action-delta

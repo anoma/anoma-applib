@@ -14,24 +14,20 @@ import BaseLayer.ResourceMachine as BaseLayer;
 
 import Applib.Resource.Traits.Convertable open;
 
-fromJust {A} : Maybe A -> A
-  | nothing := failwith "fromJust"
-  | (just x) := x;
-
 findResourceByNullifier
-  (nf : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
-    hasNullifier (nf : Nat) (r : Resource) : Bool := base-nullifier r == nf;
+    hasNullifier (nf : Nat) (r : Resource) : Bool := BaseLayer.nullifier r == nf;
     getConsumed (nf : Nat) : Maybe Resource :=
-      find (hasNullifier nf) (Logic.Witness.consumed privateInputs);
+      find (hasNullifier nf) (BaseLayer.Witness.consumed privateInputs);
   in getConsumed nf;
 
 findResourceByCommitment
-  (cm : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  (cm : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
-    hasCommitment (cm : Nat) (r : Resource) : Bool := base-commitment r == cm;
+    hasCommitment (cm : Nat) (r : Resource) : Bool := BaseLayer.commitment r == cm;
     getCreated (cm : Nat) : Maybe Resource :=
-      find (hasCommitment cm) (Logic.Witness.created privateInputs);
+      find (hasCommitment cm) (BaseLayer.Witness.created privateInputs);
   in getCreated cm;
 
 type ResourceStatus :=
@@ -39,13 +35,7 @@ type ResourceStatus :=
   | CreatedRes Resource
   | ConsumedRes Resource;
 
-fromStatus (status : ResourceStatus) : Resource :=
-  case status of
-    | CreatedRes r := r
-    | ConsumedRes r := r
-    | NonExisting := failwith "resource does not exist";
-
-findResource (tag : Nat) (privateInputs : Logic.Witness) : ResourceStatus :=
+findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
   case findResourceByNullifier tag privateInputs of
     | just consumed := ConsumedRes consumed
     | nothing :=
@@ -105,118 +95,38 @@ type TagsAndCustomInputs :=
     customInputs : CustomInputs;
   };
 
-tagsToPair (tags : List Tag) : Pair (List Nullifier) (List Commitment) :=
-  for (nfs, cms := [], []) (tag in tags) {
-    case tag of
-      | Consumed nf := nfs ++ [nf], cms
-      | Created cm := nfs, cms ++ [cm]
-  };
-
-pairtoTags
-  (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
-  Set.union
-    Set.map (nullifier in nullifiers) {
-      Consumed nullifier
-    }
-    Set.map (commitment in commitments) {
-      Created commitment
-    };
-
-computeTags (consumed created : List Resource) : List Tag :=
-  let
-    nullifierTags :=
-      map (r in consumed) {
-        Consumed (nullifier r)
-      };
-    commitmentTags :=
-      map (r in created) {
-        Created (commitment r)
-      };
-  in nullifierTags ++ commitmentTags;
-
-computeTagsAndCustomInputs
-  (consumed created : List Resource) : TagsAndCustomInputs :=
-  let
-    consumed' : List Resource := consumed;
-    created' : List Resource := created;
-
-    nullifiers' : List Nullifier := map nullifier consumed';
-    commitments' : List Commitment := map commitment created';
-
-    tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
-  in mkTagsAndCustomInputs@{
-       tags := tags';
-       customInputs :=
-         Map.fromList
-           (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
-     };
-
-module ProvingHelpers;
-  createLogicProofRecord
-    (tag : Tag)
-    (publicInputs : Logic.Instance)
-    (privateInputs : Logic.Witness)
-    : BaseLayer.Proof :=
-    let
-      proof : Logic.Proof :=
-        Logic.prove@{
-          provingKey :=
-            Logic.mkProvingKey
-              (fromStatus (findResource (tagToNat tag) privateInputs));
-          publicInputs;
-          privateInputs;
-        };
-    in proof;
-end;
-
-open ProvingHelpers;
-
--- Helps with the creation of an action ;Action;.
--- @param identity The identity to derive the nullifier key from.
--- @param consumed The resources being consumed in this action.
--- @param created The resources being created in this action.
--- @param appData The app data of the action.
--- @param customInputs The custom inputs of the action.
--- @param maybeNullifiers Optional nullifiers to avoid recomputation.
--- @param maybeCommitments Optional commitments to avoid recomputation.
--- @return The action object.
 mkActionHelper
-  (consumed created : List Resource) {appData : Nat := 0} : Action :=
+  (consumed created : List Resource) {app-data : Nat := 0} : Action :=
   let
-    tags :=
-      computeTags@{
-        consumed;
-        created;
-      };
-    (nullifiers', commitments') := tagsToPair tags;
-    nullifiers := map Nullifier.unNullifier nullifiers';
-    commitments := map Commitment.unCommitment commitments';
+    nullifiers := map BaseLayer.nullifier consumed;
+    commitments := map BaseLayer.commitment created;
+    all-resources := zip consumed nullifiers ++ zip created commitments;
 
+    public-inputs : Nat -> BaseLayer.Instance
+      | tag :=
+        BaseLayer.mkInstance@{
+          commitments;
+          nullifiers;
+          tag;
+          app-data;
+        };
+
+    private :=
+      BaseLayer.mkWitness@{
+        created;
+        consumed;
+        customInputs := 0;
+      };
     -- Compute proofs
     logicProofs : List BaseLayer.Proof :=
-      map (tag in tags) {
-        createLogicProofRecord@{
-          tag;
-          publicInputs :=
-            Logic.mkInstance@{
-              tag := tagToNat tag;
-              commitments;
-              nullifiers;
-              appData;
-            };
-          privateInputs :=
-            Logic.mkWitness@{
-              created;
-              consumed;
-              customInputs := 0;
-            };
-        }
+      map (resource, tag in all-resources) {
+        BaseLayer.proofLogic resource (public-inputs tag, private)
       };
   in mkAction@{
        commitments;
        nullifiers;
        proofs := logicProofs;
-       appData := appData;
+       app-data;
      };
 
 mkTransactionHelper
@@ -245,11 +155,11 @@ emptyTx : Transaction :=
 prepareStandardTransaction
   (standardInputs : StandardInputs)
   (consumed created : List Resource)
-  {appData : Nat := 0}
+  {app-data : Nat := 0}
   : Transaction :=
   mkTransactionHelper@{
     roots := [StandardInputs.currentRoot standardInputs];
-    actions := [mkActionHelper consumed created {appData}];
+    actions := [mkActionHelper consumed created {app-data}];
   };
 
 composeAll (txs : Set Transaction) : Transaction :=
