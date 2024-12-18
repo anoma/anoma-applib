@@ -69,10 +69,3 @@ type ProvingKey :=
   mkProvingKey@{
     unProvingKey : Resource;
   };
-
-type ProofRecord :=
-  mkProofRecord@{
-    proof : Proof;
-    verifyingKeyUNUSED : Unit;
-    instance : Instance;
-  };
