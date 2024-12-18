@@ -156,7 +156,7 @@ module ProvingHelpers;
     (tag : Tag)
     (publicInputs : Logic.Instance)
     (privateInputs : Logic.Witness)
-    : ProofRecord :=
+    : BaseLayer.Proof :=
     let
       proof : Logic.Proof :=
         Logic.prove@{
@@ -166,9 +166,7 @@ module ProvingHelpers;
           publicInputs;
           privateInputs;
         };
-      verifyingKey := unit;
-      proofRecord := Logic.mkProofRecord proof verifyingKey publicInputs;
-    in LogicProofRecord proofRecord;
+    in proof;
 end;
 
 open ProvingHelpers;
@@ -195,7 +193,7 @@ mkActionHelper
     commitments := map Commitment.unCommitment commitments';
 
     -- Compute proofs
-    logicProofs : List ProofRecord :=
+    logicProofs : List BaseLayer.Proof :=
       map (tag in tags) {
         createLogicProofRecord@{
           tag;
@@ -214,22 +212,12 @@ mkActionHelper
             };
         }
       };
-
-    complianceProofs : List ProofRecord := [];
   in mkAction@{
        commitments;
        nullifiers;
-       proofs := map proofRecordToProof (logicProofs ++ complianceProofs);
+       proofs := logicProofs;
        appData := appData;
      };
-
-logicProofRecordToProof (p : Logic.ProofRecord) : Logic.Proof :=
-  Logic.ProofRecord.proof p;
-
-proofRecordToProof : ProofRecord -> Logic.Proof
-  | (LogicProofRecord logProof) := logicProofRecordToProof logProof
-  | ComplianceProofRecord := failwith "proofRecordToProof"
-  | DeltaProofRecord := failwith "proofRecordToProof";
 
 mkTransactionHelper
   {roots : List CommitmentTree.Root := []}
