@@ -11,7 +11,6 @@ module Applib.Resource.Traits;
 -- import Applib.Resource.Traits.NullifierKey open public;
 -- import Applib.Resource.Traits.Originator open public;
 -- import Applib.Resource.Traits.Owner open public;
-import Applib.Resource.Traits.Quantity open public;
 -- import Applib.Resource.Traits.Supply open public;
 -- import Applib.Resource.Traits.Transferability open public;
 

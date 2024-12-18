@@ -15,25 +15,6 @@ KindEq : Eq Kind :=
     eq (a b : Kind) : Bool := anomaEncode a == anomaEncode b;
   };
 
---- A fixed-size data type encoding the quantity of a resource.
-type Quantity :=
-  mkQuantity@{
-    unQuantity : Nat;
-  };
-
-instance
-FromNaturalQuantityI : FromNatural Quantity := mkFromNatural mkQuantity;
-
-instance
-NaturalQuantityI : Natural Quantity :=
-  mkNatural@{
-    + : Quantity -> Quantity -> Quantity
-      | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.+ b);
-
-    * : Quantity -> Quantity -> Quantity
-      | (mkQuantity a) (mkQuantity b) := mkQuantity (a Natural.* b);
-  };
-
 --- A fixed-size data type encoding the public commitment to the private nullifier key.
 type NullifierKeyCommitment :=
   mkNullifierKeyCommitment@{
@@ -112,12 +93,6 @@ Value-Ord : Ord Value;
 
 deriving instance
 Value-Eq : Eq Value;
-
-deriving instance
-Quantity-Ord : Ord Quantity;
-
-deriving instance
-Quantity-Eq : Eq Quantity;
 
 --- Implements the ;FixedSize; trait for ;NullifierKeyCommitment;.
 instance
