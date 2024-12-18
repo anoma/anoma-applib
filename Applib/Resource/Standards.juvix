@@ -1,4 +1,0 @@
-module Applib.Resource.Standards;
-
-import Applib.Resource.Standards.ValueMap as ValueMap public;
-import Applib.Resource.Standards.Ownership as Ownership public;
