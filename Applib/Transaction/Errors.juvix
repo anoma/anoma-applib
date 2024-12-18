@@ -22,8 +22,8 @@ type InsufficientElementsError :=
 
 type InsufficientHasQuantityError :=
   mkInsufficientHasQuantityError@{
-    limit : Quantity;
-    actual : Quantity;
+    limit : Nat;
+    actual : Nat;
   };
 
 type InvalidLogicError :=
@@ -139,13 +139,11 @@ InsufficientHasQuantityError-Show : Show InsufficientHasQuantityError :=
         ++str "limit : "
         ++str (e
           |> InsufficientHasQuantityError.limit
-          |> Quantity.unQuantity
           |> Show.show)
         ++str ", "
         ++str "actual"
         ++str (e
           |> InsufficientHasQuantityError.actual
-          |> Quantity.unQuantity
           |> Show.show)
         ++str "}"};
 
