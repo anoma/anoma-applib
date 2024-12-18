@@ -1,4 +1,0 @@
-module Applib.Resource;
-
-import Applib.Transaction.Errors as Errors public;
-import Applib.Resource.Standards as Standards public;
