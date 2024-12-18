@@ -53,21 +53,6 @@ lookupResource {A} (key : A) (customInputs : CustomInputs) : Maybe Resource :=
     customInputs;
   };
 
-toAppDataEntry
-  {Key Data : Type}
-  (key : Key)
-  (data : Data)
-  {deletionCriterion : DeletionCriterion := StoreForever}
-  : Pair AppDataKey AppDataValue :=
-
-  mkAppDataKey@{
-    unAppDataKey := anomaEncode key;
-  }
-    , mkAppDataValue@{
-        data := anomaEncode data;
-        deletionCriterion;
-      };
-
 toCustomInputsEntry
   {Key Value : Type}
   (key : Key)
@@ -96,7 +81,7 @@ type TagsAndCustomInputs :=
   };
 
 mkActionHelper
-  (consumed created : List Resource) {app-data : Nat := 0} : Action :=
+  (consumed created : List Resource) {app-data : Nat := 0} : BaseLayer.Action :=
   let
     nullifiers := map BaseLayer.nullifier consumed;
     commitments := map BaseLayer.commitment created;
@@ -122,7 +107,7 @@ mkActionHelper
       map (resource, tag in all-resources) {
         BaseLayer.proofLogic resource (public-inputs tag, private)
       };
-  in mkAction@{
+  in BaseLayer.mkAction@{
        commitments;
        nullifiers;
        proofs := logicProofs;
@@ -131,16 +116,16 @@ mkActionHelper
 
 mkTransactionHelper
   {roots : List CommitmentTree.Root := []}
-  (actions : List Action)
-  : Transaction :=
-  mkTransaction@{
+  (actions : List BaseLayer.Action)
+  : BaseLayer.Transaction :=
+  BaseLayer.mkTransaction@{
     roots := map CommitmentTree.unRoot roots;
     actions;
     delta := BaseLayer.zeroDelta;
     deltaProof := 0;
   };
 
-emptyTx : Transaction :=
+emptyTx : BaseLayer.Transaction :=
   mkTransactionHelper@{
     roots := [];
     actions := [];
@@ -156,13 +141,13 @@ prepareStandardTransaction
   (standardInputs : StandardInputs)
   (consumed created : List Resource)
   {app-data : Nat := 0}
-  : Transaction :=
+  : BaseLayer.Transaction :=
   mkTransactionHelper@{
     roots := [StandardInputs.currentRoot standardInputs];
     actions := [mkActionHelper consumed created {app-data}];
   };
 
-composeAll (txs : Set Transaction) : Transaction :=
+composeAll (txs : Set BaseLayer.Transaction) : BaseLayer.Transaction :=
   for (acc := emptyTx) (tx in txs) {
     BaseLayer.compose acc tx
   };
