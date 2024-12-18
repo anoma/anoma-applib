@@ -2,8 +2,8 @@ module Anoma;
 
 -- import Anoma.Random open public;
 -- import Anoma.Primitives open public;
+
 import Anoma.Resource open public;
-import Anoma.Transaction open public;
 import Anoma.Identity open public;
 import Anoma.Builtin.ByteArray open public;
 -- import Anoma.Compliance as Compliance public;
