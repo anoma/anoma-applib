@@ -15,19 +15,19 @@ import BaseLayer.ResourceMachine as BaseLayer;
 import Applib.Resource.Traits.Convertable open;
 
 findResourceByNullifier
-  (nf : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
     hasNullifier (nf : Nat) (r : Resource) : Bool := BaseLayer.nullifier r == nf;
     getConsumed (nf : Nat) : Maybe Resource :=
-      find (hasNullifier nf) (Logic.Witness.consumed privateInputs);
+      find (hasNullifier nf) (BaseLayer.Witness.consumed privateInputs);
   in getConsumed nf;
 
 findResourceByCommitment
-  (cm : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  (cm : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
     hasCommitment (cm : Nat) (r : Resource) : Bool := BaseLayer.commitment r == cm;
     getCreated (cm : Nat) : Maybe Resource :=
-      find (hasCommitment cm) (Logic.Witness.created privateInputs);
+      find (hasCommitment cm) (BaseLayer.Witness.created privateInputs);
   in getCreated cm;
 
 type ResourceStatus :=
@@ -35,7 +35,7 @@ type ResourceStatus :=
   | CreatedRes Resource
   | ConsumedRes Resource;
 
-findResource (tag : Nat) (privateInputs : Logic.Witness) : ResourceStatus :=
+findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
   case findResourceByNullifier tag privateInputs of
     | just consumed := ConsumedRes consumed
     | nothing :=
@@ -102,9 +102,9 @@ mkActionHelper
     commitments := map BaseLayer.commitment created;
     all-resources := zip consumed nullifiers ++ zip created commitments;
 
-    public-inputs : Nat -> Logic.Instance
+    public-inputs : Nat -> BaseLayer.Instance
       | tag :=
-        Logic.mkInstance@{
+        BaseLayer.mkInstance@{
           commitments;
           nullifiers;
           tag;
@@ -112,7 +112,7 @@ mkActionHelper
         };
 
     private :=
-      Logic.mkWitness@{
+      BaseLayer.mkWitness@{
         created;
         consumed;
         customInputs := 0;
