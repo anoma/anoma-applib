@@ -10,8 +10,48 @@ import Anoma open;
 import Anoma.State open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Builtin.System open;
+import BaseLayer.ResourceMachine as BaseLayer;
 
 import Applib.Resource.Traits.Convertable open;
+
+fromJust {A} : Maybe A -> A
+  | nothing := failwith "fromJust"
+  | (just x) := x;
+
+findResourceByNullifier
+  (nf : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  let
+    hasNullifier (nf : Nat) (r : Resource) : Bool := base-nullifier r == nf;
+    getConsumed (nf : Nat) : Maybe Resource :=
+      find (hasNullifier nf) (Logic.Witness.consumed privateInputs);
+  in getConsumed nf;
+
+findResourceByCommitment
+  (cm : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
+  let
+    hasCommitment (cm : Nat) (r : Resource) : Bool := base-commitment r == cm;
+    getCreated (cm : Nat) : Maybe Resource :=
+      find (hasCommitment cm) (Logic.Witness.created privateInputs);
+  in getCreated cm;
+
+type ResourceStatus :=
+  | NonExisting
+  | CreatedRes Resource
+  | ConsumedRes Resource;
+
+fromStatus (status : ResourceStatus) : Resource :=
+  case status of
+    | CreatedRes r := r
+    | ConsumedRes r := r
+    | NonExisting := failwith "resource does not exist";
+
+findResource (tag : Nat) (privateInputs : Logic.Witness) : ResourceStatus :=
+  case findResourceByNullifier tag privateInputs of
+    | just consumed := ConsumedRes consumed
+    | nothing :=
+      case findResourceByCommitment tag privateInputs of
+        | just created := CreatedRes created
+        | nothing := NonExisting;
 
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
@@ -61,19 +101,16 @@ type StandardInputs :=
 
 type TagsAndCustomInputs :=
   mkTagsAndCustomInputs@{
-    tags : Set Tag;
+    tags : List Tag;
     customInputs : CustomInputs;
   };
 
-tagsToPair (tags : Set Tag) : Pair (Set Nullifier) (Set Commitment) :=
-  let
-    pair :=
-      (for (nfs, cms := [], []) (tag in Set.toList tags) {
-        case tag of
-          | Consumed nf := nfs ++ [nf], cms
-          | Created cm := nfs, cms ++ [cm]
-      });
-  in Set.fromList (fst pair), Set.fromList (snd pair);
+tagsToPair (tags : List Tag) : Pair (List Nullifier) (List Commitment) :=
+  for (nfs, cms := [], []) (tag in tags) {
+    case tag of
+      | Consumed nf := nfs ++ [nf], cms
+      | Created cm := nfs, cms ++ [cm]
+  };
 
 pairtoTags
   (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
@@ -85,140 +122,89 @@ pairtoTags
       Created commitment
     };
 
-computeTags (consumed created : Set Resource) : Set Tag :=
+computeTags (consumed created : List Resource) : List Tag :=
   let
     nullifierTags :=
-      Set.map (r in consumed) {
-        Consumed (nullifier Universal.nullifierKey r)
+      map (r in consumed) {
+        Consumed (nullifier r)
       };
     commitmentTags :=
-      Set.map (r in created) {
+      map (r in created) {
         Created (commitment r)
       };
-  in Set.union nullifierTags commitmentTags;
+  in nullifierTags ++ commitmentTags;
 
 computeTagsAndCustomInputs
-  (consumed created : Set Resource) : TagsAndCustomInputs :=
+  (consumed created : List Resource) : TagsAndCustomInputs :=
   let
-    consumed' : List Resource := Set.toList consumed;
-    created' : List Resource := Set.toList created;
+    consumed' : List Resource := consumed;
+    created' : List Resource := created;
 
-    nullifiers' : List Nullifier :=
-      map (nullifier Universal.nullifierKey) consumed';
+    nullifiers' : List Nullifier := map nullifier consumed';
     commitments' : List Commitment := map commitment created';
 
     tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
   in mkTagsAndCustomInputs@{
-       tags := Set.fromList tags';
+       tags := tags';
        customInputs :=
          Map.fromList
            (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
      };
 
 module ProvingHelpers;
-  findProvingKey
-    {T} (key : T) (customInputs : CustomInputs) : Logic.ProvingKey :=
-    case
-      lookupCustomInputs@{
-        key;
-        Value := Resource;
-        customInputs;
-      }
-    of
-      | just resource := Logic.mkProvingKey resource
-      | nothing :=
-        failwith
-          "Error. The proving key could not be found. This should never happen.";
-
   createLogicProofRecord
     (tag : Tag)
     (publicInputs : Logic.Instance)
     (privateInputs : Logic.Witness)
     : ProofRecord :=
     let
-      customInputs := Logic.Witness.customInputs privateInputs;
-      provingKey :=
-        case tag of
-          | Consumed nf := findProvingKey nf customInputs
-          | Created cm := findProvingKey cm customInputs;
       proof : Logic.Proof :=
         Logic.prove@{
-          provingKey;
+          provingKey :=
+            Logic.mkProvingKey
+              (fromStatus (findResource (tagToNat tag) privateInputs));
           publicInputs;
           privateInputs;
         };
-      verifyingKey := Logic.mkVerifyingKey unit;
+      verifyingKey := unit;
       proofRecord := Logic.mkProofRecord proof verifyingKey publicInputs;
     in LogicProofRecord proofRecord;
-
-  emptyComplianceProofRecord : Compliance.ProofRecord :=
-    let
-      verifyingKey := Compliance.mkVerifyingKey unit;
-      provingKey := Compliance.mkProvingKey unit;
-      publicInputs := Compliance.mkInstance unit;
-      privateInputs := Compliance.mkWitness unit;
-      proof :=
-        Compliance.prove@{
-          provingKey;
-          publicInputs;
-          privateInputs;
-        };
-    in Compliance.mkProofRecord proof verifyingKey publicInputs;
-
-  createComplianceProofRecord : ProofRecord :=
-    ComplianceProofRecord emptyComplianceProofRecord;
-
-  emptyDeltaProofRecord : Delta.ProofRecord :=
-    let
-      verifyingKey := Delta.mkVerifyingKey unit;
-      provingKey := Delta.mkProvingKey unit;
-      publicInputs := Delta.mkInstance unit;
-      privateInputs := Delta.mkWitness unit;
-      proof :=
-        Delta.prove@{
-          provingKey;
-          publicInputs;
-          privateInputs;
-        };
-    in Delta.mkProofRecord proof verifyingKey publicInputs;
-
-  createDeltaProofRecord : ProofRecord :=
-    DeltaProofRecord emptyDeltaProofRecord;
 end;
 
 open ProvingHelpers;
 
---- Helps with the creation of an action ;Action;.
---- @param identity The identity to derive the nullifier key from.
---- @param consumed The resources being consumed in this action.
---- @param created The resources being created in this action.
---- @param appData The app data of the action.
---- @param customInputs The custom inputs of the action.
---- @param maybeNullifiers Optional nullifiers to avoid recomputation.
---- @param maybeCommitments Optional commitments to avoid recomputation.
---- @return The action object.
+-- Helps with the creation of an action ;Action;.
+-- @param identity The identity to derive the nullifier key from.
+-- @param consumed The resources being consumed in this action.
+-- @param created The resources being created in this action.
+-- @param appData The app data of the action.
+-- @param customInputs The custom inputs of the action.
+-- @param maybeNullifiers Optional nullifiers to avoid recomputation.
+-- @param maybeCommitments Optional commitments to avoid recomputation.
+-- @return The action object.
 mkActionHelper
-  (consumed created : Set Resource)
-  (appData : AppData)
-  (customInputs : CustomInputs)
-  {tags : Set Tag := computeTags@{
-                       consumed;
-                       created;
-                     }}
+  (consumed created : List Resource)
+  {appData : Nat := 0}
+  {custom : CustomInputs := Map.empty}
   : Action :=
   let
-    pair := tagsToPair tags;
-    nullifiers := fst pair;
-    commitments := snd pair;
+    tags :=
+      computeTags@{
+        consumed;
+        created;
+      };
+    (nullifiers', commitments') := tagsToPair tags;
+    nullifiers := map Nullifier.unNullifier nullifiers';
+    commitments := map Commitment.unCommitment commitments';
 
     -- Compute proofs
-    logicProofs : Set ProofRecord :=
-      Set.map (tag in tags) {
+    logicProofs : List ProofRecord :=
+      map (tag in tags) {
         createLogicProofRecord@{
           tag;
           publicInputs :=
             Logic.mkInstance@{
-              tag;
+              tag := tagToNat tag;
               commitments;
               nullifiers;
               appData;
@@ -227,37 +213,42 @@ mkActionHelper
             Logic.mkWitness@{
               created;
               consumed;
-              customInputs;
+              customInputs := anomaEncode custom;
             };
         }
       };
 
-    -- Compute the compliance proofs (that currently are empty).
-    -- NOTE: Proof replicas will be deduplicated by ;Set;
-    complianceProofs : Set ProofRecord :=
-      Set.map (_ in tags) {
-        createComplianceProofRecord
-      };
+    complianceProofs : List ProofRecord := [];
   in mkAction@{
        commitments;
        nullifiers;
-       proofRecords := Set.union logicProofs complianceProofs;
-       appData;
+       proofs := map proofRecordToProof (logicProofs ++ complianceProofs);
+       appData := appData;
      };
 
+logicProofRecordToProof (p : Logic.ProofRecord) : Logic.Proof :=
+  Logic.ProofRecord.proof p;
+
+proofRecordToProof : ProofRecord -> Logic.Proof
+  | (LogicProofRecord logProof) := logicProofRecordToProof logProof
+  | ComplianceProofRecord := failwith "proofRecordToProof"
+  | DeltaProofRecord := failwith "proofRecordToProof";
+
 mkTransactionHelper
-  (roots : Set CommitmentTree.Root) (actions : Set Action) : Transaction :=
+  {roots : List CommitmentTree.Root := []}
+  (actions : List Action)
+  : Transaction :=
   mkTransaction@{
-    roots;
+    roots := map CommitmentTree.unRoot roots;
     actions;
-    delta := Delta.zero;
-    deltaProofRecord := emptyDeltaProofRecord;
+    delta := BaseLayer.zeroDelta;
+    deltaProof := 0;
   };
 
 emptyTx : Transaction :=
   mkTransactionHelper@{
-    roots := Set.empty;
-    actions := Set.empty;
+    roots := [];
+    actions := [];
   };
 
 --- A helper function preparing the transaction object by creating an action object
@@ -268,8 +259,8 @@ emptyTx : Transaction :=
 --- @return The transaction object.
 prepareStandardTransaction
   (standardInputs : StandardInputs)
-  (consumed created : Set Resource)
-  {appData : AppData := Map.empty}
+  (consumed created : List Resource)
+  {appData : Nat := 0}
   : Transaction :=
   let
     -- Put maps into the custom inputs that map:
@@ -281,22 +272,21 @@ prepareStandardTransaction
         created;
       };
   in mkTransactionHelper@{
-       roots := Set.singleton (StandardInputs.currentRoot standardInputs);
+       roots := [StandardInputs.currentRoot standardInputs];
        actions :=
-         Set.singleton
+         [
            mkActionHelper@{
              consumed;
              created;
-             tags := TagsAndCustomInputs.tags tagsAndCustomInputs;
              appData;
-             customInputs :=
-               TagsAndCustomInputs.customInputs tagsAndCustomInputs;
+             custom := TagsAndCustomInputs.customInputs tagsAndCustomInputs;
            };
+         ];
      };
 
 composeAll (txs : Set Transaction) : Transaction :=
   for (acc := emptyTx) (tx in txs) {
-    composeTransactions acc tx
+    BaseLayer.compose acc tx
   };
 
 fromResult

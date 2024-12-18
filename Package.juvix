@@ -6,12 +6,5 @@ package : Package :=
   defaultPackage@{
     name := "anoma-applib";
     version := mkVersion 0 6 0;
-    dependencies :=
-      [
-        defaultStdlib;
-        github
-          "anoma"
-          "juvix-arm-specs"
-          "02187e53f0f0dc45cf4b5633510a64765da31bc7";
-      ];
+    dependencies := [defaultStdlib];
   };

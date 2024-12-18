@@ -1,0 +1,35 @@
+module Anoma.Utils;
+
+import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open using {failwith};
+
+--- A type describing the absence of a types.
+--- NOTE: This can be used in instantiated interfaces for type parameters that are not used.
+UNUSED : Type := Unit;
+
+--- A type describing an unknown type that must be clarified.
+--- NOTE: This can be used in instantiated interfaces for type parameters that are not unknown.
+STILL_MISSING_DEFINITION : Type := Unit;
+
+MISSING_SIZE : Nat := 0;
+
+--- A placeholder for an implementation that is not required for the private testnet.
+NOT_REQUIRED : {A : Type} → A :=
+  failwith "THIS IS NOT REQUIRED FOR THE PRIVATE TESTNET";
+
+--- A placeholder for a missing Juvix implementation.
+STILL_MISSING_JUVIX_IMPLEMENTATION : {A : Type} → A :=
+  failwith "THIS MUST BE IMPLEMENT BY JUVIX";
+
+--- A placeholder for a missing Anoma builtin.
+STILL_MISSING_ANOMA_BUILTIN : {A : Type} → A :=
+  failwith "THIS MUST BE PROVIDED AS AN ANOMA BUILTIN IN JUVIX";
+
+--- A placeholder for a builtin defined in resource-machine.hoon but not as a Juvix builtin.
+STILL_MISSING_JUVIX_BUILTIN : {A : Type} → A :=
+  failwith "THIS IS PROVIDED AS AN ANOMA BUILTIN BUT NOT AS A JUVIX BUILTIN";
+
+--- A placeholder for an implementation that must be implemented on by the Anoma instantiator in the backend, but is not supposed to be called from Juvix.
+ANOMA_BACKEND_IMPLEMENTATION : {A : Type} → A :=
+  failwith
+    "THIS BACKEND IMPLEMENTATION IS NOT SUPPOSED TO BE CALLED FROM JUVIX";

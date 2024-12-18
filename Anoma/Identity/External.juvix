@@ -1,0 +1,25 @@
+module Anoma.Identity.External;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
+
+--- A fixed-size data type describing an external identity.
+type ExternalIdentity :=
+  mkExternalIdentity@{
+    unExternalIdentity : ByteArray;
+  };
+
+deriving instance
+ExternalIdentity-Ord : Ord ExternalIdentity;
+
+deriving instance
+ExternalIdentity-Eq : Eq ExternalIdentity;
+
+instance
+ExternalIdentity-Show : Show ExternalIdentity :=
+  mkShow
+    \{iden :=
+      iden
+        |> ExternalIdentity.unExternalIdentity
+        |> toAnomaContents
+        |> natToString};

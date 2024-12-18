@@ -1,0 +1,9 @@
+module Anoma.Primitives.FixedSize;
+
+import Stdlib.Prelude open;
+
+trait
+type FixedSize T :=
+  mkFixedSize@{
+    byteSize : Nat;
+  };
