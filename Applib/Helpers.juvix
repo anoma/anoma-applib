@@ -14,14 +14,10 @@ import BaseLayer.ResourceMachine as BaseLayer;
 
 import Applib.Resource.Traits.Convertable open;
 
-fromJust {A} : Maybe A -> A
-  | nothing := failwith "fromJust"
-  | (just x) := x;
-
 findResourceByNullifier
   (nf : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
   let
-    hasNullifier (nf : Nat) (r : Resource) : Bool := base-nullifier r == nf;
+    hasNullifier (nf : Nat) (r : Resource) : Bool := BaseLayer.nullifier r == nf;
     getConsumed (nf : Nat) : Maybe Resource :=
       find (hasNullifier nf) (Logic.Witness.consumed privateInputs);
   in getConsumed nf;
@@ -29,7 +25,7 @@ findResourceByNullifier
 findResourceByCommitment
   (cm : Nat) (privateInputs : Logic.Witness) : Maybe Resource :=
   let
-    hasCommitment (cm : Nat) (r : Resource) : Bool := base-commitment r == cm;
+    hasCommitment (cm : Nat) (r : Resource) : Bool := BaseLayer.commitment r == cm;
     getCreated (cm : Nat) : Maybe Resource :=
       find (hasCommitment cm) (Logic.Witness.created privateInputs);
   in getCreated cm;
@@ -38,12 +34,6 @@ type ResourceStatus :=
   | NonExisting
   | CreatedRes Resource
   | ConsumedRes Resource;
-
-fromStatus (status : ResourceStatus) : Resource :=
-  case status of
-    | CreatedRes r := r
-    | ConsumedRes r := r
-    | NonExisting := failwith "resource does not exist";
 
 findResource (tag : Nat) (privateInputs : Logic.Witness) : ResourceStatus :=
   case findResourceByNullifier tag privateInputs of
@@ -104,52 +94,6 @@ type TagsAndCustomInputs :=
     tags : List Tag;
     customInputs : CustomInputs;
   };
-
-tagsToPair (tags : List Tag) : Pair (List Nullifier) (List Commitment) :=
-  for (nfs, cms := [], []) (tag in tags) {
-    case tag of
-      | Consumed nf := nfs ++ [nf], cms
-      | Created cm := nfs, cms ++ [cm]
-  };
-
-pairtoTags
-  (nullifiers : Set Nullifier) (commitments : Set Commitment) : Set Tag :=
-  Set.union
-    Set.map (nullifier in nullifiers) {
-      Consumed nullifier
-    }
-    Set.map (commitment in commitments) {
-      Created commitment
-    };
-
-computetags (consumed created : List Resource) : List Tag :=
-  let
-    nullifierTags :=
-      map (r in consumed) {
-        Consumed (nullifier r)
-      };
-    commitmentTags :=
-      map (r in created) {
-        Created (commitment r)
-      };
-  in nullifierTags ++ commitmentTags;
-
-computeTagsAndCustomInputs
-  (consumed created : List Resource) : TagsAndCustomInputs :=
-  let
-    consumed' : List Resource := consumed;
-    created' : List Resource := created;
-
-    nullifiers' : List Nullifier := map nullifier consumed';
-    commitments' : List Commitment := map commitment created';
-
-    tags' : List Tag := map Consumed nullifiers' ++ map Created commitments';
-  in mkTagsAndCustomInputs@{
-       tags := tags';
-       customInputs :=
-         Map.fromList
-           (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
-     };
 
 mkActionHelper
   (consumed created : List Resource) {app-data : Nat := 0} : Action :=
