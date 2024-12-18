@@ -122,7 +122,7 @@ pairtoTags
       Created commitment
     };
 
-computeTags (consumed created : List Resource) : List Tag :=
+computetags (consumed created : List Resource) : List Tag :=
   let
     nullifierTags :=
       map (r in consumed) {
@@ -151,72 +151,38 @@ computeTagsAndCustomInputs
            (zipWith toCustomInputsEntry tags' (consumed' ++ created'));
      };
 
-module ProvingHelpers;
-  createLogicProofRecord
-    (tag : Tag)
-    (publicInputs : Logic.Instance)
-    (privateInputs : Logic.Witness)
-    : BaseLayer.Proof :=
-    let
-      proof : Logic.Proof :=
-        Logic.prove@{
-          provingKey :=
-            Logic.mkProvingKey
-              (fromStatus (findResource (tagToNat tag) privateInputs));
-          publicInputs;
-          privateInputs;
-        };
-    in proof;
-end;
-
-open ProvingHelpers;
-
--- Helps with the creation of an action ;Action;.
--- @param identity The identity to derive the nullifier key from.
--- @param consumed The resources being consumed in this action.
--- @param created The resources being created in this action.
--- @param appData The app data of the action.
--- @param customInputs The custom inputs of the action.
--- @param maybeNullifiers Optional nullifiers to avoid recomputation.
--- @param maybeCommitments Optional commitments to avoid recomputation.
--- @return The action object.
 mkActionHelper
-  (consumed created : List Resource) {appData : Nat := 0} : Action :=
+  (consumed created : List Resource) {app-data : Nat := 0} : Action :=
   let
-    tags :=
-      computeTags@{
-        consumed;
-        created;
-      };
-    (nullifiers', commitments') := tagsToPair tags;
-    nullifiers := map Nullifier.unNullifier nullifiers';
-    commitments := map Commitment.unCommitment commitments';
+    nullifiers := map BaseLayer.nullifier consumed;
+    commitments := map BaseLayer.commitment created;
+    all-resources := zip consumed nullifiers ++ zip created commitments;
 
+    public-inputs : Nat -> Logic.Instance
+      | tag :=
+        Logic.mkInstance@{
+          commitments;
+          nullifiers;
+          tag;
+          app-data;
+        };
+
+    private :=
+      Logic.mkWitness@{
+        created;
+        consumed;
+        customInputs := 0;
+      };
     -- Compute proofs
     logicProofs : List BaseLayer.Proof :=
-      map (tag in tags) {
-        createLogicProofRecord@{
-          tag;
-          publicInputs :=
-            Logic.mkInstance@{
-              tag := tagToNat tag;
-              commitments;
-              nullifiers;
-              appData;
-            };
-          privateInputs :=
-            Logic.mkWitness@{
-              created;
-              consumed;
-              customInputs := 0;
-            };
-        }
+      map (resource, tag in all-resources) {
+        BaseLayer.proofLogic resource (public-inputs tag, private)
       };
   in mkAction@{
        commitments;
        nullifiers;
        proofs := logicProofs;
-       appData := appData;
+       app-data;
      };
 
 mkTransactionHelper
@@ -245,11 +211,11 @@ emptyTx : Transaction :=
 prepareStandardTransaction
   (standardInputs : StandardInputs)
   (consumed created : List Resource)
-  {appData : Nat := 0}
+  {app-data : Nat := 0}
   : Transaction :=
   mkTransactionHelper@{
     roots := [StandardInputs.currentRoot standardInputs];
-    actions := [mkActionHelper consumed created {appData}];
+    actions := [mkActionHelper consumed created {app-data}];
   };
 
 composeAll (txs : Set Transaction) : Transaction :=

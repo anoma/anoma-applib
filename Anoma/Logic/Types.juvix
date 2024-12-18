@@ -58,7 +58,7 @@ module Proper;
     in mkInstance@{
          commitments := B.Instance.commitments b;
          nullifiers := B.Instance.nullifiers b;
-         appData := B.Instance.appData b;
+         appData := B.Instance.app-data b;
          tag;
        };
 end;
