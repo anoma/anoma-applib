@@ -1,6 +1,5 @@
 module Applib;
 
-import Applib.Resource open public;
 import Applib.Helpers open public;
 import Applib.Identities open public;
 
