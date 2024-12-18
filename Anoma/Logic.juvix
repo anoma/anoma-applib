@@ -1,4 +1,0 @@
-module Anoma.Logic;
-
-import Anoma.Logic.Types open public;
-import Anoma.Logic.ProvingSystem open public;
