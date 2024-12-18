@@ -5,5 +5,4 @@ import Applib.Helpers open public;
 import Applib.Identities open public;
 
 import Applib.Transaction as Transaction public;
-import Applib.Projection as Projection public;
 import Applib.Authorization as Authorization public;

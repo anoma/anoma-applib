@@ -12,8 +12,6 @@ import Anoma.Builtin.ByteArray open;
 import Anoma.Builtin.System open;
 import BaseLayer.ResourceMachine as BaseLayer;
 
-import Applib.Resource.Traits.Convertable open;
-
 findResourceByNullifier
   (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
