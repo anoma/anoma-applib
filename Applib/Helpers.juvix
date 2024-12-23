@@ -15,7 +15,8 @@ import BaseLayer.ResourceMachine as BaseLayer;
 findResourceByNullifier
   (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
-    hasNullifier (nf : Nat) (r : Resource) : Bool := BaseLayer.nullifier r == nf;
+    hasNullifier (nf : Nat) (r : Resource) : Bool :=
+      BaseLayer.nullifier r == nf;
     getConsumed (nf : Nat) : Maybe Resource :=
       find (hasNullifier nf) (BaseLayer.Witness.consumed privateInputs);
   in getConsumed nf;
@@ -23,7 +24,8 @@ findResourceByNullifier
 findResourceByCommitment
   (cm : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
   let
-    hasCommitment (cm : Nat) (r : Resource) : Bool := BaseLayer.commitment r == cm;
+    hasCommitment (cm : Nat) (r : Resource) : Bool :=
+      BaseLayer.commitment r == cm;
     getCreated (cm : Nat) : Maybe Resource :=
       find (hasCommitment cm) (BaseLayer.Witness.created privateInputs);
   in getCreated cm;
