@@ -10,11 +10,10 @@ import Anoma.Builtin.System open using {
 } public;
 import Anoma.Resource.Types open using {
   Nonce;
-  mkNonce;
   RandSeed;
   mkRandSeed;
   module RandSeed;
-  nonceFrom32SizedByteArray;
+  module Nonce;
 };
 import Anoma.Builtin.ByteArray open;
 
@@ -73,7 +72,7 @@ syntax alias prngNextNBytes := pseudoRandomNumberGeneratorNextNBytes;
 --- @return A pair containing the random number and the advanced PRNG.
 generateNextNonce (generator : PRNG) : Pair Nonce PRNG :=
   first
-    nonceFrom32SizedByteArray
+    Nonce.from32SizedByteArray
     (prngNextBytes (FixedSize.byteSize {Nonce}) generator);
 
 --- Generates a ;List; of pseudo-random nonces ;Nonce; and returns the updated PRNG.
@@ -84,7 +83,7 @@ generateNextNonces (n : Nat) (generator : PRNG) : Pair (List Nonce) PRNG :=
   let
     pair : Pair (List ByteArray) PRNG :=
       prngNextNBytes n (FixedSize.byteSize {Nonce}) generator;
-    nonces := map nonceFrom32SizedByteArray (fst pair);
+    nonces := map Nonce.from32SizedByteArray (fst pair);
   in nonces, snd pair;
 
 --- Generates a pseudo-random nonce from a randomness seed.

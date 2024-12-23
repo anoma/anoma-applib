@@ -1,6 +1,0 @@
-module Applib.Transaction.Traits;
-
-import Stdlib.Prelude open;
-import Stdlib.Data.Set as Set open using {Set};
-import Anoma open;
-import Applib.Helpers open;

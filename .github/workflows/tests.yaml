@@ -17,7 +17,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
           repo: anoma/juvix
-          tag: v0.6.8
+          tag: v0.6.9
           cache: enable
       - name: Clean
         run: juvix clean --global && juvix dependencies update 
