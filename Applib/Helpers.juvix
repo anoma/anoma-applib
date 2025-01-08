@@ -47,13 +47,12 @@ isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
 
---- Standard inputs to for transaction functions.
+--- Standard inputs for transaction functions.
 --- NOTE: In the future, this will include more settings such as the information flow control flag.
 type StandardInputs :=
   mkStandardInputs@{
     caller : Identity;
     currentRoot : CommitmentTree.Root;
-    randSeed : RandSeed;
   };
 
 mkActionHelper
