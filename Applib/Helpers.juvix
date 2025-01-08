@@ -11,6 +11,7 @@ import Anoma.State open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Builtin.System open;
 import BaseLayer.ResourceMachine as BaseLayer;
+import Mtl open hiding {Identity};
 
 findResourceByNullifier
   (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
@@ -113,13 +114,19 @@ emptyTx : BaseLayer.Transaction :=
 --- @param created The created resources.
 --- @return The transaction object.
 prepareStandardTransaction
-  (standardInputs : StandardInputs)
+  {M : Type -> Type}
+  {{MonadReader StandardInputs M}}
+  {{Monad M}}
   (consumed created : List Resource)
   {app-data : Nat := 0}
-  : BaseLayer.Transaction :=
-  mkTransactionHelper@{
-    roots := [StandardInputs.currentRoot standardInputs];
-    actions := [mkActionHelper consumed created {app-data}];
+  : M BaseLayer.Transaction :=
+  do {
+    si <- ask;
+    pure
+      mkTransactionHelper@{
+        roots := [StandardInputs.currentRoot si];
+        actions := [mkActionHelper consumed created {app-data}];
+      };
   };
 
 composeAll (txs : Set BaseLayer.Transaction) : BaseLayer.Transaction :=
