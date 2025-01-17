@@ -25,7 +25,7 @@ StandardTx-MonadReaderI
     ask : StandardTx StandardInputs := lift Reader.ask;
     local {A} (f : StandardInputs -> StandardInputs) : StandardTx A -> StandardTx A
       | (mkStateT st) := mkStateT \{s := let sts : ReaderT StandardInputs Mtl.Identity (Pair A PRNG) :=
-        st s
+        Reader.local f (st s)
         in sts} ;
   };
 end;
