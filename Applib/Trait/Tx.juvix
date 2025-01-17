@@ -3,35 +3,55 @@ module Applib.Trait.Tx;
 import Stdlib.Prelude open;
 import Anoma open;
 import Applib.Data.StandardInputs open;
+import BaseLayer.ResourceMachine open;
+import Applib.Trait.Random open;
 import Mtl open;
 
 --- An environment used to create Anoma transactions
 trait
-type Tx (M : Type -> Type) := mkTx@{
- --- Generates a random ;Nonce;
-  genRandomNonce : M Nonce;
-  askStandardInputs : StandardInputs;
-};
+type Tx (M : Type -> Type) :=
+  mkTx@{
+    --- Generates a random ;Nonce;
+    genRandomNonce : M Nonce;
+    getStandardInputs : M StandardInputs;
+  };
 
 module Private;
-  StandardTx (A : Type) : Type := StateT PRNG (ReaderT StandardInputs Mtl.Identity) A;
+  --- Concrete implementation of the ;Tx; trait
+  StandardTx (A : Type) : Type :=
+    StateT PRNG (ReaderT StandardInputs Mtl.Identity) A;
 
-instance
-StandardTx-MonadReaderI
-  : Reader
-    StandardInputs
-    StandardTx :=
-  mkReader@{
-    ask : StandardTx StandardInputs := lift Reader.ask;
-    local {A} (f : StandardInputs -> StandardInputs) : StandardTx A -> StandardTx A
-      | (mkStateT st) := mkStateT \{s := let sts : ReaderT StandardInputs Mtl.Identity (Pair A PRNG) :=
-        st s
-        in sts} ;
-  };
+  instance
+  StandardTx-MonadReaderI
+    : Reader
+      StandardInputs
+      (StateT PRNG (ReaderT StandardInputs Mtl.Identity)) :=
+    mkReader@{
+      ask : StandardTx StandardInputs := lift Reader.ask;
+      local
+        {A}
+        (f : StandardInputs -> StandardInputs)
+        : StandardTx A -> StandardTx A
+        | (mkStateT st) := mkStateT (st >> Reader.local f);
+    };
+
+  instance
+  StandardTx-Tx : Tx (StateT PRNG (ReaderT StandardInputs Mtl.Identity)) :=
+    mkTx@{
+      getStandardInputs : StandardTx StandardInputs := ask;
+      genRandomNonce : StandardTx Nonce :=
+        do {
+          bytes <- Random.genRandomBytes 32;
+          pure (Nonce.from32SizedByteArray bytes);
+        };
+    };
+
+  runStandardTx' {A} (seed : Nat) (si : StandardInputs) : StandardTx A -> A :=
+    evalState (mkPrng seed) >> runReader si >> Mtl.run;
 end;
 
--- runTx' {A} (seed : Nat) (si : StandardInputs) : Tx A -> A :=
---   evalState (mkPrng seed) >> runReader si >> Mtl.runIdentity;
+open Private using {StandardTx} public;
 
--- runTx (seed : Nat) (si : StandardInputs) : Tx Transaction -> Transaction :=
---   evalState (mkPrng seed) >> runReader si >> Mtl.runIdentity;
+--- Run the transaction builder
+runTx (seed : Nat) (si : StandardInputs) : StandardTx Transaction -> Transaction :=
+  evalState (mkPrng seed) >> runReader si >> Mtl.run;
