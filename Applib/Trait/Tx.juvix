@@ -55,5 +55,6 @@ end;
 open Private using {StandardTx} public;
 
 --- Run the transaction builder
-runTx (seed : Nat) (si : StandardInputs) : StandardTx Transaction -> Transaction :=
+runTx
+  (seed : Nat) (si : StandardInputs) : StandardTx Transaction -> Transaction :=
   evalState (mkPrng seed) >> runReader si >> Mtl.run;

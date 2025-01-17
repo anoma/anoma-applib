@@ -109,13 +109,13 @@ emptyTx : BaseLayer.Transaction :=
 --- @return The transaction object.
 prepareStandardTransaction
   {M : Type -> Type}
-  {{Reader StandardInputs M}}
+  {{Tx M}}
   {{Monad M}}
   (consumed created : List Resource)
   {app-data : Nat := 0}
   : M BaseLayer.Transaction :=
   do {
-    si <- ask;
+    si <- getStandardInputs;
     pure
       mkTransactionHelper@{
         roots := [StandardInputs.currentRoot si];
