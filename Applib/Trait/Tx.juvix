@@ -16,6 +16,8 @@ type Tx (M : Type -> Type) :=
     getStandardInputs : M StandardInputs;
   };
 
+open Tx public;
+
 module Private;
   --- Concrete implementation of the ;Tx; trait
   StandardTx (A : Type) : Type :=
