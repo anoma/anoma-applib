@@ -1,0 +1,13 @@
+module Applib.Trait.Tx;
+
+import Stdlib.Prelude open;
+import Anoma open;
+import Applib.Data.StandardInputs open;
+
+--- An environment used to create Anoma transactions
+trait
+type Tx (M : Type -> Type) := mkTx@{
+ --- Generates a random ;Nonce;
+  genRandomNonce : M Nonce;
+  askStandardInputs : StandardInputs;
+};

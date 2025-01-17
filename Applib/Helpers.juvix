@@ -3,8 +3,10 @@ module Applib.Helpers;
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
 
+import Applib.Data.StandardInputs open public;
 import Applib.Identities open;
 import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
+import Applib.Trait.Tx open public;
 import Stdlib.Data.Map as Map open using {Map};
 import Anoma open;
 import Anoma.State open;
@@ -47,14 +49,6 @@ findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
-
---- Standard inputs for transaction functions.
---- NOTE: In the future, this will include more settings such as the information flow control flag.
-type StandardInputs :=
-  mkStandardInputs@{
-    caller : Identity;
-    currentRoot : CommitmentTree.Root;
-  };
 
 mkActionHelper
   (consumed created : List Resource) {app-data : Nat := 0} : BaseLayer.Action :=
