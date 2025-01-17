@@ -1,7 +1,6 @@
 module Anoma.Delta.Types;
 
 import Stdlib.Prelude open;
--- import Anoma.Math open;
 import Anoma.Utils open;
 import Anoma.Builtin.System open;
 

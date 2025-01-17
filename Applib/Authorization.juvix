@@ -1,4 +1,3 @@
 module Applib.Authorization;
 
--- import Applib.Authorization.Check as Check open public;
 import Applib.Identities as Identities open public;

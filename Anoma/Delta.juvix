@@ -1,4 +1,3 @@
 module Anoma.Delta;
 
 import Anoma.Delta.Types open public;
--- import Anoma.Delta.ProvingSystem open public;
