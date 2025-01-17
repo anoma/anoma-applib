@@ -3,6 +3,7 @@ module Applib.Trait.Tx;
 import Stdlib.Prelude open;
 import Anoma open;
 import Applib.Data.StandardInputs open;
+import Mtl open;
 
 --- An environment used to create Anoma transactions
 trait
@@ -11,3 +12,26 @@ type Tx (M : Type -> Type) := mkTx@{
   genRandomNonce : M Nonce;
   askStandardInputs : StandardInputs;
 };
+
+module Private;
+  StandardTx (A : Type) : Type := StateT PRNG (ReaderT StandardInputs Mtl.Identity) A;
+
+instance
+StandardTx-MonadReaderI
+  : Reader
+    StandardInputs
+    StandardTx :=
+  mkReader@{
+    ask : StandardTx StandardInputs := lift Reader.ask;
+    local {A} (f : StandardInputs -> StandardInputs) : StandardTx A -> StandardTx A
+      | (mkStateT st) := mkStateT \{s := let sts : ReaderT StandardInputs Mtl.Identity (Pair A PRNG) :=
+        st s
+        in sts} ;
+  };
+end;
+
+-- runTx' {A} (seed : Nat) (si : StandardInputs) : Tx A -> A :=
+--   evalState (mkPrng seed) >> runReader si >> Mtl.runIdentity;
+
+-- runTx (seed : Nat) (si : StandardInputs) : Tx Transaction -> Transaction :=
+--   evalState (mkPrng seed) >> runReader si >> Mtl.runIdentity;
