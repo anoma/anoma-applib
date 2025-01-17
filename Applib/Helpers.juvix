@@ -115,7 +115,7 @@ emptyTx : BaseLayer.Transaction :=
 --- @return The transaction object.
 prepareStandardTransaction
   {M : Type -> Type}
-  {{MonadReader StandardInputs M}}
+  {{Reader StandardInputs M}}
   {{Monad M}}
   (consumed created : List Resource)
   {app-data : Nat := 0}
