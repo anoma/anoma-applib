@@ -1,0 +1,20 @@
+module Anoma.Encode;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.System open;
+
+module Encode;
+  module Internal;
+    type Encoded A := mkEncoded Nat;
+  end;
+
+  open Internal using {Encoded} public;
+
+  decode {A} : (encoded : Encoded A) -> A
+    | (Internal.mkEncoded n) := builtinAnomaDecode n;
+
+  encode {A} (obj : A) : Encoded A :=
+    Internal.mkEncoded (builtinAnomaEncode obj);
+end;
+
+open Encode using {Encoded; decode; encode} public;

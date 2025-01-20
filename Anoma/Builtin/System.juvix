@@ -13,7 +13,7 @@ end;
 
 --- Encodes a value into a natural number.
 builtin anoma-encode
-axiom anomaEncode
+axiom builtinAnomaEncode
   : {Value : Type}
     -- | The value to encode.
     -> Value
@@ -22,7 +22,7 @@ axiom anomaEncode
 
 --- Decodes a value from a natural number.
 builtin anoma-decode
-axiom anomaDecode
+axiom builtinAnomaDecode
   : {Value : Type}
     -- | The natural number to decode.
     -> Nat
