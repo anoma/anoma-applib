@@ -7,5 +7,4 @@ import Anoma.Delta as Delta public;
 import Anoma.Delta open using {Delta} public;
 import Anoma.Random open public;
 import Anoma.Utils as Utils public;
-
-import Anoma.Builtin.System open using {anomaEncode; anomaDecode} public;
+import Anoma.Encode open public;
