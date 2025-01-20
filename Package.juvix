@@ -6,5 +6,9 @@ package : Package :=
   defaultPackage@{
     name := "anoma-applib";
     version := mkVersion 0 6 0;
-    dependencies := [github "anoma" "juvix-stdlib" "v0.9.0"];
+    dependencies :=
+      [
+        github "anoma" "juvix-stdlib" "v0.10.0";
+        github "anoma" "juvix-mtl" "v0.1.1";
+      ];
   };

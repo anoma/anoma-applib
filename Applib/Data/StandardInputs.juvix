@@ -1,0 +1,13 @@
+module Applib.Data.StandardInputs;
+
+import Stdlib.Prelude open;
+import Anoma.State open;
+import Anoma open;
+import Applib.Identities open;
+
+--- Standard inputs for Anoma transaction functions
+type StandardInputs :=
+  mkStandardInputs@{
+    caller : Identity;
+    currentRoot : CommitmentTree.Root;
+  };

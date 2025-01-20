@@ -1,0 +1,23 @@
+module Applib.Trait.Random;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.System as Builtin;
+import Anoma open;
+import Mtl open;
+
+mkPrng (seed : Nat) : PRNG := Builtin.pseudoRandomNumberGeneratorInit seed;
+
+--- An environment capable of generating random ;ByteArray;s
+trait
+type Random (M : Type -> Type) :=
+  mkRandom@{
+    --- Returns a random ;ByteArray; of the given size
+    genRandomBytes (numBytes : Nat) : M ByteArray;
+  };
+
+instance
+StateT-Random {M : Type -> Type} {{Monad M}} : Random (StateT PRNG M) :=
+  mkRandom@{
+    genRandomBytes (n : Nat) : StateT PRNG M ByteArray :=
+      mkStateT (pseudoRandomNumberGeneratorNextBytes n >> pure);
+  };

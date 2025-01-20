@@ -3,14 +3,17 @@ module Applib.Helpers;
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
 
+import Applib.Data.StandardInputs open public;
 import Applib.Identities open;
 import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
+import Applib.Trait.Tx open public;
 import Stdlib.Data.Map as Map open using {Map};
 import Anoma open;
 import Anoma.State open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Builtin.System open;
 import BaseLayer.ResourceMachine as BaseLayer;
+import Mtl open hiding {Identity};
 
 findResourceByNullifier
   (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
@@ -46,14 +49,6 @@ findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
-
---- Standard inputs for transaction functions.
---- NOTE: In the future, this will include more settings such as the information flow control flag.
-type StandardInputs :=
-  mkStandardInputs@{
-    caller : Identity;
-    currentRoot : CommitmentTree.Root;
-  };
 
 mkActionHelper
   (consumed created : List Resource) {app-data : Nat := 0} : BaseLayer.Action :=
@@ -113,13 +108,19 @@ emptyTx : BaseLayer.Transaction :=
 --- @param created The created resources.
 --- @return The transaction object.
 prepareStandardTransaction
-  (standardInputs : StandardInputs)
+  {M : Type -> Type}
+  {{Tx M}}
+  {{Monad M}}
   (consumed created : List Resource)
   {app-data : Nat := 0}
-  : BaseLayer.Transaction :=
-  mkTransactionHelper@{
-    roots := [StandardInputs.currentRoot standardInputs];
-    actions := [mkActionHelper consumed created {app-data}];
+  : M BaseLayer.Transaction :=
+  do {
+    si <- getStandardInputs;
+    pure
+      mkTransactionHelper@{
+        roots := [StandardInputs.currentRoot si];
+        actions := [mkActionHelper consumed created {app-data}];
+      };
   };
 
 composeAll (txs : Set BaseLayer.Transaction) : BaseLayer.Transaction :=
