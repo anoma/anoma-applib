@@ -8,3 +8,5 @@ import Anoma.Delta open using {Delta} public;
 import Anoma.Random open public;
 import Anoma.Utils as Utils public;
 import Anoma.Encode open public;
+import Anoma.State.CommitmentTree open public;
+import Anoma.Builtin.System open using {isNullifier; isCommitment} public;
