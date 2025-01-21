@@ -2,6 +2,8 @@ module BaseLayer.TransactionRequest;
 
 import Stdlib.Prelude open;
 import BaseLayer.ResourceMachine open;
+import Applib.Data.TxContext open;
+import Applib.Trait.Tx open;
 
 type TransactionCandidate :=
   mkTransactionCandidate@{
@@ -11,7 +13,6 @@ type TransactionCandidate :=
   };
 
 module TransactionRequest;
-
   type TransactionRequest :=
     mkTransactionRequest@{
       payload : Unit -> TransactionCandidate;
@@ -26,6 +27,16 @@ module TransactionRequest;
             transactionFunction := const tx;
           };
     };
+
+  buildTransactionRequest
+    (seed : Nat)
+    (si : TxContext)
+    : TxBuilder Transaction -> TransactionRequest :=
+    runTx seed si >> fromTransaction;
 end;
 
-open TransactionRequest using {TransactionRequest; mkTransactionRequest} public;
+open TransactionRequest using {
+  TransactionRequest;
+  mkTransactionRequest;
+  buildTransactionRequest;
+} public;

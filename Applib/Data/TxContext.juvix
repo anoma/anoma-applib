@@ -1,13 +1,13 @@
-module Applib.Data.StandardInputs;
+module Applib.Data.TxContext;
 
 import Stdlib.Prelude open;
 import Anoma.State open;
 import Anoma open;
 import Applib.Identities open;
 
---- Standard inputs for Anoma transaction functions
-type StandardInputs :=
-  mkStandardInputs@{
+--- The context of an Anoma transaction
+type TxContext :=
+  mkTxContext@{
     caller : Identity;
     currentRoot : CommitmentTree.Root;
   };

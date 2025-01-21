@@ -2,7 +2,7 @@ module Applib.Trait.Tx;
 
 import Stdlib.Prelude open;
 import Anoma open;
-import Applib.Data.StandardInputs open;
+import Applib.Data.TxContext open;
 import BaseLayer.ResourceMachine open;
 import Applib.Trait.Random open;
 import Mtl open;
@@ -13,48 +13,48 @@ type Tx (M : Type -> Type) :=
   mkTx@{
     --- Generates a random ;Nonce;
     genRandomNonce : M Nonce;
-    getStandardInputs : M StandardInputs;
+    getTxContext : M TxContext;
   };
 
 open Tx public;
 
 module Private;
   --- Concrete implementation of the ;Tx; trait
-  StandardTx (A : Type) : Type :=
-    StateT PRNG (ReaderT StandardInputs Mtl.Identity) A;
+  TxBuilder (A : Type) : Type :=
+    StateT PRNG (ReaderT TxContext Mtl.Identity) A;
 
   instance
-  StandardTx-MonadReaderI
+  TxBuilder-MonadReaderI
     : Reader
-      StandardInputs
-      (StateT PRNG (ReaderT StandardInputs Mtl.Identity)) :=
+      TxContext
+      (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
     mkReader@{
-      ask : StandardTx StandardInputs := lift Reader.ask;
+      ask : TxBuilder TxContext := lift Reader.ask;
       local
         {A}
-        (f : StandardInputs -> StandardInputs)
-        : StandardTx A -> StandardTx A
+        (f : TxContext -> TxContext)
+        : TxBuilder A -> TxBuilder A
         | (mkStateT st) := mkStateT (st >> Reader.local f);
     };
 
   instance
-  StandardTx-Tx : Tx (StateT PRNG (ReaderT StandardInputs Mtl.Identity)) :=
+  TxBuilder-Tx : Tx (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
     mkTx@{
-      getStandardInputs : StandardTx StandardInputs := ask;
-      genRandomNonce : StandardTx Nonce :=
+      getTxContext : TxBuilder TxContext := ask;
+      genRandomNonce : TxBuilder Nonce :=
         do {
           bytes <- Random.genRandomBytes 32;
           pure (Nonce.from32SizedByteArray bytes);
         };
     };
 
-  runStandardTx' {A} (seed : Nat) (si : StandardInputs) : StandardTx A -> A :=
+  runTxBuilder' {A} (seed : Nat) (si : TxContext) : TxBuilder A -> A :=
     evalState (mkPrng seed) >> runReader si >> Mtl.run;
 end;
 
-open Private using {StandardTx} public;
+open Private using {TxBuilder} public;
 
 --- Run the transaction builder
 runTx
-  (seed : Nat) (si : StandardInputs) : StandardTx Transaction -> Transaction :=
+  (seed : Nat) (si : TxContext) : TxBuilder Transaction -> Transaction :=
   evalState (mkPrng seed) >> runReader si >> Mtl.run;

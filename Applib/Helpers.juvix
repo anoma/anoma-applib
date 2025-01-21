@@ -3,7 +3,7 @@ module Applib.Helpers;
 import Stdlib.Prelude open;
 import Stdlib.Debug.Fail open using {failwith};
 
-import Applib.Data.StandardInputs open public;
+import Applib.Data.TxContext open public;
 import Applib.Identities open;
 import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
 import Applib.Trait.Tx open public;
@@ -115,10 +115,10 @@ prepareStandardTransaction
   {app-data : Nat := 0}
   : M BaseLayer.Transaction :=
   do {
-    si <- getStandardInputs;
+    si <- getTxContext;
     pure
       mkTransactionHelper@{
-        roots := [StandardInputs.currentRoot si];
+        roots := [TxContext.currentRoot si];
         actions := [mkActionHelper consumed created {app-data}];
       };
   };
