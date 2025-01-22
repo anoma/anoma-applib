@@ -38,7 +38,7 @@ swapIntentLogic
            | nothing := false
            | just self :=
              case HasEphemerality.get self of
-               | NonEphemeral := true
+               | NonEphemeral := false
                | Ephemeral :=
                  let
                    created := Logic.Witness.created privateInputs;
