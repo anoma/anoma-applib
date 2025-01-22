@@ -7,8 +7,4 @@ import Applib.Resource.Standards.ValueMap open;
 ownershipStandardKey : ValueMapKey := toValueMapKey "owner";
 
 ownershipValueMapEntry (owner : ExternalIdentity) : ValueMap :=
-  Map.insert@{
-    key := ownershipStandardKey;
-    elem := toValueMapValue owner;
-    map := Map.empty;
-  };
+  Map.insert ownershipStandardKey (toValueMapValue owner) Map.empty;

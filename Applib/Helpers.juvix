@@ -58,10 +58,7 @@ isNullifierPresent
   Set.isMember nullifier nullifierSet;
 
 lookupResource {A} (key : A) (customInputs : CustomInputs) : Maybe Resource :=
-  lookupCustomInputs@{
-    key;
-    customInputs;
-  };
+  lookupCustomInputs key customInputs;
 
 toAppDataEntry
   {Key Data : Type}
@@ -106,10 +103,10 @@ type TagsAndCustomInputs :=
   };
 
 tagsToPair (tags : List Tag) : Pair (List Nullifier) (List Commitment) :=
-  for (nfs, cms := [], []) (tag in tags) {
+  rfor (nfs, cms := [], []) (tag in tags) {
     case tag of
-      | Consumed nf := nfs ++ [nf], cms
-      | Created cm := nfs, cms ++ [cm]
+      | Consumed nf := nf :: nfs, cms
+      | Created cm := nfs, cm :: cms
   };
 
 pairtoTags

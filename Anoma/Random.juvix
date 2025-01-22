@@ -58,11 +58,7 @@ pseudoRandomNumberGeneratorNextNBytes
   let
     update (acc : Pair (List ByteArray) PRNG) : Pair (List ByteArray) PRNG :=
       let
-        next :=
-          prngNextBytes@{
-            bytesSize;
-            generator := snd acc;
-          };
+        next := prngNextBytes bytesSize (snd acc);
       in fst next :: fst acc, snd next;
   in iterate n update ([], generator);
 
@@ -91,10 +87,7 @@ generateNextNonces (n : Nat) (generator : PRNG) : Pair (List Nonce) PRNG :=
 --- @param randSeed The randomness seed for the PRNG.
 --- @return The nonce.
 generateNonce (randSeed : RandSeed) : Nonce :=
-  fst
-    generateNextNonce@{
-      generator := prngInit randSeed;
-    };
+  fst (generateNextNonce (prngInit randSeed));
 
 --- Generates a pair of pseudo-random nonces from a randomness seed.
 --- @param randSeed The randomness seed for the PRNG.
@@ -111,14 +104,7 @@ generateNoncePair (randSeed : RandSeed) : Pair Nonce Nonce :=
 --- @param randSeed The randomness seed for the PRNG.
 --- @return The list of nonces.
 generateNonces (n : Nat) (randSeed : RandSeed) : List Nonce :=
-  fst
-    generateNextNonces@{
-      n;
-      generator := prngInit randSeed;
-    };
+  fst (generateNextNonces n (prngInit randSeed));
 
 UnusedRandSeed : RandSeed :=
-  mkRandSeed
-    ByteArray.zero@{
-      length := FixedSize.byteSize {RandSeed};
-    };
+  mkRandSeed (ByteArray.zero (FixedSize.byteSize {RandSeed}));

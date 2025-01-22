@@ -7,5 +7,5 @@ import Applib.Resource.Traits.Quantity open;
 
 totalQuantity {T} {{HasQuantity T}} (resources : List T) : Quantity :=
   for (sum := mkQuantity 0) (r in resources) {
-    sum + HasQuantity.get {T} r
+    sum + HasQuantity.get r
   };
