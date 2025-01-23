@@ -20,20 +20,14 @@ open Tx public;
 
 module Private;
   --- Concrete implementation of the ;Tx; trait
-  TxBuilder (A : Type) : Type :=
-    StateT PRNG (ReaderT TxContext Mtl.Identity) A;
+  TxBuilder (A : Type) : Type := StateT PRNG (ReaderT TxContext Mtl.Identity) A;
 
   instance
   TxBuilder-MonadReaderI
-    : Reader
-      TxContext
-      (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
+    : Reader TxContext (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
     mkReader@{
       ask : TxBuilder TxContext := lift Reader.ask;
-      local
-        {A}
-        (f : TxContext -> TxContext)
-        : TxBuilder A -> TxBuilder A
+      local {A} (f : TxContext -> TxContext) : TxBuilder A -> TxBuilder A
         | (mkStateT st) := mkStateT (st >> Reader.local f);
     };
 
@@ -55,6 +49,5 @@ end;
 open Private using {TxBuilder} public;
 
 --- Run the transaction builder
-runTx
-  (seed : Nat) (si : TxContext) : TxBuilder Transaction -> Transaction :=
+runTx (seed : Nat) (si : TxContext) : TxBuilder Transaction -> Transaction :=
   evalState (mkPrng seed) >> runReader si >> Mtl.run;
