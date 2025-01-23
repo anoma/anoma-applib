@@ -29,5 +29,4 @@ ByteArray-Ord : Ord ByteArray :=
 instance
 ByteArray-Eq : Eq ByteArray := fromOrdToEq;
 
-zero (length : Nat) : ByteArray :=
-  mkByteArray (replicate length 0x0);
+zero (length : Nat) : ByteArray := mkByteArray (replicate length 0x0);

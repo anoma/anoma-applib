@@ -55,8 +55,7 @@ mkResourceRelationshipAppDataEntry
         mustBeConsumed;
         mustBeCreated;
       };
-    signature : Signature :=
-      sign message signer;
+    signature : Signature := sign message signer;
   in case origin of
        | Created commitment :=
          toAppDataEntry@{
