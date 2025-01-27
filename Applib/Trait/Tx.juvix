@@ -23,15 +23,6 @@ module Private;
   TxBuilder (A : Type) : Type := StateT PRNG (ReaderT TxContext Mtl.Identity) A;
 
   instance
-  TxBuilder-MonadReaderI
-    : Reader TxContext (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
-    mkReader@{
-      ask : TxBuilder TxContext := lift Reader.ask;
-      local {A} (f : TxContext -> TxContext) : TxBuilder A -> TxBuilder A
-        | (mkStateT st) := mkStateT (st >> Reader.local f);
-    };
-
-  instance
   TxBuilder-Tx : Tx (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
     mkTx@{
       getTxContext : TxBuilder TxContext := ask;
