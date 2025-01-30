@@ -1,20 +1,33 @@
 module Anoma.Resource.Tag;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug open;
 import Anoma.Resource.Object open using {Resource};
 import Anoma.Resource.Types open;
+import Anoma.Builtin.System open;
 
---- The reference to the ;Resource;.
-type Tag :=
-  | Created Commitment
-  | Consumed Nullifier;
+module Tag;
+  --- The reference to the ;Resource;.
+  type Tag :=
+    | Created Commitment
+    | Consumed Nullifier;
 
-tagToNat : Tag -> Nat
-  | (Created x) := unCommitment x
-  | (Consumed x) := unNullifier x;
+  toNat : Tag -> Nat
+    | (Created x) := unCommitment x
+    | (Consumed x) := unNullifier x;
 
-deriving instance
-Tag-Ord : Ord Tag;
+  fromNat (n : Nat) : Tag :=
+    if
+      | isNullifier n := Consumed (mkNullifier n)
+      | isCommitment n := Created (mkCommitment n)
+      | else :=
+        failwith "given natural is neither a nullifier nor a commitment";
 
-deriving instance
-Tag-Eq : Eq Tag;
+  deriving instance
+  Tag-Ord : Ord Tag;
+
+  deriving instance
+  Tag-Eq : Eq Tag;
+end;
+
+open Tag using {Tag} public;

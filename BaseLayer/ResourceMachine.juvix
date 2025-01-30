@@ -1,6 +1,7 @@
 module BaseLayer.ResourceMachine;
 
 import Stdlib.Prelude open;
+import Stdlib.Data.Map as Map open;
 
 module AnomaSet;
   empty {A} : AnomaSet A := fromList [];
@@ -23,17 +24,21 @@ Logic : Type := Instance -> Witness -> Bool;
 -- axiom toAnomaNoun {A} : A -> AnomaNoun;
 -- axiom fromAnomaNoun {A} : AnomaNoun -> A;
 
-module AnomaAtomPrivate;
-  positive
-  type AnomaAtom := mkAnomaAtom Nat;
+module AnomaAtom;
+  module Private;
+    positive
+    type AnomaAtom := mkAnomaAtom Nat;
+  end;
 
-  toAnomaAtom : Nat -> AnomaAtom := mkAnomaAtom;
+  open Private using {AnomaAtom} public;
 
-  fromAnomaAtom : AnomaAtom -> Nat
-    | (mkAnomaAtom n) := n;
+  fromNat : Nat -> AnomaAtom := Private.mkAnomaAtom;
+
+  toNat : AnomaAtom -> Nat
+    | (Private.mkAnomaAtom n) := n;
 end;
 
-open AnomaAtomPrivate using {AnomaAtom; fromAnomaAtom; toAnomaAtom} public;
+open AnomaAtom using {AnomaAtom} public;
 
 builtin anoma-resource
 type Resource :=
@@ -50,8 +55,18 @@ type Resource :=
     randSeed : Nat;
   };
 
--- TODO we should replace AnomaAtom with AnomaNoun
-AppData : Type := AnomaSet (Pair Nat (Pair AnomaAtom Bool));
+module AppData;
+  -- TODO we should replace AnomaAtom with AnomaNoun
+  AppData : Type := AnomaSet (Pair Nat (Pair AnomaAtom Bool));
+
+  toMap : AppData -> Map Nat AnomaAtom :=
+    AnomaSet.toList >> map \{(k, v, _) := k, v} >> Map.fromList;
+
+  fromMap : Map Nat AnomaAtom -> AppData :=
+    Map.toList >> map \{(k, v) := k, v, true} >> AnomaSet.fromList;
+end;
+
+open AppData using {AppData} public;
 
 positive
 type Instance :=
