@@ -5,15 +5,16 @@ import Stdlib.Prelude open;
 module AnomaSet;
   empty {A} : AnomaSet A := fromList [];
 
-builtin anoma-set
-axiom AnomaSet : Type -> Type;
+  builtin anoma-set
+  axiom AnomaSet : Type -> Type;
 
-builtin anoma-set-to-list
-axiom toList {A} (set : AnomaSet A) : List A;
+  builtin anoma-set-to-list
+  axiom toList {A} (set : AnomaSet A) : List A;
 
-builtin anoma-set-from-list
-axiom fromList {A} (list : List A) : AnomaSet A;
+  builtin anoma-set-from-list
+  axiom fromList {A} (list : List A) : AnomaSet A;
 end;
+
 open AnomaSet using {AnomaSet} public;
 
 Logic : Type := Instance -> Witness -> Bool;
@@ -49,6 +50,7 @@ type Resource :=
     randSeed : Nat;
   };
 
+-- TODO we should replace AnomaAtom with AnomaNoun
 AppData : Type := AnomaSet (Pair Nat (Pair AnomaAtom Bool));
 
 positive
@@ -57,8 +59,7 @@ type Instance :=
     commitments : List Nat;
     nullifiers : List Nat;
     tag : Nat;
-    -- TODO we should replace AnomaAtom with AnomaNoun
-    app-data : AppData;
+    appData : AppData;
   };
 
 positive
@@ -119,7 +120,7 @@ type Action :=
     commitments : List Nat;
     nullifiers : List Nat;
     proofs : List Proof;
-    app-data : AppData;
+    appData : AppData;
   };
 
 builtin anoma-action-delta
