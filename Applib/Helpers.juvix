@@ -51,7 +51,7 @@ isNullifierPresent
   Set.isMember nullifier nullifierSet;
 
 mkActionHelper
-  (consumed created : List Resource) {app-data : BaseLayer.AppData := BaseLayer.AnomaSet.empty} : BaseLayer.Action :=
+  (consumed created : List Resource) {appData : BaseLayer.AppData := BaseLayer.AnomaSet.empty} : BaseLayer.Action :=
   let
     nullifiers := map BaseLayer.nullifier consumed;
     commitments := map BaseLayer.commitment created;
@@ -63,7 +63,7 @@ mkActionHelper
           commitments;
           nullifiers;
           tag;
-          app-data;
+          appData;
         };
 
     private :=
@@ -81,7 +81,7 @@ mkActionHelper
        commitments;
        nullifiers;
        proofs := logicProofs;
-       app-data;
+       appData;
      };
 
 mkTransactionHelper
@@ -112,14 +112,14 @@ prepareStandardTransaction
   {{Tx M}}
   {{Monad M}}
   (consumed created : List Resource)
-  {app-data : BaseLayer.AppData := BaseLayer.AnomaSet.empty}
+  {appData : BaseLayer.AppData := BaseLayer.AnomaSet.empty}
   : M BaseLayer.Transaction :=
   do {
     si <- getTxContext;
     pure
       mkTransactionHelper@{
         roots := [TxContext.currentRoot si];
-        actions := [mkActionHelper consumed created {app-data}];
+        actions := [mkActionHelper consumed created {appData}];
       };
   };
 
