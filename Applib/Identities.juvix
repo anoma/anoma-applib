@@ -14,7 +14,7 @@ module ExternalIdentity;
   toNullifierKeyCommitment
     (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
     externalIdentity
-      |> ExternalIdentity.unExternalIdentity
+      |> ExternalIdentity.toByteArray
       |> mkNullifierKeyCommitment;
 end;
 
@@ -71,7 +71,7 @@ module Universal;
     let
       pubKeyBytes := bytes;
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            mkInternalIdentity (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
        };
@@ -85,7 +85,7 @@ module Universal;
 
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity
-      |> ExternalIdentity.unExternalIdentity
+      |> ExternalIdentity.toByteArray
       |> mkNullifierKeyCommitment;
 end;
 
@@ -128,7 +128,7 @@ module Alice;
           0x29;
         ];
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            mkInternalIdentity
              (mkByteArray (replicate 31 0x0 ++ [0x1] ++ pubKeyBytes));
@@ -178,7 +178,7 @@ module Bob;
           0x74;
         ];
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            mkInternalIdentity
              (mkByteArray (replicate 31 0x0 ++ [0x2] ++ pubKeyBytes));
@@ -228,7 +228,7 @@ module Carol;
           0x4b;
         ];
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            mkInternalIdentity
              (mkByteArray (replicate 31 0x0 ++ [0x3] ++ pubKeyBytes));
@@ -243,5 +243,5 @@ end;
 --- for which the ;InternalIdentity; is not known.
 module Zero;
   externalIdentity : ExternalIdentity :=
-    mkExternalIdentity (mkByteArray (replicate 32 0x0));
+    ExternalIdentity.fromByteArray (mkByteArray (replicate 32 0x0));
 end;
