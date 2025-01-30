@@ -2,7 +2,37 @@ module BaseLayer.ResourceMachine;
 
 import Stdlib.Prelude open;
 
+module AnomaSet;
+  empty {A} : AnomaSet A := fromList [];
+
+builtin anoma-set
+axiom AnomaSet : Type -> Type;
+
+builtin anoma-set-to-list
+axiom toList {A} (set : AnomaSet A) : List A;
+
+builtin anoma-set-from-list
+axiom fromList {A} (list : List A) : AnomaSet A;
+end;
+open AnomaSet using {AnomaSet} public;
+
 Logic : Type := Instance -> Witness -> Bool;
+
+-- axiom AnomaNoun : Type;
+-- axiom toAnomaNoun {A} : A -> AnomaNoun;
+-- axiom fromAnomaNoun {A} : AnomaNoun -> A;
+
+module AnomaAtomPrivate;
+  positive
+  type AnomaAtom := mkAnomaAtom Nat;
+
+  toAnomaAtom : Nat -> AnomaAtom := mkAnomaAtom;
+
+  fromAnomaAtom : AnomaAtom -> Nat
+    | (mkAnomaAtom n) := n;
+end;
+
+open AnomaAtomPrivate using {AnomaAtom; fromAnomaAtom; toAnomaAtom} public;
 
 builtin anoma-resource
 type Resource :=
@@ -19,13 +49,16 @@ type Resource :=
     randSeed : Nat;
   };
 
+AppData : Type := AnomaSet (Pair Nat (Pair AnomaAtom Bool));
+
 positive
 type Instance :=
   mkInstance@{
     commitments : List Nat;
     nullifiers : List Nat;
     tag : Nat;
-    app-data : Nat;
+    -- TODO we should replace AnomaAtom with AnomaNoun
+    app-data : AppData;
   };
 
 positive
@@ -86,7 +119,7 @@ type Action :=
     commitments : List Nat;
     nullifiers : List Nat;
     proofs : List Proof;
-    app-data : Nat;
+    app-data : AppData;
   };
 
 builtin anoma-action-delta
