@@ -51,26 +51,32 @@ isNullifierPresent
   Set.isMember nullifier nullifierSet;
 
 mkActionHelper
-  (consumed created : List Resource) {appData : BaseLayer.AppData := BaseLayer.AnomaSet.empty} : BaseLayer.Action :=
+  (consumed created : List Resource)
+  {appData : BaseLayer.AppData := BaseLayer.AnomaSet.empty}
+  : BaseLayer.Action :=
   let
     nullifiers := map BaseLayer.nullifier consumed;
     commitments := map BaseLayer.commitment created;
     all-resources := zip consumed nullifiers ++ zip created commitments;
+    appDataMap : Map Nat BaseLayer.AnomaAtom := BaseLayer.AppData.toMap appData;
+    getOtherPublic (n : Nat) : BaseLayer.AnomaAtom :=
+      case Map.lookup n appDataMap of
+        | nothing := BaseLayer.AnomaAtom.fromNat 0
+        | just x := x;
 
-    public-inputs : Nat -> BaseLayer.Instance
-      | tag :=
-        BaseLayer.mkInstance@{
-          commitments;
-          nullifiers;
-          tag;
-          appData;
-        };
+    public-inputs (tag : Nat) : BaseLayer.Instance :=
+      BaseLayer.mkInstance@{
+        commitments;
+        nullifiers;
+        tag;
+        otherPublic := getOtherPublic tag;
+      };
 
     private :=
       BaseLayer.mkWitness@{
         created;
         consumed;
-        customInputs := 0;
+        otherPrivate := BaseLayer.AnomaAtom.fromNat 0;
       };
     -- Compute proofs
     logicProofs : List BaseLayer.Proof :=

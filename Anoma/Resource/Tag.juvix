@@ -30,4 +30,4 @@ module Tag;
   Tag-Eq : Eq Tag;
 end;
 
-open Tag using {Tag} public;
+open Tag using {Tag; Consumed; Created} public;

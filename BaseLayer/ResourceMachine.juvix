@@ -36,6 +36,12 @@ module AnomaAtom;
 
   toNat : AnomaAtom -> Nat
     | (Private.mkAnomaAtom n) := n;
+
+  deriving instance
+  AnomaAtomEqI : Eq AnomaAtom;
+
+  deriving instance
+  AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
 open AnomaAtom using {AnomaAtom} public;
@@ -74,15 +80,18 @@ type Instance :=
     commitments : List Nat;
     nullifiers : List Nat;
     tag : Nat;
-    appData : AppData;
+    -- we are expecting this to be AppData[tag]
+    otherPublic : AnomaAtom;
   };
 
 positive
 type Witness :=
   mkWitness@{
+    -- Preserves the order from the transaction function. Does not have duplicates
     created : List Resource;
+    -- Preserves the order from the transaction function. Does not have duplicates
     consumed : List Resource;
-    customInputs : Nat;
+    otherPrivate : AnomaAtom;
   };
 
 builtin anoma-delta
@@ -94,6 +103,7 @@ axiom Kind : Type;
 builtin anoma-resource-commitment
 axiom commitment : Resource -> Nat;
 
+-- FIXME The computation of the nullifier should depend on the nullifier key
 builtin anoma-resource-nullifier
 axiom nullifier : Resource -> Nat;
 
