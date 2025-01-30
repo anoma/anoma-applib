@@ -51,7 +51,7 @@ isNullifierPresent
   Set.isMember nullifier nullifierSet;
 
 mkActionHelper
-  (consumed created : List Resource) {app-data : Nat := 0} : BaseLayer.Action :=
+  (consumed created : List Resource) {app-data : BaseLayer.AppData := BaseLayer.AnomaSet.empty} : BaseLayer.Action :=
   let
     nullifiers := map BaseLayer.nullifier consumed;
     commitments := map BaseLayer.commitment created;
@@ -112,7 +112,7 @@ prepareStandardTransaction
   {{Tx M}}
   {{Monad M}}
   (consumed created : List Resource)
-  {app-data : Nat := 0}
+  {app-data : BaseLayer.AppData := BaseLayer.AnomaSet.empty}
   : M BaseLayer.Transaction :=
   do {
     si <- getTxContext;
