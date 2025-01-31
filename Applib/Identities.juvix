@@ -7,7 +7,7 @@ import Anoma.Builtin.ByteArray open;
 
 module InternalIdentity;
   toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
-    internalIdentity |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
 end;
 
 module ExternalIdentity;
@@ -73,7 +73,7 @@ module Universal;
     in mkIdentity@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
+           InternalIdentity.fromByteArray (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
@@ -81,7 +81,7 @@ module Universal;
   internalIdentity : InternalIdentity := Identity.internal identity;
 
   nullifierKey : NullifierKey :=
-    internalIdentity |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
 
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity
@@ -130,7 +130,7 @@ module Alice;
     in mkIdentity@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity
+           InternalIdentity.fromByteArray
              (mkByteArray (replicate 31 0x0 ++ [0x1] ++ pubKeyBytes));
        };
 
@@ -180,7 +180,7 @@ module Bob;
     in mkIdentity@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity
+           InternalIdentity.fromByteArray
              (mkByteArray (replicate 31 0x0 ++ [0x2] ++ pubKeyBytes));
        };
 
@@ -230,7 +230,7 @@ module Carol;
     in mkIdentity@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity
+           InternalIdentity.fromByteArray
              (mkByteArray (replicate 31 0x0 ++ [0x3] ++ pubKeyBytes));
        };
 

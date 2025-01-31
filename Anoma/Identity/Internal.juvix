@@ -4,13 +4,20 @@ import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
 
---- A fixed-size data type describing an internal identity.
-type InternalIdentity :=
-  mkInternalIdentity@{
-    unInternalIdentity : ByteArray;
-  };
+module InternalIdentity;
+  --- A fixed-size data type describing an internal identity.
+  type InternalIdentity :=
+    mkInternalIdentity@{
+      unInternalIdentity : ByteArray;
+    };
 
-module InternalIdentityInternal;
+  fromByteArray : ByteArray -> InternalIdentity := mkInternalIdentity;
+
+  toByteArray : InternalIdentity -> ByteArray :=
+    InternalIdentity.unInternalIdentity;
+
+  toNat : InternalIdentity -> Nat := toByteArray >> toAnomaContents;
+
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=
     Ord.cmp
@@ -26,11 +33,9 @@ module InternalIdentityInternal;
   InternalIdentity-Eq : Eq InternalIdentity := fromOrdToEq;
 end;
 
+open InternalIdentity using {InternalIdentity} public;
+
+--- The Anoma backend does not support converting natural numbers to strings
 instance
 InternalIdentity-Show : Show InternalIdentity :=
-  mkShow
-    \{id :=
-      id
-        |> InternalIdentity.unInternalIdentity
-        |> toAnomaContents
-        |> natToString};
+  mkShow \{id := "<<InternalIdentity>>"};

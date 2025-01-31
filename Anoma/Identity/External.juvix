@@ -25,12 +25,7 @@ module ExternalIdentity;
 
   instance
   ExternalIdentity-Show : Show ExternalIdentity :=
-    mkShow
-      \{iden :=
-        iden
-          |> ExternalIdentity.unExternalIdentity
-          |> toAnomaContents
-          |> natToString};
+    mkShow \{iden := "<<ExternalIdentity>>"};
 end;
 
 open ExternalIdentity using {ExternalIdentity} public;

@@ -23,5 +23,5 @@ sign
   | message internalIdentity :=
     SystemBuiltins.anomaSignDetached
         message
-        (InternalIdentity.unInternalIdentity internalIdentity)
+        (InternalIdentity.toByteArray internalIdentity)
       |> mkSignature;
