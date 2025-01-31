@@ -21,7 +21,7 @@ sign
     -- | The resulting signature
     -> Signature
   | message internalIdentity :=
-    SystemBuiltins.anomaSign
+    SystemBuiltins.anomaSignDetached
         message
         (InternalIdentity.unInternalIdentity internalIdentity)
       |> mkSignature;
