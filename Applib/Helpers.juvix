@@ -52,7 +52,7 @@ isNullifierPresent
 
 mkActionHelper
   (consumed created : List Resource)
-  {appData : BaseLayer.AppData := BaseLayer.AnomaSet.empty}
+  (appData : BaseLayer.AppData)
   : BaseLayer.Action :=
   let
     nullifiers := map BaseLayer.nullifier consumed;
@@ -61,7 +61,7 @@ mkActionHelper
     appDataMap : Map Nat BaseLayer.AnomaAtom := BaseLayer.AppData.toMap appData;
     getOtherPublic (n : Nat) : BaseLayer.AnomaAtom :=
       case Map.lookup n appDataMap of
-        | nothing := BaseLayer.AnomaAtom.fromNat 0
+        | nothing := failwith "missing value"
         | just x := x;
 
     public-inputs (tag : Nat) : BaseLayer.Instance :=
@@ -125,7 +125,7 @@ prepareStandardTransaction
     pure
       mkTransactionHelper@{
         roots := [TxContext.currentRoot si];
-        actions := [mkActionHelper consumed created {appData}];
+        actions := [mkActionHelper consumed created appData];
       };
   };
 
