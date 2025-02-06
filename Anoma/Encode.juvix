@@ -15,6 +15,13 @@ module Encode;
 
   encode {A} (obj : A) : Encoded A :=
     Internal.mkEncoded (builtinAnomaEncode obj);
+
+  deriving instance
+  Encoded-Ord {A} : Ord (Encoded A);
+
+  deriving instance
+  Encoded-Eq {A} : Eq (Encoded A);
+
 end;
 
 open Encode using {Encoded; decode; encode} public;
