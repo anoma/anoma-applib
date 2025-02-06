@@ -21,3 +21,12 @@ StateT-Random {M : Type -> Type} {{Monad M}} : Random (StateT PRNG M) :=
     genRandomBytes (n : Nat) : StateT PRNG M ByteArray :=
       mkStateT (pseudoRandomNumberGeneratorNextBytes n >> pure);
   };
+
+-- TODO use lift
+instance
+ErrorT-Random
+  {Err} {M : Type -> Type} {{Monad M}} {{Random M}} : Random (ErrorT Err M) :=
+  mkRandom@{
+    genRandomBytes (n : Nat) : ErrorT Err M ByteArray :=
+      mkErrorT (ok <$> Random.genRandomBytes n);
+  };
