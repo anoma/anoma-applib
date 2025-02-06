@@ -73,7 +73,8 @@ module Universal;
     in mkIdentity@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           InternalIdentity.fromByteArray (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
+           InternalIdentity.fromByteArray
+             (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
