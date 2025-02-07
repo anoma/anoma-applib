@@ -95,11 +95,19 @@ builtin anoma-random-generator-split
 axiom pseudoRandomNumberGeneratorSplit : PRNG -> Pair PRNG PRNG;
 
 --- Generates a random number and returns the a
---- @param The number of output bytes to generate.
+--- @param The number of output bits to generate.
 --- @param The generator to use.
 --- @return A pair containing the random number and the advanced PRNG.
 builtin anoma-random-next-bytes
-axiom pseudoRandomNumberGeneratorNextBytes : Nat -> PRNG -> Pair ByteArray PRNG;
+axiom pseudoRandomNumberGeneratorNextBits : Nat -> PRNG -> Pair ByteArray PRNG;
+
+--- Generates a random number and returns the a
+--- @param The number of output bytes to generate.
+--- @param The generator to use.
+--- @return A pair containing the random number and the advanced PRNG.
+pseudoRandomNumberGeneratorNextBytes
+  (bytesSize : Nat) (prng : PRNG) : Pair ByteArray PRNG :=
+  pseudoRandomNumberGeneratorNextBits (bytesSize * 8) prng;
 
 builtin anoma-is-nullifier
 axiom isNullifier : Nat -> Bool;
