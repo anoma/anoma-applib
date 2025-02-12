@@ -123,7 +123,7 @@ prepareStandardTransaction
       };
   };
 
-composeAll (txs : Set BaseLayer.Transaction) : BaseLayer.Transaction :=
+composeAll (txs : List BaseLayer.Transaction) : BaseLayer.Transaction :=
   for (acc := emptyTx) (tx in txs) {
     BaseLayer.compose acc tx
   };
