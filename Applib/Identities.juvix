@@ -7,14 +7,14 @@ import Anoma.Builtin.ByteArray open;
 
 module InternalIdentity;
   toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
-    internalIdentity |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
 end;
 
 module ExternalIdentity;
   toNullifierKeyCommitment
     (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
     externalIdentity
-      |> ExternalIdentity.unExternalIdentity
+      |> ExternalIdentity.toByteArray
       |> mkNullifierKeyCommitment;
 end;
 
@@ -71,9 +71,10 @@ module Universal;
     let
       pubKeyBytes := bytes;
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
+           InternalIdentity.fromByteArray
+             (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
@@ -81,11 +82,11 @@ module Universal;
   internalIdentity : InternalIdentity := Identity.internal identity;
 
   nullifierKey : NullifierKey :=
-    internalIdentity |> InternalIdentity.unInternalIdentity |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
 
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity
-      |> ExternalIdentity.unExternalIdentity
+      |> ExternalIdentity.toByteArray
       |> mkNullifierKeyCommitment;
 end;
 
@@ -128,9 +129,9 @@ module Alice;
           0x29;
         ];
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity
+           InternalIdentity.fromByteArray
              (mkByteArray (replicate 31 0x0 ++ [0x1] ++ pubKeyBytes));
        };
 
@@ -178,9 +179,9 @@ module Bob;
           0x74;
         ];
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity
+           InternalIdentity.fromByteArray
              (mkByteArray (replicate 31 0x0 ++ [0x2] ++ pubKeyBytes));
        };
 
@@ -228,9 +229,9 @@ module Carol;
           0x4b;
         ];
     in mkIdentity@{
-         external := mkExternalIdentity (mkByteArray pubKeyBytes);
+         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
-           mkInternalIdentity
+           InternalIdentity.fromByteArray
              (mkByteArray (replicate 31 0x0 ++ [0x3] ++ pubKeyBytes));
        };
 
@@ -243,5 +244,5 @@ end;
 --- for which the ;InternalIdentity; is not known.
 module Zero;
   externalIdentity : ExternalIdentity :=
-    mkExternalIdentity (mkByteArray (replicate 32 0x0));
+    ExternalIdentity.fromByteArray (mkByteArray (replicate 32 0x0));
 end;

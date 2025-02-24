@@ -1,6 +1,7 @@
 module Applib.Trait.Tx;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
 import Anoma open;
 import Applib.Data.TxContext open;
 import BaseLayer.ResourceMachine open;
@@ -14,17 +15,21 @@ type Tx (M : Type -> Type) :=
     --- Generates a random ;Nonce;
     genRandomNonce : M Nonce;
     getTxContext : M TxContext;
+    txThrow {A} : String -> M A;
   };
 
 open Tx public;
 
 module Private;
   --- Concrete implementation of the ;Tx; trait
-  TxBuilder (A : Type) : Type := StateT PRNG (ReaderT TxContext Mtl.Identity) A;
+  TxBuilder (A : Type) : Type :=
+    ErrorT String (StateT PRNG (ReaderT TxContext Mtl.Identity)) A;
 
   instance
-  TxBuilder-Tx : Tx (StateT PRNG (ReaderT TxContext Mtl.Identity)) :=
+  TxBuilder-Tx
+    : Tx (ErrorT String (StateT PRNG (ReaderT TxContext Mtl.Identity))) :=
     mkTx@{
+      txThrow {X} : String -> TxBuilder X := throw;
       getTxContext : TxBuilder TxContext := ask;
       genRandomNonce : TxBuilder Nonce :=
         do {
@@ -34,11 +39,19 @@ module Private;
     };
 
   runTxBuilder' {A} (seed : Nat) (si : TxContext) : TxBuilder A -> A :=
-    evalState (mkPrng seed) >> runReader si >> Mtl.run;
+    runError
+      >> map fromOk
+      >> evalState (mkPrng seed)
+      >> runReader si
+      >> Mtl.run;
+
+  fromOk {A} : Result String A -> A
+    | (ok r) := r
+    | (error e) := failwith e;
 end;
 
 open Private using {TxBuilder} public;
 
 --- Run the transaction builder
 runTx (seed : Nat) (si : TxContext) : TxBuilder Transaction -> Transaction :=
-  evalState (mkPrng seed) >> runReader si >> Mtl.run;
+  Private.runTxBuilder' seed si;
