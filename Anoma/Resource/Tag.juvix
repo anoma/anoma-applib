@@ -6,20 +6,19 @@ import Anoma.Resource.Object open using {Resource};
 import Anoma.Resource.Types open;
 import Anoma.Builtin.System open;
 
-module Tag;
   --- The reference to the ;Resource;.
   type Tag :=
     | Created Commitment
-    | Consumed Nullifier;
+    | Consumed Nullifier with
 
   toNat : Tag -> Nat
-    | (Created x) := unCommitment x
-    | (Consumed x) := unNullifier x;
+    | (Created x) := Commitment.toNat x
+    | (Consumed x) := Nullifier.toNat x;
 
   fromNat (n : Nat) : Tag :=
     if
-      | isNullifier n := Consumed (mkNullifier n)
-      | isCommitment n := Created (mkCommitment n)
+      | isNullifier n := Consumed (Nullifier.mk n)
+      | isCommitment n := Created (Commitment.mk n)
       | else :=
         failwith "given natural is neither a nullifier nor a commitment";
 
@@ -30,4 +29,4 @@ module Tag;
   Tag-Eq : Eq Tag;
 end;
 
-open Tag using {Tag; Consumed; Created} public;
+open Tag using {Consumed; Created} public;

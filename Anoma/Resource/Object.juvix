@@ -2,4 +2,4 @@ module Anoma.Resource.Object;
 
 import BaseLayer.ResourceMachine as B;
 
-open B using {Resource; mkResource; module Resource} public;
+open B using {Resource; module Resource} public;

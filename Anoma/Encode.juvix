@@ -3,25 +3,20 @@ module Anoma.Encode;
 import Stdlib.Prelude open;
 import Anoma.Builtin.System open;
 
-module Encode;
-  module Internal;
-    type Encoded A := mkEncoded Nat;
-  end;
-
-  open Internal using {Encoded} public;
+type Encoded A := internalMk Nat
+with
+  coerceFromNat {A} : Nat -> Encoded A := internalMk;
 
   decode {A} : (encoded : Encoded A) -> A
-    | (Internal.mkEncoded n) := builtinAnomaDecode n;
+    | (internalMk n) := builtinAnomaDecode n;
 
-  encode {A} (obj : A) : Encoded A :=
-    Internal.mkEncoded (builtinAnomaEncode obj);
+  encode {A} (obj : A) : Encoded A := internalMk (builtinAnomaEncode obj);
 
   deriving instance
   Encoded-Ord {A} : Ord (Encoded A);
 
   deriving instance
   Encoded-Eq {A} : Eq (Encoded A);
-
 end;
 
-open Encode using {Encoded; decode; encode} public;
+open Encoded using {decode; encode} public;

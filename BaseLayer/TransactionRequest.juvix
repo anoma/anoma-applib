@@ -6,37 +6,31 @@ import Applib.Data.TxContext open;
 import Applib.Trait.Tx open;
 
 type TransactionCandidate :=
-  mkTransactionCandidate@{
+  mk@{
     --- keyspace is unused
     keyspace : Nat;
     transactionFunction : Unit -> Transaction;
   };
 
-module TransactionRequest;
-  type TransactionRequest :=
-    mkTransactionRequest@{
-      payload : Unit -> TransactionCandidate;
-    };
+type TransactionRequest :=
+  mk@{
+    payload : Unit -> TransactionCandidate;
+  }
+with
 
   fromTransaction (tx : Transaction) : TransactionRequest :=
-    mkTransactionRequest@{
+    TransactionRequest.mk@{
       payload :=
         const
-          mkTransactionCandidate@{
+          TransactionCandidate.mk@{
             keyspace := 0;
             transactionFunction := const tx;
           };
     };
 
-  buildTransactionRequest
+  build
     (seed : Nat)
     (si : TxContext)
     : TxBuilder Transaction -> TransactionRequest :=
     runTx seed si >> fromTransaction;
 end;
-
-open TransactionRequest using {
-  TransactionRequest;
-  mkTransactionRequest;
-  buildTransactionRequest;
-} public;

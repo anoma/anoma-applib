@@ -7,7 +7,7 @@ import Anoma.Builtin.ByteArray open;
 
 module InternalIdentity;
   toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
-    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.mk;
 end;
 
 module ExternalIdentity;
@@ -15,7 +15,7 @@ module ExternalIdentity;
     (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
     externalIdentity
       |> ExternalIdentity.toByteArray
-      |> mkNullifierKeyCommitment;
+      |> NullifierKeyCommitment.mk;
 end;
 
 toNullifierKey (identity : Identity) : NullifierKey :=
@@ -70,7 +70,7 @@ module Universal;
   identity : Identity :=
     let
       pubKeyBytes := bytes;
-    in mkIdentity@{
+    in Identity.mk@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
@@ -82,12 +82,12 @@ module Universal;
   internalIdentity : InternalIdentity := Identity.internal identity;
 
   nullifierKey : NullifierKey :=
-    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.mk;
 
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity
       |> ExternalIdentity.toByteArray
-      |> mkNullifierKeyCommitment;
+      |> NullifierKeyCommitment.mk;
 end;
 
 module Alice;
@@ -128,7 +128,7 @@ module Alice;
           0xba;
           0x29;
         ];
-    in mkIdentity@{
+    in Identity.mk@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
@@ -178,7 +178,7 @@ module Bob;
           0x26;
           0x74;
         ];
-    in mkIdentity@{
+    in Identity.mk@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
@@ -228,7 +228,7 @@ module Carol;
           0xa5;
           0x4b;
         ];
-    in mkIdentity@{
+    in Identity.mk@{
          external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray

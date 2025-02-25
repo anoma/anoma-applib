@@ -5,7 +5,7 @@ import Stdlib.Debug.Fail open using {failwith};
 
 import Applib.Data.TxContext open public;
 import Applib.Identities open;
-import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
+import Stdlib.Data.Set as Set open using {Set; insert; union; isMember};
 import Applib.Trait.Tx open public;
 import Stdlib.Data.Map as Map open using {Map};
 import Anoma open;
@@ -38,6 +38,8 @@ type ResourceStatus :=
   | CreatedRes Resource
   | ConsumedRes Resource;
 
+open ResourceStatus public;
+
 findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
   case findResourceByNullifier tag privateInputs of
     | just consumed := ConsumedRes consumed
@@ -65,7 +67,7 @@ mkActionHelper
         | just x := x;
 
     public-inputs (tag : Nat) : BaseLayer.Instance :=
-      BaseLayer.mkInstance@{
+      BaseLayer.Instance.mk@{
         commitments;
         nullifiers;
         tag;
@@ -73,7 +75,7 @@ mkActionHelper
       };
 
     private :=
-      BaseLayer.mkWitness@{
+      BaseLayer.Witness.mk@{
         created;
         consumed;
         otherPrivate := BaseLayer.AnomaAtom.fromNat 0;
@@ -81,9 +83,9 @@ mkActionHelper
     -- Compute proofs
     logicProofs : List BaseLayer.Proof :=
       map (resource, tag in all-resources) {
-        BaseLayer.proofLogic resource (public-inputs tag, private)
+        BaseLayer.Proof.logic resource (public-inputs tag, private)
       };
-  in BaseLayer.mkAction@{
+  in BaseLayer.Action.mk@{
        commitments;
        nullifiers;
        proofs := logicProofs;
@@ -94,7 +96,7 @@ mkTransactionHelper
   {roots : List CommitmentTree.Root := []}
   (actions : List BaseLayer.Action)
   : BaseLayer.Transaction :=
-  BaseLayer.mkTransaction@{
+  BaseLayer.Transaction.mk@{
     roots := map CommitmentTree.unRoot roots;
     actions;
     delta := BaseLayer.zeroDelta;

@@ -11,7 +11,6 @@ import Anoma.Builtin.System open using {
 import Anoma.Resource.Types open using {
   Nonce;
   RandSeed;
-  mkRandSeed;
   module RandSeed;
   module Nonce;
 };
@@ -117,7 +116,7 @@ generateNonces (n : Nat) (randSeed : RandSeed) : List Nonce :=
     };
 
 UnusedRandSeed : RandSeed :=
-  mkRandSeed
+  RandSeed.mk
     ByteArray.zero@{
       length := FixedSize.byteSize {RandSeed};
     };

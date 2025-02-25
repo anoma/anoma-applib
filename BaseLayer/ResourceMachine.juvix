@@ -24,18 +24,12 @@ Logic : Type := Instance -> Witness -> Bool;
 -- axiom toAnomaNoun {A} : A -> AnomaNoun;
 -- axiom fromAnomaNoun {A} : AnomaNoun -> A;
 
-module AnomaAtom;
-  module Private;
-    positive
-    type AnomaAtom := mkAnomaAtom Nat;
-  end;
-
-  open Private using {AnomaAtom} public;
-
-  fromNat : Nat -> AnomaAtom := Private.mkAnomaAtom;
+type AnomaAtom := mk Nat
+with
+  fromNat : Nat -> AnomaAtom := mk;
 
   toNat : AnomaAtom -> Nat
-    | (Private.mkAnomaAtom n) := n;
+    | (mk n) := n;
 
   deriving instance
   AnomaAtomEqI : Eq AnomaAtom;
@@ -44,11 +38,9 @@ module AnomaAtom;
   AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
-open AnomaAtom using {AnomaAtom} public;
-
 builtin anoma-resource
 type Resource :=
-  mkResource@{
+  mk@{
     label : Nat;
     logic : Logic;
     ephemeral : Bool;
@@ -76,7 +68,7 @@ open AppData using {AppData} public;
 
 positive
 type Instance :=
-  mkInstance@{
+  mk@{
     commitments : List Nat;
     nullifiers : List Nat;
     tag : Nat;
@@ -86,7 +78,7 @@ type Instance :=
 
 positive
 type Witness :=
-  mkWitness@{
+  mk@{
     -- Preserves the order from the transaction function. Does not have duplicates
     created : List Resource;
     -- Preserves the order from the transaction function. Does not have duplicates
@@ -112,7 +104,7 @@ axiom kind : Resource -> Kind;
 
 instance
 ShowKindI : Show Kind :=
-  mkShow@{
+  Show.mk@{
     show (_ : Kind) : String := "<kind>";
   };
 
@@ -120,7 +112,7 @@ builtin anoma-resource-delta
 axiom resourceDelta : Resource -> Delta;
 
 type LogicProof : Type :=
-  mkLogicProof@{
+  mk@{
     resource : Resource;
     inputs : Pair Instance Witness;
   };
@@ -128,34 +120,35 @@ type LogicProof : Type :=
 ComplianceProof : Type := Nat;
 
 type Proof :=
-  | proofCompliance
-  | proofLogic Resource (Pair Instance Witness);
+  | compliance
+  | logic Resource (Pair Instance Witness);
 
-mkProofCompliance (_ : ComplianceProof) : Proof := proofCompliance;
+mkProofCompliance (_ : ComplianceProof) : Proof := Proof.compliance;
 
 mkProofLogic
   (resource : Resource)
   (publicInputs : Instance)
   (privateInputs : Witness)
-  : Proof := proofLogic resource (publicInputs, privateInputs);
+  : Proof := Proof.logic resource (publicInputs, privateInputs);
 
 builtin anoma-action
 type Action :=
-  mkAction@{
+  mk@{
     commitments : List Nat;
     nullifiers : List Nat;
     proofs : List Proof;
     appData : AppData;
-  };
+  }
+with
+  builtin anoma-action-delta
+  axiom delta : Action -> Delta;
 
-builtin anoma-action-delta
-axiom actionDelta : Action -> Delta;
+  builtin anoma-actions-delta
+  axiom listDelta : List Action -> Delta;
 
-builtin anoma-actions-delta
-axiom actionsDelta : List Action -> Delta;
-
-builtin anoma-prove-action
-axiom proveAction : Action -> Nat;
+  builtin anoma-prove-action
+  axiom prove : Action -> Nat;
+end;
 
 builtin anoma-prove-delta
 axiom proveDelta : Delta -> Nat;
@@ -171,26 +164,22 @@ axiom subDelta : Delta -> Delta -> Delta;
 
 CommitmentRoot : Type := Nat;
 
-module Transaction;
-  type Transaction :=
-    mkTransaction@{
-      --- root set for spent resources
-      roots : List CommitmentRoot;
-      actions : List Action;
-      delta : Delta;
-      deltaProof : Nat;
-    };
-
-  open Transaction public;
-
+type Transaction :=
+  mk@{
+    --- root set for spent resources
+    roots : List CommitmentRoot;
+    actions : List Action;
+    delta : Delta;
+    deltaProof : Nat;
+  }
+with
   compose (tx1 tx2 : Transaction) : Transaction :=
-    mkTransaction@{
+    mk@{
       roots := roots tx1 ++ roots tx2;
       actions := actions tx1 ++ actions tx2;
       delta := addDelta (delta tx1) (delta tx2);
       deltaProof := 0;
     };
-
 end;
 
-open Transaction using {Transaction; mkTransaction; compose} public;
+open Transaction using {compose} public;

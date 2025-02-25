@@ -4,6 +4,8 @@ import Stdlib.Prelude open;
 
 trait
 type FixedSize T :=
-  mkFixedSize@{
+  mk@{
     byteSize : Nat;
   };
+
+open FixedSize using {byteSize} public;

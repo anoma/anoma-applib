@@ -11,74 +11,69 @@ open B using {Kind} public;
 
 instance
 KindEq : Eq Kind :=
-  mkEq@{
-    eq (a b : Kind) : Bool := builtinAnomaEncode a == builtinAnomaEncode b;
+  Eq.mk@{
+    isEqual (a b : Kind) : Bool := builtinAnomaEncode a == builtinAnomaEncode b;
   };
 
 --- A fixed-size data type encoding the public commitment to the private nullifier key.
 type NullifierKeyCommitment :=
-  mkNullifierKeyCommitment@{
+  mk@{
     unNullifierKeyCommitment : ByteArray;
   };
 
-open NullifierKeyCommitment public;
-
-module Nonce;
-  --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
+--- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
   --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
-  type Nonce := mkNonce ByteArray;
+  type Nonce := internalMk ByteArray with
 
   size : Nat := 32;
 
-  fromNat : Nat -> Nonce := fromAnomaContents size >> mkNonce;
+  fromNat : Nat -> Nonce := fromAnomaContents size >> internalMk;
 
-  from32SizedByteArray : ByteArray -> Nonce := mkNonce;
+  from32SizedByteArray : ByteArray -> Nonce := internalMk;
 
   toNat : Nonce -> Nat
-    | (mkNonce nonce) := toAnomaContents nonce;
-
+    | (internalMk nonce) := toAnomaContents nonce;
 end;
-
-open Nonce using {Nonce} public;
 
 --- A fixed-size data type encoding a randomness seed.
 --- NOTE: This seed provides pseudo randomness and cannot be expected to provide true randomness.
 type RandSeed :=
-  mkRandSeed@{
+  mk@{
     unRandSeed : ByteArray;
   };
 
 --- The resource label type.
 type Label :=
-  mkLabel@{
+  mk@{
     unLabel : Nat;
   };
 
 --- The resource value type.
 type Value :=
-  mkValue@{
+  mk@{
     unValue : Nat;
   };
 
 --- The resource commitment type.
 type Commitment :=
-  mkCommitment@{
+  mk@{
     unCommitment : Nat;
-  };
-
-open Commitment public;
+  } with
+  toNat : Commitment -> Nat := unCommitment;
+  end;
 
 --- The resource nullifier type.
 type Nullifier :=
-  mkNullifier@{
+  mk@{
     unNullifier : Nat;
-  };
-
-open Nullifier public;
+  }
+ with
+  toNat : Nullifier -> Nat := unNullifier;
+  end;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 type NullifierKey :=
-  mkNullifierKey@{
+  mk@{
     unNullifierKey : ByteArray;
   };
 
@@ -97,7 +92,7 @@ Value-Eq : Eq Value;
 --- Implements the ;FixedSize; trait for ;NullifierKeyCommitment;.
 instance
 NullifierKeyCommitment-FixedSize : FixedSize NullifierKeyCommitment :=
-  mkFixedSize 32;
+  FixedSize.mk 32;
 
 deriving instance
 NullifierKeyCommitment-Ord : Ord NullifierKeyCommitment;
@@ -107,7 +102,7 @@ NullifierKeyCommitment-Eq : Eq NullifierKeyCommitment;
 
 --- Implements the ;FixedSize; trait for ;Nonce;.
 instance
-Nonce-FixedSize : FixedSize Nonce := mkFixedSize 32;
+Nonce-FixedSize : FixedSize Nonce := FixedSize.mk 32;
 
 deriving instance
 Nonce-Ord : Ord Nonce;
@@ -116,13 +111,13 @@ deriving instance
 Nonce-Eq : Eq Nonce;
 
 instance
-RandSeed-FixedSize : FixedSize RandSeed := mkFixedSize 32;
+RandSeed-FixedSize : FixedSize RandSeed := FixedSize.mk 32;
 
 instance
 RandSeetFromNaturalI : FromNatural RandSeed :=
   mkFromNatural@{
     fromNat (n : Nat) : RandSeed :=
-      mkRandSeed (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
+      RandSeed.mk (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
   };
 
 deriving instance
@@ -145,7 +140,7 @@ Nullifier-Eq : Eq Nullifier;
 
 --- Implements the ;FixedSize; trait for ;NullifierKey;.
 instance
-NullifierKey-FixedSize : FixedSize NullifierKey := mkFixedSize 64;
+NullifierKey-FixedSize : FixedSize NullifierKey := FixedSize.mk 64;
 
 deriving instance
 NullifierKey-Ord : Ord NullifierKey;
