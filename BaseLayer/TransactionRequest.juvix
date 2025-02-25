@@ -17,7 +17,6 @@ type TransactionRequest :=
     payload : Unit -> TransactionCandidate;
   }
 with
-
   fromTransaction (tx : Transaction) : TransactionRequest :=
     TransactionRequest.mk@{
       payload :=
@@ -31,6 +30,6 @@ with
   build
     (seed : Nat)
     (si : TxContext)
-    : TxBuilder Transaction -> TransactionRequest :=
-    runTx seed si >> fromTransaction;
+    : Tx.Builder Transaction -> TransactionRequest :=
+    Tx.run seed si >> fromTransaction;
 end;

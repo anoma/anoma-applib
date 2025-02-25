@@ -97,7 +97,7 @@ mkTransactionHelper
   (actions : List BaseLayer.Action)
   : BaseLayer.Transaction :=
   BaseLayer.Transaction.mk@{
-    roots := map CommitmentTree.unRoot roots;
+    roots := map CommitmentTree.Root.toNat roots;
     actions;
     delta := BaseLayer.zeroDelta;
     deltaProof := 0;

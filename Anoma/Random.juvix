@@ -2,7 +2,7 @@ module Anoma.Random;
 
 import Stdlib.Prelude open;
 import Anoma.Primitives.FixedSize open;
-import Anoma.Builtin.ByteArray as ByteArray open using {ByteArray; mkByteArray};
+import Anoma.Builtin.ByteArray as ByteArray open using {ByteArray};
 import Anoma.Builtin.System as SystemBuiltins;
 import Anoma.Builtin.System open using {
   PseudoRandomNumberGenerator;
@@ -22,7 +22,7 @@ import Anoma.Builtin.ByteArray open;
 {-# inline: true #-}
 pseudoRandomNumberGeneratorInit (randSeed : RandSeed) : PRNG :=
   SystemBuiltins.pseudoRandomNumberGeneratorInit
-    (toAnomaContents (RandSeed.unRandSeed randSeed));
+    (toAnomaContents (RandSeed.toByteArray randSeed));
 
 syntax alias prngInit := pseudoRandomNumberGeneratorInit;
 
@@ -116,7 +116,7 @@ generateNonces (n : Nat) (randSeed : RandSeed) : List Nonce :=
     };
 
 UnusedRandSeed : RandSeed :=
-  RandSeed.mk
+  RandSeed.fromByteArray
     ByteArray.zero@{
       length := FixedSize.byteSize {RandSeed};
     };

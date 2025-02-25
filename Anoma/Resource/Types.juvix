@@ -38,9 +38,12 @@ end;
 --- A fixed-size data type encoding a randomness seed.
 --- NOTE: This seed provides pseudo randomness and cannot be expected to provide true randomness.
 type RandSeed :=
-  mk@{
+  internalMk@{
     unRandSeed : ByteArray;
-  };
+  } with
+  toByteArray : RandSeed -> ByteArray := unRandSeed;
+  fromByteArray : ByteArray  -> RandSeed := internalMk;
+end;
 
 --- The resource label type.
 type Label :=
@@ -117,7 +120,7 @@ instance
 RandSeetFromNaturalI : FromNatural RandSeed :=
   mkFromNatural@{
     fromNat (n : Nat) : RandSeed :=
-      RandSeed.mk (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
+      RandSeed.fromByteArray (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
   };
 
 deriving instance
