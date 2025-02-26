@@ -11,6 +11,8 @@ module InternalIdentity;
       unInternalIdentity : ByteArray;
     };
 
+  open InternalIdentity using {mkInternalIdentity} public;
+
   fromByteArray : ByteArray -> InternalIdentity := mkInternalIdentity;
 
   toByteArray : InternalIdentity -> ByteArray :=
@@ -20,7 +22,7 @@ module InternalIdentity;
 
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=
-    Ord.cmp
+    Ord.compare
       (InternalIdentity.unInternalIdentity lhs)
       (InternalIdentity.unInternalIdentity rhs);
 

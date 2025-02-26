@@ -7,3 +7,5 @@ type FixedSize T :=
   mkFixedSize@{
     byteSize : Nat;
   };
+
+open FixedSize using {mkFixedSize} public;

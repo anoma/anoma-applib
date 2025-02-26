@@ -12,6 +12,8 @@ module Tag;
     | Created Commitment
     | Consumed Nullifier;
 
+  open Tag using {Created; Consumed} public;
+
   toNat : Tag -> Nat
     | (Created x) := unCommitment x
     | (Consumed x) := unNullifier x;

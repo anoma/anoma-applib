@@ -23,7 +23,8 @@ ByteArray-Ord : Ord ByteArray :=
   let
     prod (b : ByteArray) : _ := size b, toAnomaContents b;
   in mkOrd@{
-       cmp (lhs rhs : ByteArray) : Ordering := Ord.cmp (prod lhs) (prod rhs);
+       compare (lhs rhs : ByteArray) : Ordering :=
+         Ord.compare (prod lhs) (prod rhs);
      };
 
 instance
