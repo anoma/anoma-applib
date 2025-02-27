@@ -13,13 +13,13 @@ type InternalIdentity :=
 module InternalIdentityInternal;
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=
-    Ord.cmp
+    Ord.compare
       (InternalIdentity.unInternalIdentity lhs)
       (InternalIdentity.unInternalIdentity rhs);
 
   --- Implements the ;Ord; trait for ;InternalIdentity;.
   instance
-  InternalIdentity-Ord : Ord InternalIdentity := mkOrd compare;
+  InternalIdentity-Ord : Ord InternalIdentity := Ord.mk compare;
 
   --- Implements the ;Eq; trait for ;InternalIdentity;.
   instance
@@ -28,7 +28,7 @@ end;
 
 instance
 InternalIdentity-Show : Show InternalIdentity :=
-  mkShow
+  Show.mk
     \{id :=
       id
         |> InternalIdentity.unInternalIdentity

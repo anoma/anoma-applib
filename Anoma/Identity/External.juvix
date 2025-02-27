@@ -17,7 +17,7 @@ ExternalIdentity-Eq : Eq ExternalIdentity;
 
 instance
 ExternalIdentity-Show : Show ExternalIdentity :=
-  mkShow
+  Show.mk
     \{iden :=
       iden
         |> ExternalIdentity.unExternalIdentity

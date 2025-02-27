@@ -19,5 +19,5 @@ instance
 StateT-Random {M : Type -> Type} {{Monad M}} : Random (StateT PRNG M) :=
   mkRandom@{
     genRandomBytes (n : Nat) : StateT PRNG M ByteArray :=
-      mkStateT (pseudoRandomNumberGeneratorNextBytes n >> pure);
+      StateT.mk (pseudoRandomNumberGeneratorNextBytes n >> pure);
   };

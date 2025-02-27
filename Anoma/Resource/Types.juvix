@@ -11,8 +11,8 @@ open B using {Kind} public;
 
 instance
 KindEq : Eq Kind :=
-  mkEq@{
-    eq (a b : Kind) : Bool := builtinAnomaEncode a == builtinAnomaEncode b;
+  Eq.mk@{
+    isEqual (a b : Kind) : Bool := builtinAnomaEncode a == builtinAnomaEncode b;
   };
 
 --- A fixed-size data type encoding the public commitment to the private nullifier key.
