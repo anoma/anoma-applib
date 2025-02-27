@@ -9,6 +9,8 @@ type Tag :=
   | Created Commitment
   | Consumed Nullifier;
 
+open Tag using {Created; Consumed} public;
+
 tagToNat : Tag -> Nat
   | (Created x) := unCommitment x
   | (Consumed x) := unNullifier x;

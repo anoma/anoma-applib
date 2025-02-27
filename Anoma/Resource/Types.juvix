@@ -21,12 +21,16 @@ type NullifierKeyCommitment :=
     unNullifierKeyCommitment : ByteArray;
   };
 
+open NullifierKeyCommitment using {mkNullifierKeyCommitment} public;
+
 open NullifierKeyCommitment public;
 
 module Nonce;
   --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
   --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
   type Nonce := mkNonce ByteArray;
+
+  open Nonce using {mkNonce} public;
 
   size : Nat := 32;
 
@@ -48,11 +52,15 @@ type RandSeed :=
     unRandSeed : ByteArray;
   };
 
+open RandSeed using {mkRandSeed} public;
+
 --- The resource label type.
 type Label :=
   mkLabel@{
     unLabel : Nat;
   };
+
+open Label using {mkLabel} public;
 
 --- The resource value type.
 type Value :=
@@ -60,11 +68,15 @@ type Value :=
     unValue : Nat;
   };
 
+open Value using {mkValue} public;
+
 --- The resource commitment type.
 type Commitment :=
   mkCommitment@{
     unCommitment : Nat;
   };
+
+open Commitment using {mkCommitment} public;
 
 open Commitment public;
 
@@ -74,6 +86,8 @@ type Nullifier :=
     unNullifier : Nat;
   };
 
+open Nullifier using {mkNullifier} public;
+
 open Nullifier public;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
@@ -81,6 +95,8 @@ type NullifierKey :=
   mkNullifierKey@{
     unNullifierKey : ByteArray;
   };
+
+open NullifierKey using {mkNullifierKey} public;
 
 deriving instance
 Label-Ord : Ord Label;

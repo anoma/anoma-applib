@@ -8,6 +8,8 @@ type Root :=
     unRoot : Nat;
   };
 
+open Root using {mkRoot} public;
+
 open Root public;
 
 --- A path in the commitment tree.
@@ -15,6 +17,8 @@ type Path :=
   mkPath@{
     unPath : List Nat;
   };
+
+open Path using {mkPath} public;
 
 open Path public;
 

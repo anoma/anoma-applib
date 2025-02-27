@@ -11,3 +11,5 @@ type TxContext :=
     caller : Identity;
     currentRoot : CommitmentTree.Root;
   };
+
+open TxContext using {mkTxContext} public;

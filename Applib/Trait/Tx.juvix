@@ -16,6 +16,8 @@ type Tx (M : Type -> Type) :=
     getTxContext : M TxContext;
   };
 
+open Tx using {mkTx} public;
+
 open Tx public;
 
 module Private;

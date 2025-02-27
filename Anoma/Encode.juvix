@@ -6,6 +6,8 @@ import Anoma.Builtin.System open;
 module Encode;
   module Internal;
     type Encoded A := mkEncoded Nat;
+
+    open Encoded using {mkEncoded} public;
   end;
 
   open Internal using {Encoded} public;

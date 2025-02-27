@@ -19,6 +19,8 @@ type Resource :=
     randSeed : Nat;
   };
 
+open Resource using {mkResource} public;
+
 positive
 type Instance :=
   mkInstance@{
@@ -28,6 +30,8 @@ type Instance :=
     app-data : Nat;
   };
 
+open Instance using {mkInstance} public;
+
 positive
 type Witness :=
   mkWitness@{
@@ -35,6 +39,8 @@ type Witness :=
     consumed : List Resource;
     customInputs : Nat;
   };
+
+open Witness using {mkWitness} public;
 
 builtin anoma-delta
 axiom Delta : Type;
@@ -66,11 +72,15 @@ type LogicProof : Type :=
     inputs : Pair Instance Witness;
   };
 
+open LogicProof using {mkLogicProof} public;
+
 ComplianceProof : Type := Nat;
 
 type Proof :=
   | proofCompliance
   | proofLogic Resource (Pair Instance Witness);
+
+open Proof using {proofCompliance; proofLogic} public;
 
 mkProofCompliance (_ : ComplianceProof) : Proof := proofCompliance;
 
@@ -88,6 +98,8 @@ type Action :=
     proofs : List Proof;
     app-data : Nat;
   };
+
+open Action using {mkAction} public;
 
 builtin anoma-action-delta
 axiom actionDelta : Action -> Delta;
@@ -121,6 +133,8 @@ module Transaction;
       delta : Delta;
       deltaProof : Nat;
     };
+
+  open Transaction using {mkTransaction} public;
 
   open Transaction public;
 

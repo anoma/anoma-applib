@@ -10,6 +10,8 @@ type InternalIdentity :=
     unInternalIdentity : ByteArray;
   };
 
+open InternalIdentity using {mkInternalIdentity} public;
+
 module InternalIdentityInternal;
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=

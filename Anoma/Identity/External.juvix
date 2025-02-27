@@ -9,6 +9,8 @@ type ExternalIdentity :=
     unExternalIdentity : ByteArray;
   };
 
+open ExternalIdentity using {mkExternalIdentity} public;
+
 deriving instance
 ExternalIdentity-Ord : Ord ExternalIdentity;
 

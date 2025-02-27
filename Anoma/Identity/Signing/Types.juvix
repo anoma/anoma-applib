@@ -11,6 +11,8 @@ type Signature :=
     unSignature : ByteArray;
   };
 
+open Signature using {mkSignature} public;
+
 {-# inline: true #-}
 sign
   : {Message : Type}

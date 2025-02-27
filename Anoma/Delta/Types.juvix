@@ -13,20 +13,28 @@ type VerifyingKey :=
     unVerifyingKey : UNUSED;
   };
 
+open VerifyingKey using {mkVerifyingKey} public;
+
 type ProvingKey :=
   mkProvingKey@{
     unProvingKey : UNUSED;
   };
+
+open ProvingKey using {mkProvingKey} public;
 
 type Instance :=
   mkInstance@{
     unInstance : UNUSED;
   };
 
+open Instance using {mkInstance} public;
+
 type Witness :=
   mkWitness@{
     unWitness : UNUSED;
   };
+
+open Witness using {mkWitness} public;
 
 --- The ;Delta; value zero.
 zero : Delta := STILL_MISSING_ANOMA_BUILTIN;
