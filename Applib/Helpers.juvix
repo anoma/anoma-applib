@@ -63,7 +63,7 @@ mkActionHelper
     appDataMap : Map Nat BaseLayer.AnomaAtom := BaseLayer.AppData.toMap appData;
     getOtherPublic (n : Nat) : BaseLayer.AnomaAtom :=
       case Map.lookup n appDataMap of
-        | nothing := failwith "missing value"
+        | nothing := failwith "mkActionHelper: appData missing value"
         | just x := x;
 
     public-inputs (tag : Nat) : BaseLayer.Instance :=
