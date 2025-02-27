@@ -4,19 +4,25 @@ import Stdlib.Prelude open;
 
 --- A state root of the commitment tree.
 type Root :=
-  mkRoot@{
+  internalMk@{
     unRoot : Nat;
-  };
+  }
+with
+  fromNat : Nat -> Root := internalMk;
 
-open Root public;
+  toNat : Root -> Nat := unRoot;
+end;
 
 --- A path in the commitment tree.
 type Path :=
-  mkPath@{
+  internalMk@{
     unPath : List Nat;
-  };
+  }
+with
+  fromList : List Nat -> Path := internalMk;
 
-open Path public;
+  toList : Path -> List Nat := unPath;
+end;
 
 deriving instance
 Root-Ord : Ord Root;

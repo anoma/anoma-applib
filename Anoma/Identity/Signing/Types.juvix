@@ -7,7 +7,7 @@ import Anoma.Builtin.ByteArray as ByteArray open;
 import Anoma.Builtin.System as SystemBuiltins open;
 
 type Signature :=
-  mkSignature@{
+  mk@{
     unSignature : ByteArray;
   };
 
@@ -24,4 +24,4 @@ sign
     SystemBuiltins.anomaSignDetached
         message
         (InternalIdentity.toByteArray internalIdentity)
-      |> mkSignature;
+      |> Signature.mk;

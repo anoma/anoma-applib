@@ -11,9 +11,9 @@ axiom base-commitment : Resource -> Nat;
 builtin anoma-resource-nullifier
 axiom base-nullifier : Resource -> Nat;
 
-nullifier : Resource -> Nullifier := base-nullifier >> mkNullifier;
+nullifier : Resource -> Nullifier := base-nullifier >> Nullifier.mk;
 
-commitment : Resource -> Commitment := base-commitment >> mkCommitment;
+commitment : Resource -> Commitment := base-commitment >> Commitment.mk;
 
 builtin anoma-resource-kind
 axiom kind : Resource -> Kind;
