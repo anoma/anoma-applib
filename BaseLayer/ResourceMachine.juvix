@@ -1,11 +1,148 @@
+-- based on anoma checkout b27ee767dce1b95a047475395cc75618a2516fa0
 module BaseLayer.ResourceMachine;
 
+import Anoma.Encode open;
+import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
+import Anoma.State.CommitmentTree open;
 import Stdlib.Data.Map as Map open;
 
-module AnomaSet;
-  empty {A} : AnomaSet A := fromList [];
+type Tag := privateMk Nat
+with
+  toNat : Tag -> Nat
+    | (privateMk c) := c;
 
+  fromNat : Nat -> Tag := privateMk;
+
+  deriving instance
+  Tag-Eq : Eq Tag;
+
+  deriving instance
+  Tag-Ord : Ord Tag;
+end;
+
+type Nullifier := privateMk Nat
+with
+  toNat : Nullifier -> Nat
+    | (privateMk c) := c;
+
+  fromNat : Nat -> Nullifier := privateMk;
+end;
+
+type Commitment := privateMk Nat
+with
+  toNat : Commitment -> Nat
+    | (privateMk c) := c;
+
+  fromNat : Nat -> Commitment := privateMk;
+end;
+
+--- always 0
+--- in compliance_unit.ex it is checked that the proof is 0, otherwise it errors
+type Proof := privateMk Nat
+with
+  mk : Proof := privateMk 0;
+end;
+
+--- always 0
+--- in compliance_unit.ex it is checked that the verifying key is 0, otherwise it errors
+type VerifyingKey := privateMk Nat
+with
+  mk : VerifyingKey := privateMk 0;
+end;
+
+type ConsumedItem :=
+  mk@{
+    nullifier : Nullifier;
+    root : Root;
+    logic : Nat;
+  };
+
+type DeltaHash := privateMk Nat;
+
+type CreatedItem :=
+  mk@{
+    commitment : Commitment;
+    logic : Nat;
+  };
+
+type Instance :=
+  mk@{
+    consumed : List ConsumedItem;
+    created : List CreatedItem;
+    deltaHash : DeltaHash;
+  };
+
+type ComplianceUnit :=
+  mk@{
+    proof : Proof;
+    instance : Instance;
+    verifyingKey : VerifyingKey;
+  };
+
+type Logic : Type :=
+  mk@{
+    compute : Logic.Arg -> Bool;
+
+  }
+with
+  -- BUG: the positive shouldn't be needed
+  positive
+  type Arg :=
+    mk@{
+      self : Resource;
+      isConsumed : Bool;
+      consumed : List Resource;
+      created : List Resource;
+      appData : AppData;
+    };
+end;
+
+type Label := mk Nat
+with
+  toNat : Label -> Nat
+    | (mk l) := l;
+
+  fromNat : Nat -> Label := mk;
+end;
+
+--- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
+--- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
+type Nonce := internalMk ByteArray
+with
+
+  size : Nat := 32;
+
+  fromNat : Nat -> Nonce := fromAnomaContents size >> internalMk;
+
+  from32SizedByteArray : ByteArray -> Nonce := internalMk;
+
+  toNat : Nonce -> Nat
+    | (internalMk nonce) := toAnomaContents nonce;
+end;
+
+type NullifierKeyCommitment := mk ByteArray
+with
+  fromByteArray : ByteArray -> NullifierKeyCommitment := mk;
+
+  toByteArray : NullifierKeyCommitment -> ByteArray
+    | (mk b) := b;
+end;
+
+builtin anoma-resource
+type Resource :=
+  mk@{
+    label : Label;
+    logic : Encoded Logic;
+    value : AnomaAtom;
+    quantity : Nat;
+    ephemeral : Bool;
+    nonce : Nonce;
+    nullifierKeyCommitment : NullifierKeyCommitment;
+    unusedRandSeed : Nat;
+  };
+
+module AnomaSet;
   builtin anoma-set
   axiom AnomaSet : Type -> Type;
 
@@ -14,15 +151,11 @@ module AnomaSet;
 
   builtin anoma-set-from-list
   axiom fromList {A} (list : List A) : AnomaSet A;
+
+  empty {A} : AnomaSet A := fromList [];
 end;
 
 open AnomaSet using {AnomaSet} public;
-
-Logic : Type := Instance -> Witness -> Bool;
-
--- axiom AnomaNoun : Type;
--- axiom toAnomaNoun {A} : A -> AnomaNoun;
--- axiom fromAnomaNoun {A} : AnomaNoun -> A;
 
 type AnomaAtom := mk Nat
 with
@@ -38,59 +171,49 @@ with
   AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
-builtin anoma-resource
-type Resource :=
-  mk@{
-    label : Nat;
-    logic : Logic;
-    ephemeral : Bool;
-    quantity : Nat;
-    value : Nat;
-    --- 256 bits
-    nullifierKeyCommitment : Nat;
-    --- nonce for commitments 256 bits
-    nonce : Nat;
-    randSeed : Nat;
-  };
+type AppData := privateMk (AnomaSet (Pair Tag AppData.Value))
+with
+  -- we shouldn't need the positive assertion here. It is compiler a bug
+  positive
+  type Value :=
+    mk@{
+      atom : AnomaAtom;
+      deletionCriteria : Bool;
+    }
+  with
+    fromAnomaAtom (atom : AnomaAtom) : Value :=
+      mk@{
+        atom;
+        deletionCriteria := true;
+      };
+  end;
 
-module AppData;
-  -- TODO we should replace AnomaAtom with AnomaNoun
-  AppData : Type := AnomaSet (Pair Nat (Pair AnomaAtom Bool));
+  toMap : AppData -> Map Tag AnomaAtom
+    | (privateMk m) :=
+      AnomaSet.toList m |> map \{(k, v) := k, Value.atom v} |> Map.fromList;
 
-  toMap : AppData -> Map Nat AnomaAtom :=
-    AnomaSet.toList >> map \{(k, v, _) := k, v} >> Map.fromList;
-
-  fromMap : Map Nat AnomaAtom -> AppData :=
-    Map.toList >> map \{(k, v) := k, v, true} >> AnomaSet.fromList;
+  fromMap : Map Tag AnomaAtom -> AppData :=
+    Map.toList
+      >> map \{(k, v) := k, Value.fromAnomaAtom v}
+      >> AnomaSet.fromList
+      >> privateMk;
 end;
-
-open AppData using {AppData} public;
-
-positive
-type Instance :=
-  mk@{
-    commitments : List Nat;
-    nullifiers : List Nat;
-    tag : Nat;
-    -- we are expecting this to be AppData[tag]
-    otherPublic : AnomaAtom;
-  };
-
-positive
-type Witness :=
-  mk@{
-    -- Preserves the order from the transaction function. Does not have duplicates
-    created : List Resource;
-    -- Preserves the order from the transaction function. Does not have duplicates
-    consumed : List Resource;
-    otherPrivate : AnomaAtom;
-  };
 
 builtin anoma-delta
 axiom Delta : Type;
 
 builtin anoma-kind
 axiom Kind : Type;
+
+instance
+ShowKindI : Show Kind :=
+  Show.mk@{
+    show (_ : Kind) : String := "<kind>";
+  };
+
+-- Unused
+-- builtin anoma-resource-delta
+-- axiom resourceDelta : Resource -> Delta;
 
 builtin anoma-resource-commitment
 axiom commitment : Resource -> Nat;
@@ -102,84 +225,78 @@ axiom nullifier : Resource -> Nat;
 builtin anoma-resource-kind
 axiom kind : Resource -> Kind;
 
-instance
-ShowKindI : Show Kind :=
-  Show.mk@{
-    show (_ : Kind) : String := "<kind>";
-  };
+-- type LogicProof : Type :=
+--   mk@{
+--     resource : Resource;
+--     inputs : Pair Instance Witness;
+--   };
 
-builtin anoma-resource-delta
-axiom resourceDelta : Resource -> Delta;
+-- ComplianceProof : Type := Nat;
 
-type LogicProof : Type :=
-  mk@{
-    resource : Resource;
-    inputs : Pair Instance Witness;
-  };
+-- type Proof :=
+--   | compliance
+--   | logic Resource (Pair Instance Witness);
 
-ComplianceProof : Type := Nat;
+-- mkProofCompliance (_ : ComplianceProof) : Proof := Proof.compliance;
 
-type Proof :=
-  | compliance
-  | logic Resource (Pair Instance Witness);
-
-mkProofCompliance (_ : ComplianceProof) : Proof := Proof.compliance;
-
-mkProofLogic
-  (resource : Resource)
-  (publicInputs : Instance)
-  (privateInputs : Witness)
-  : Proof := Proof.logic resource (publicInputs, privateInputs);
+-- mkProofLogic
+--   (resource : Resource)
+--   (publicInputs : Instance)
+--   (privateInputs : Witness)
+--   : Proof := Proof.logic resource (publicInputs, privateInputs);
 
 builtin anoma-action
 type Action :=
   mk@{
-    commitments : List Nat;
-    nullifiers : List Nat;
-    proofs : List Proof;
+    commitments : List Commitment;
+    nullifiers : List Nullifier;
+    resourceLogicProofs : todo {Type};
+    complianceUnits : AnomaSet ComplianceUnit;
     appData : AppData;
   }
 with
   builtin anoma-action-delta
   axiom delta : Action -> Delta;
 
-  builtin anoma-actions-delta
-  axiom listDelta : List Action -> Delta;
+-- not needed for v0.2
+  -- builtin anoma-actions-delta
+  -- axiom listDelta : List Action -> Delta;
 
-  builtin anoma-prove-action
-  axiom prove : Action -> Nat;
+-- not needed for v0.2
+  -- builtin anoma-prove-action
+  -- axiom prove : Action -> Nat;
 end;
 
-builtin anoma-prove-delta
-axiom proveDelta : Delta -> Nat;
+-- builtin anoma-prove-delta
+-- axiom proveDelta : Delta -> Nat;
 
-builtin anoma-zero-delta
-axiom zeroDelta : Delta;
+-- builtin anoma-zero-delta
+-- axiom zeroDelta : Delta;
 
-builtin anoma-add-delta
-axiom addDelta : Delta -> Delta -> Delta;
+-- builtin anoma-add-delta
+-- axiom addDelta : Delta -> Delta -> Delta;
 
-builtin anoma-sub-delta
-axiom subDelta : Delta -> Delta -> Delta;
+-- builtin anoma-sub-delta
+-- axiom subDelta : Delta -> Delta -> Delta;
 
-CommitmentRoot : Type := Nat;
+-- CommitmentRoot : Type := Nat;
 
-type Transaction :=
-  mk@{
-    --- root set for spent resources
-    roots : List CommitmentRoot;
-    actions : List Action;
-    delta : Delta;
-    deltaProof : Nat;
-  }
-with
-  compose (tx1 tx2 : Transaction) : Transaction :=
-    mk@{
-      roots := roots tx1 ++ roots tx2;
-      actions := actions tx1 ++ actions tx2;
-      delta := addDelta (delta tx1) (delta tx2);
-      deltaProof := 0;
-    };
-end;
+-- type Transaction :=
+--   mk@{
+--     --- root set for spent resources
+--     roots : List CommitmentRoot;
+--     actions : List Action;
+--     delta : Delta;
+--     deltaProof : Nat;
+--   }
+-- with
+--   compose (tx1 tx2 : Transaction) : Transaction :=
+--     mk@{
+--       roots := roots tx1 ++ roots tx2;
+--       actions := actions tx1 ++ actions tx2;
+--       delta := addDelta (delta tx1) (delta tx2);
+--       deltaProof := 0;
+--     };
+-- end;
 
-open Transaction using {compose} public;
+-- open Transaction using {compose} public;

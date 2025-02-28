@@ -21,20 +21,6 @@ type NullifierKeyCommitment :=
     unNullifierKeyCommitment : ByteArray;
   };
 
---- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
-  --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
-  type Nonce := internalMk ByteArray with
-
-  size : Nat := 32;
-
-  fromNat : Nat -> Nonce := fromAnomaContents size >> internalMk;
-
-  from32SizedByteArray : ByteArray -> Nonce := internalMk;
-
-  toNat : Nonce -> Nat
-    | (internalMk nonce) := toAnomaContents nonce;
-end;
-
 --- A fixed-size data type encoding a randomness seed.
 --- NOTE: This seed provides pseudo randomness and cannot be expected to provide true randomness.
 type RandSeed :=
