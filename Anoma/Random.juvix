@@ -8,13 +8,9 @@ import Anoma.Builtin.System open using {
   PseudoRandomNumberGenerator;
   PRNG;
 } public;
-import Anoma.Resource.Types open using {
-  Nonce;
-  RandSeed;
-  module RandSeed;
-  module Nonce;
-};
 import Anoma.Builtin.ByteArray open;
+import Anoma.Data.RandSeed open;
+import BaseLayer.ResourceMachine open;
 
 --- Creates and initializes a pure PRNG with a seed.
 --- @param seed The seed.

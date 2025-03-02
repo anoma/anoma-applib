@@ -2,24 +2,32 @@
 module BaseLayer.ResourceMachine;
 
 import Anoma.Encode open;
+import Stdlib.Debug.Fail open;
+import Anoma.Builtin.System open;
 import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
 import Anoma.State.CommitmentTree open;
 import Stdlib.Data.Map as Map open;
+import Anoma.Primitives.FixedSize open;
 
-type Tag := privateMk Nat
+-- The reference to the ;Resource;.
+type Tag :=
+  | Created Commitment
+  | Consumed Nullifier
 with
   toNat : Tag -> Nat
-    | (privateMk c) := c;
+    | (Created x) := Commitment.toNat x
+    | (Consumed x) := Nullifier.toNat x;
 
-  fromNat : Nat -> Tag := privateMk;
-
-  deriving instance
-  Tag-Eq : Eq Tag;
-
-  deriving instance
-  Tag-Ord : Ord Tag;
+  fromNat (n : Nat) : Tag :=
+    if
+      | isNullifier n := Consumed (Nullifier.fromNat n)
+      | isCommitment n := Created (Commitment.fromNat n)
+      | else :=
+        failwith "The given natural is neither a nullifier nor a commitment";
 end;
+
+open Tag using {Consumed; Created} public;
 
 type Nullifier := privateMk Nat
 with
@@ -27,6 +35,29 @@ with
     | (privateMk c) := c;
 
   fromNat : Nat -> Nullifier := privateMk;
+
+  deriving instance
+  Nullifier-Ord : Ord Nullifier;
+
+  deriving instance
+  Nullifier-Eq : Eq Nullifier;
+end;
+
+--- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
+type NullifierKey :=
+  mk@{
+    unNullifierKey : ByteArray;
+  }
+with
+  --- Implements the ;FixedSize; trait for ;NullifierKey;.
+  instance
+  NullifierKey-FixedSize : FixedSize NullifierKey := FixedSize.mk 64;
+
+  deriving instance
+  NullifierKey-Ord : Ord NullifierKey;
+
+  deriving instance
+  NullifierKey-Eq : Eq NullifierKey;
 end;
 
 type Commitment := privateMk Nat
@@ -35,7 +66,19 @@ with
     | (privateMk c) := c;
 
   fromNat : Nat -> Commitment := privateMk;
+
+  deriving instance
+  Commitment-Eq : Eq Commitment;
+
+  deriving instance
+  Commitment-Ord : Ord Commitment;
 end;
+
+deriving instance
+Tag-Eq : Eq Tag;
+
+deriving instance
+Tag-Ord : Ord Tag;
 
 --- always 0
 --- in compliance_unit.ex it is checked that the proof is 0, otherwise it errors
@@ -104,13 +147,18 @@ with
     | (mk l) := l;
 
   fromNat : Nat -> Label := mk;
+
+  deriving instance
+  Label-Ord : Ord Label;
+
+  deriving instance
+  Label-Eq : Eq Label;
 end;
 
 --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
 --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
 type Nonce := internalMk ByteArray
 with
-
   size : Nat := 32;
 
   fromNat : Nat -> Nonce := fromAnomaContents size >> internalMk;
@@ -119,14 +167,36 @@ with
 
   toNat : Nonce -> Nat
     | (internalMk nonce) := toAnomaContents nonce;
+
+  --- Implements the ;FixedSize; trait for ;Nonce;.
+  instance
+  Nonce-FixedSize : FixedSize Nonce := FixedSize.mk size;
+
+  deriving instance
+  Nonce-Ord : Ord Nonce;
+
+  deriving instance
+  Nonce-Eq : Eq Nonce;
 end;
 
+--- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 type NullifierKeyCommitment := mk ByteArray
 with
   fromByteArray : ByteArray -> NullifierKeyCommitment := mk;
 
   toByteArray : NullifierKeyCommitment -> ByteArray
     | (mk b) := b;
+
+  --- Implements the ;FixedSize; trait for ;NullifierKeyCommitment;.
+  instance
+  NullifierKeyCommitment-FixedSize : FixedSize NullifierKeyCommitment :=
+    FixedSize.mk 32;
+
+  deriving instance
+  NullifierKeyCommitment-Ord : Ord NullifierKeyCommitment;
+
+  deriving instance
+  NullifierKeyCommitment-Eq : Eq NullifierKeyCommitment;
 end;
 
 builtin anoma-resource
@@ -171,8 +241,27 @@ with
   AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
-type AppData := privateMk (AnomaSet (Pair Tag AppData.Value))
+type AppData := privateMk (AnomaSet (Pair AppData.RawTag AppData.Value))
 with
+  positive
+  type RawTag := privateMk Nat
+  with
+    fromTag : Tag -> RawTag := Tag.toNat >> fromNat;
+
+    toTag : RawTag -> Tag := toNat >> Tag.fromNat;
+
+    toNat : RawTag -> Nat
+      | (RawTag.privateMk c) := c;
+
+    fromNat : Nat -> RawTag := RawTag.privateMk;
+
+    deriving instance
+    RawTag-Eq : Eq RawTag;
+
+    deriving instance
+    RawTag-Ord : Ord RawTag;
+  end;
+
   -- we shouldn't need the positive assertion here. It is compiler a bug
   positive
   type Value :=
@@ -188,11 +277,11 @@ with
       };
   end;
 
-  toMap : AppData -> Map Tag AnomaAtom
+  toMap : AppData -> Map RawTag AnomaAtom
     | (privateMk m) :=
       AnomaSet.toList m |> map \{(k, v) := k, Value.atom v} |> Map.fromList;
 
-  fromMap : Map Tag AnomaAtom -> AppData :=
+  fromMap : Map RawTag AnomaAtom -> AppData :=
     Map.toList
       >> map \{(k, v) := k, Value.fromAnomaAtom v}
       >> AnomaSet.fromList
@@ -202,8 +291,19 @@ end;
 builtin anoma-delta
 axiom Delta : Type;
 
-builtin anoma-kind
-axiom Kind : Type;
+module Kind;
+  builtin anoma-kind
+  axiom Kind : Type;
+
+  instance
+  KindEq : Eq Kind :=
+    Eq.mk@{
+      isEqual (a b : Kind) : Bool :=
+        builtinAnomaEncode a == builtinAnomaEncode b;
+    };
+end;
+
+open Kind using {Kind} public;
 
 instance
 ShowKindI : Show Kind :=
@@ -216,11 +316,15 @@ ShowKindI : Show Kind :=
 -- axiom resourceDelta : Resource -> Delta;
 
 builtin anoma-resource-commitment
-axiom commitment : Resource -> Nat;
+axiom rawCommitment : Resource -> Nat;
+
+commitment : Resource -> Commitment := rawCommitment >> Commitment.fromNat;
 
 -- FIXME The computation of the nullifier should depend on the nullifier key
 builtin anoma-resource-nullifier
-axiom nullifier : Resource -> Nat;
+axiom rawNullifier : Resource -> Nat;
+
+nullifier : Resource -> Nullifier := rawNullifier >> Nullifier.fromNat;
 
 builtin anoma-resource-kind
 axiom kind : Resource -> Kind;
@@ -259,12 +363,12 @@ with
   axiom delta : Action -> Delta;
 
 -- not needed for v0.2
-  -- builtin anoma-actions-delta
-  -- axiom listDelta : List Action -> Delta;
+-- builtin anoma-actions-delta
+-- axiom listDelta : List Action -> Delta;
 
 -- not needed for v0.2
-  -- builtin anoma-prove-action
-  -- axiom prove : Action -> Nat;
+-- builtin anoma-prove-action
+-- axiom prove : Action -> Nat;
 end;
 
 -- builtin anoma-prove-delta
@@ -280,6 +384,14 @@ end;
 -- axiom subDelta : Delta -> Delta -> Delta;
 
 -- CommitmentRoot : Type := Nat;
+
+-- TODO
+type Transaction :=
+mk@{
+-- how to handle MapSet?
+}
+with
+end;
 
 -- type Transaction :=
 --   mk@{

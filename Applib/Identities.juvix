@@ -4,6 +4,7 @@ import Stdlib.Prelude open;
 
 import Anoma open;
 import Anoma.Builtin.ByteArray open;
+import BaseLayer.ResourceMachine open;
 
 module InternalIdentity;
   toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
