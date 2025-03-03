@@ -80,15 +80,15 @@ Tag-Eq : Eq Tag;
 deriving instance
 Tag-Ord : Ord Tag;
 
---- always 0
---- in compliance_unit.ex it is checked that the proof is 0, otherwise it errors
+-- always 0
+-- in compliance_unit.ex it is checked that the proof is 0, otherwise it errors
 type Proof := privateMk Nat
 with
   mk : Proof := privateMk 0;
 end;
 
---- always 0
---- in compliance_unit.ex it is checked that the verifying key is 0, otherwise it errors
+-- always 0
+-- in compliance_unit.ex it is checked that the verifying key is 0, otherwise it errors
 type VerifyingKey := privateMk Nat
 with
   mk : VerifyingKey := privateMk 0;
@@ -117,16 +117,23 @@ type Instance :=
   };
 
 type ComplianceUnit :=
-  mk@{
+  privateMk@{
     proof : Proof;
     instance : Instance;
     verifyingKey : VerifyingKey;
-  };
+  }
+with
+  mk (instance : Instance) : ComplianceUnit :=
+    privateMk@{
+      instance;
+      proof := Proof.mk;
+      verifyingKey := VerifyingKey.mk;
+    };
+end;
 
 type Logic : Type :=
   mk@{
     compute : Logic.Arg -> Bool;
-
   }
 with
   -- BUG: the positive shouldn't be needed
@@ -168,7 +175,6 @@ with
   toNat : Nonce -> Nat
     | (internalMk nonce) := toAnomaContents nonce;
 
-  --- Implements the ;FixedSize; trait for ;Nonce;.
   instance
   Nonce-FixedSize : FixedSize Nonce := FixedSize.mk size;
 
@@ -187,7 +193,6 @@ with
   toByteArray : NullifierKeyCommitment -> ByteArray
     | (mk b) := b;
 
-  --- Implements the ;FixedSize; trait for ;NullifierKeyCommitment;.
   instance
   NullifierKeyCommitment-FixedSize : FixedSize NullifierKeyCommitment :=
     FixedSize.mk 32;
@@ -212,9 +217,10 @@ type Resource :=
     unusedRandSeed : Nat;
   };
 
+-- Corresponds to Set in Hoon (MapSet in Elixir)
 module AnomaSet;
   builtin anoma-set
-  axiom AnomaSet : Type -> Type;
+  axiom AnomaSet (A : Type) : Type;
 
   builtin anoma-set-to-list
   axiom toList {A} (set : AnomaSet A) : List A;
@@ -226,6 +232,21 @@ module AnomaSet;
 end;
 
 open AnomaSet using {AnomaSet} public;
+
+type AnomaMap (key value : Type) := privateMk (AnomaSet (Pair key value))
+with
+  fromList {key} {value} : List (Pair key value) -> AnomaMap key value :=
+    AnomaSet.fromList >> privateMk;
+
+  toList {key} {value} : AnomaMap key value -> List (Pair key value)
+    | (privateMk m) := AnomaSet.toList m;
+
+  toMap {key} {value} {{Ord key}} : AnomaMap key value -> Map key value
+    | (privateMk m) := Map.fromList (AnomaSet.toList m);
+
+  fromMap {key} {value} : Map key value -> AnomaMap key value :=
+    Map.toList >> fromList;
+end;
 
 type AnomaAtom := mk Nat
 with
@@ -241,27 +262,28 @@ with
   AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
-type AppData := privateMk (AnomaSet (Pair AppData.RawTag AppData.Value))
+-- BUG: positive should not be necessary
+positive
+type RawTag := privateMk Nat
 with
-  positive
-  type RawTag := privateMk Nat
-  with
-    fromTag : Tag -> RawTag := Tag.toNat >> fromNat;
+  fromTag : Tag -> RawTag := Tag.toNat >> fromNat;
 
-    toTag : RawTag -> Tag := toNat >> Tag.fromNat;
+  toTag : RawTag -> Tag := toNat >> Tag.fromNat;
 
-    toNat : RawTag -> Nat
-      | (RawTag.privateMk c) := c;
+  toNat : RawTag -> Nat
+    | (privateMk c) := c;
 
-    fromNat : Nat -> RawTag := RawTag.privateMk;
+  fromNat : Nat -> RawTag := privateMk;
 
-    deriving instance
-    RawTag-Eq : Eq RawTag;
+  deriving instance
+  RawTag-Eq : Eq RawTag;
 
-    deriving instance
-    RawTag-Ord : Ord RawTag;
-  end;
+  deriving instance
+  RawTag-Ord : Ord RawTag;
+end;
 
+type AppData := privateMk (AnomaMap RawTag AppData.Value)
+with
   -- we shouldn't need the positive assertion here. It is compiler a bug
   positive
   type Value :=
@@ -279,12 +301,12 @@ with
 
   toMap : AppData -> Map RawTag AnomaAtom
     | (privateMk m) :=
-      AnomaSet.toList m |> map \{(k, v) := k, Value.atom v} |> Map.fromList;
+      AnomaMap.toList m |> map \{(k, v) := k, Value.atom v} |> Map.fromList;
 
   fromMap : Map RawTag AnomaAtom -> AppData :=
     Map.toList
       >> map \{(k, v) := k, Value.fromAnomaAtom v}
-      >> AnomaSet.fromList
+      >> AnomaMap.fromList
       >> privateMk;
 end;
 
@@ -354,7 +376,7 @@ type Action :=
   mk@{
     commitments : List Commitment;
     nullifiers : List Nullifier;
-    resourceLogicProofs : todo {Type};
+    resourceLogicProofs : AnomaMap RawTag (todo {Type});
     complianceUnits : AnomaSet ComplianceUnit;
     appData : AppData;
   }
@@ -362,13 +384,9 @@ with
   builtin anoma-action-delta
   axiom delta : Action -> Delta;
 
--- not needed for v0.2
+-- We need it to compute the Delta in unbalanced transactions
 -- builtin anoma-actions-delta
 -- axiom listDelta : List Action -> Delta;
-
--- not needed for v0.2
--- builtin anoma-prove-action
--- axiom prove : Action -> Nat;
 end;
 
 -- builtin anoma-prove-delta
@@ -383,32 +401,34 @@ end;
 -- builtin anoma-sub-delta
 -- axiom subDelta : Delta -> Delta -> Delta;
 
--- CommitmentRoot : Type := Nat;
-
--- TODO
-type Transaction :=
-mk@{
--- how to handle MapSet?
-}
+type CommitmentRoot := privateMk Nat
 with
+  fromNat : Nat -> CommitmentRoot := privateMk;
+
+  toNat : CommitmentRoot -> Nat
+    | (privateMk r) := r;
 end;
 
--- type Transaction :=
---   mk@{
---     --- root set for spent resources
---     roots : List CommitmentRoot;
---     actions : List Action;
---     delta : Delta;
---     deltaProof : Nat;
---   }
--- with
---   compose (tx1 tx2 : Transaction) : Transaction :=
---     mk@{
---       roots := roots tx1 ++ roots tx2;
---       actions := actions tx1 ++ actions tx2;
---       delta := addDelta (delta tx1) (delta tx2);
---       deltaProof := 0;
---     };
--- end;
+type DeltaProof := privateMk Nat
+with
+  -- TODO replace with builtin when ready
+  mk : DeltaProof := privateMk 0;
+end;
 
--- open Transaction using {compose} public;
+type Transaction :=
+  privateMk@{
+    roots : AnomaSet CommitmentRoot;
+    actions : AnomaSet Action;
+    deltaProof : DeltaProof;
+  }
+with
+  mk
+    (roots : AnomaSet CommitmentRoot)
+    (actions : AnomaSet Action)
+    : Transaction :=
+    privateMk@{
+      roots;
+      actions;
+      deltaProof := DeltaProof.mk;
+    };
+end;
