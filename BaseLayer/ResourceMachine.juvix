@@ -1,4 +1,4 @@
--- based on anoma checkout b27ee767dce1b95a047475395cc75618a2516fa0
+-- based on anoma checkout d2cd5ec8646655e320db979aa5aa3d78fb7665ae
 module BaseLayer.ResourceMachine;
 
 import Anoma.Encode open;
@@ -9,7 +9,6 @@ import Stdlib.Prelude open;
 import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
 
--- The reference to the ;Resource;.
 type Tag :=
   | Created Commitment
   | Consumed Nullifier
