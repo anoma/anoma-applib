@@ -25,7 +25,7 @@ module ExternalIdentity;
 
   instance
   ExternalIdentity-Show : Show ExternalIdentity :=
-    mkShow \{iden := "<<ExternalIdentity>>"};
+    Show.mk \{iden := "<<ExternalIdentity>>"};
 end;
 
 open ExternalIdentity using {ExternalIdentity} public;

@@ -20,13 +20,13 @@ module InternalIdentity;
 
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=
-    Ord.cmp
+    Ord.compare
       (InternalIdentity.unInternalIdentity lhs)
       (InternalIdentity.unInternalIdentity rhs);
 
   --- Implements the ;Ord; trait for ;InternalIdentity;.
   instance
-  InternalIdentity-Ord : Ord InternalIdentity := mkOrd compare;
+  InternalIdentity-Ord : Ord InternalIdentity := Ord.mk compare;
 
   --- Implements the ;Eq; trait for ;InternalIdentity;.
   instance
@@ -38,4 +38,4 @@ open InternalIdentity using {InternalIdentity} public;
 --- The Anoma backend does not support converting natural numbers to strings
 instance
 InternalIdentity-Show : Show InternalIdentity :=
-  mkShow \{id := "<<InternalIdentity>>"};
+  Show.mk \{id := "<<InternalIdentity>>"};

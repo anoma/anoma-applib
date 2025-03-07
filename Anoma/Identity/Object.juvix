@@ -16,11 +16,11 @@ type Identity :=
 module IdentityInternal;
   --- Compares two ;Identity; objects.
   compare (lhs rhs : Identity) : Ordering :=
-    Ord.cmp (Identity.external lhs) (Identity.external rhs);
+    Ord.compare (Identity.external lhs) (Identity.external rhs);
 
   --- Implements the ;Ord; trait for ;Identity;.
   instance
-  Identity-Ord : Ord Identity := mkOrd compare;
+  Identity-Ord : Ord Identity := Ord.mk compare;
 
   --- Implements the ;Eq; trait for ;Identity;.
   instance
@@ -29,7 +29,7 @@ end;
 
 instance
 Identity-Show : Show Identity :=
-  mkShow
+  Show.mk
     \{id :=
       "{"
         ++str "external : "
