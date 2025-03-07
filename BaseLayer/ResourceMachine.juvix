@@ -136,7 +136,6 @@ type Logic : Type :=
     compute : Logic.Arg -> Bool;
   }
 with
-  -- BUG: the positive shouldn't be needed
   positive
   type Arg :=
     mk@{
@@ -217,7 +216,7 @@ type Resource :=
     unusedRandSeed : Nat;
   };
 
--- Corresponds to Set in Hoon (MapSet in Elixir)
+-- Dev Note: Corresponds to Set in Hoon (MapSet in Elixir)
 module AnomaSet;
   builtin anoma-set
   axiom AnomaSet (A : Type) : Type;
@@ -262,8 +261,6 @@ with
   AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
--- BUG: positive should not be necessary
-positive
 type RawTag := privateMk Nat
 with
   fromTag : Tag -> RawTag := Tag.toNat >> fromNat;
@@ -284,8 +281,6 @@ end;
 
 type AppData := privateMk (AnomaMap RawTag AppData.Value)
 with
-  -- we shouldn't need the positive assertion here. It is compiler a bug
-  positive
   type Value :=
     mk@{
       atom : AnomaAtom;
@@ -343,6 +338,7 @@ axiom rawCommitment : Resource -> Nat;
 commitment : Resource -> Commitment := rawCommitment >> Commitment.fromNat;
 
 -- FIXME The computation of the nullifier should depend on the nullifier key
+-- TODO add argument
 builtin anoma-resource-nullifier
 axiom rawNullifier : Resource -> Nat;
 
@@ -351,32 +347,25 @@ nullifier : Resource -> Nullifier := rawNullifier >> Nullifier.fromNat;
 builtin anoma-resource-kind
 axiom kind : Resource -> Kind;
 
--- type LogicProof : Type :=
---   mk@{
---     resource : Resource;
---     inputs : Pair Instance Witness;
---   };
-
--- ComplianceProof : Type := Nat;
-
--- type Proof :=
---   | compliance
---   | logic Resource (Pair Instance Witness);
-
--- mkProofCompliance (_ : ComplianceProof) : Proof := Proof.compliance;
-
--- mkProofLogic
---   (resource : Resource)
---   (publicInputs : Instance)
---   (privateInputs : Witness)
---   : Proof := Proof.logic resource (publicInputs, privateInputs);
+type LogicProof :=
+  privateMk@{
+    logic : Logic;
+    proof : Proof;
+  }
+with
+  mk (logic : Logic) : LogicProof :=
+    privateMk@{
+      logic;
+      proof := Proof.mk;
+    };
+end;
 
 builtin anoma-action
 type Action :=
   mk@{
     commitments : List Commitment;
     nullifiers : List Nullifier;
-    resourceLogicProofs : AnomaMap RawTag (todo {Type});
+    resourceLogicProofs : AnomaMap RawTag LogicProof;
     complianceUnits : AnomaSet ComplianceUnit;
     appData : AppData;
   }
@@ -384,22 +373,22 @@ with
   builtin anoma-action-delta
   axiom delta : Action -> Delta;
 
--- We need it to compute the Delta in unbalanced transactions
--- builtin anoma-actions-delta
--- axiom listDelta : List Action -> Delta;
+  -- We need it to compute the Delta in unbalanced transactions
+  builtin anoma-actions-delta
+  axiom listDelta : List Action -> Delta;
 end;
 
 -- builtin anoma-prove-delta
 -- axiom proveDelta : Delta -> Nat;
 
--- builtin anoma-zero-delta
--- axiom zeroDelta : Delta;
+builtin anoma-zero-delta
+axiom zeroDelta : Delta;
 
--- builtin anoma-add-delta
--- axiom addDelta : Delta -> Delta -> Delta;
+builtin anoma-add-delta
+axiom addDelta : Delta -> Delta -> Delta;
 
--- builtin anoma-sub-delta
--- axiom subDelta : Delta -> Delta -> Delta;
+builtin anoma-sub-delta
+axiom subDelta : Delta -> Delta -> Delta;
 
 type CommitmentRoot := privateMk Nat
 with
