@@ -1,3 +1,0 @@
-module Anoma.State;
-
-import Anoma.State.CommitmentTree as CommitmentTree public;

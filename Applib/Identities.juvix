@@ -8,7 +8,7 @@ import BaseLayer.ResourceMachine open;
 
 module InternalIdentity;
   toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
-    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.mk;
+    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.fromByteArray;
 end;
 
 module ExternalIdentity;
@@ -83,7 +83,7 @@ module Universal;
   internalIdentity : InternalIdentity := Identity.internal identity;
 
   nullifierKey : NullifierKey :=
-    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.mk;
+    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.fromByteArray;
 
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity

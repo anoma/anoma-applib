@@ -6,7 +6,6 @@ import Stdlib.Debug.Fail open;
 import Anoma.Builtin.System open;
 import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
-import Anoma.State.CommitmentTree open;
 import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
 
@@ -45,10 +44,19 @@ end;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 type NullifierKey :=
-  mk@{
+  privateMk@{
     unNullifierKey : ByteArray;
   }
 with
+  fromByteArray : ByteArray -> NullifierKey := privateMk;
+
+  toByteArray : NullifierKey -> ByteArray
+    | (privateMk b) := b;
+
+  module Transparent;
+    mk : NullifierKey := privateMk (ByteArray.zero (byteSize {NullifierKey}));
+  end;
+
   --- Implements the ;FixedSize; trait for ;NullifierKey;.
   instance
   NullifierKey-FixedSize : FixedSize NullifierKey := FixedSize.mk 64;
@@ -97,7 +105,7 @@ end;
 type ConsumedItem :=
   mk@{
     nullifier : Nullifier;
-    root : Root;
+    root : CommitmentRoot;
     logic : Nat;
   };
 
@@ -214,7 +222,13 @@ type Resource :=
     nonce : Nonce;
     nullifierKeyCommitment : NullifierKeyCommitment;
     unusedRandSeed : Nat;
-  };
+  }
+with
+  module Transparent;
+    nullifier : Resource -> Nullifier :=
+      NullifiableResource.Transparent.mk >> NullifiableResource.nullifier;
+  end;
+end;
 
 -- Dev Note: Corresponds to Set in Hoon (MapSet in Elixir)
 module AnomaSet;
@@ -234,6 +248,8 @@ open AnomaSet using {AnomaSet} public;
 
 type AnomaMap (key value : Type) := privateMk (AnomaSet (Pair key value))
 with
+  empty {key value} : AnomaMap key value := fromList [];
+
   fromList {key} {value} : List (Pair key value) -> AnomaMap key value :=
     AnomaSet.fromList >> privateMk;
 
@@ -294,6 +310,8 @@ with
       };
   end;
 
+  empty : AppData := privateMk AnomaMap.empty;
+
   toMap : AppData -> Map RawTag AnomaAtom
     | (privateMk m) :=
       AnomaMap.toList m |> map \{(k, v) := k, Value.atom v} |> Map.fromList;
@@ -337,13 +355,6 @@ axiom rawCommitment : Resource -> Nat;
 
 commitment : Resource -> Commitment := rawCommitment >> Commitment.fromNat;
 
--- FIXME The computation of the nullifier should depend on the nullifier key
--- TODO add argument
-builtin anoma-resource-nullifier
-axiom rawNullifier : Resource -> Nat;
-
-nullifier : Resource -> Nullifier := rawNullifier >> Nullifier.fromNat;
-
 builtin anoma-resource-kind
 axiom kind : Resource -> Kind;
 
@@ -358,6 +369,29 @@ with
       logic;
       proof := Proof.mk;
     };
+end;
+
+type NullifiableResource :=
+  mk@{
+    key : NullifierKey;
+    resource : Resource;
+  }
+with
+  -- FIXME The computation of the nullifier should depend on the nullifier key
+  -- TODO add NullifierKey argument
+  builtin anoma-resource-nullifier
+  axiom rawNullifier : Resource -> Nat;
+
+  nullifier : NullifiableResource -> Nullifier :=
+    resource >> rawNullifier >> Nullifier.fromNat;
+
+  module Transparent;
+    mk (resource : Resource) : NullifiableResource :=
+      NullifiableResource.mk@{
+        resource;
+        key := NullifierKey.Transparent.mk;
+      };
+  end;
 end;
 
 builtin anoma-action
@@ -376,10 +410,14 @@ with
   -- We need it to compute the Delta in unbalanced transactions
   builtin anoma-actions-delta
   axiom listDelta : List Action -> Delta;
-end;
 
--- builtin anoma-prove-delta
--- axiom proveDelta : Delta -> Nat;
+  -- TODO make this a builtin
+  axiom create
+    (consumed : AnomaSet NullifiableResource)
+    (created : AnomaSet Resource)
+    (appData : AppData)
+    : Action;
+end;
 
 builtin anoma-zero-delta
 axiom zeroDelta : Delta;
@@ -390,12 +428,19 @@ axiom addDelta : Delta -> Delta -> Delta;
 builtin anoma-sub-delta
 axiom subDelta : Delta -> Delta -> Delta;
 
+--- A Commitment Tree root
 type CommitmentRoot := privateMk Nat
 with
   fromNat : Nat -> CommitmentRoot := privateMk;
 
   toNat : CommitmentRoot -> Nat
     | (privateMk r) := r;
+
+  deriving instance
+  Root-Ord : Ord CommitmentRoot;
+
+  deriving instance
+  Root-Eq : Eq CommitmentRoot;
 end;
 
 type DeltaProof := privateMk Nat
@@ -420,4 +465,7 @@ with
       actions;
       deltaProof := DeltaProof.mk;
     };
+
+  -- TODO make this a builtin
+  axiom compose (tx1 tx2 : Transaction) : Transaction;
 end;

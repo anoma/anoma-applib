@@ -1,7 +1,6 @@
 module Applib.Data.TxContext;
 
 import Stdlib.Prelude open;
-import Anoma.State open;
 import Anoma open;
 import Applib.Identities open;
 
@@ -9,5 +8,5 @@ import Applib.Identities open;
 type TxContext :=
   mk@{
     caller : Identity;
-    currentRoot : CommitmentTree.Root;
+    currentRoot : CommitmentRoot;
   };

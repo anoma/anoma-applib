@@ -12,6 +12,7 @@ module ByteArray;
 
   zero (length : Nat) : ByteArray := mk (replicate length 0x0);
 
+  --- The number of bytes in the ;ByteArray;
   builtin bytearray-length
   axiom size : ByteArray -> Nat;
 
