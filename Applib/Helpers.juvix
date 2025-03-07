@@ -38,6 +38,8 @@ type ResourceStatus :=
   | CreatedRes Resource
   | ConsumedRes Resource;
 
+open ResourceStatus using {NonExisting; CreatedRes; ConsumedRes} public;
+
 findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
   case findResourceByNullifier tag privateInputs of
     | just consumed := ConsumedRes consumed

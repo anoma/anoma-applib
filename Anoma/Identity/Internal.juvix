@@ -11,6 +11,8 @@ module InternalIdentity;
       unInternalIdentity : ByteArray;
     };
 
+  open InternalIdentity using {mkInternalIdentity} public;
+
   fromByteArray : ByteArray -> InternalIdentity := mkInternalIdentity;
 
   toByteArray : InternalIdentity -> ByteArray :=

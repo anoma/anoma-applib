@@ -7,6 +7,8 @@ import Anoma.Encode open;
 
 module Private;
   type AnomaMap := mkAnoma (Map Nat Nat);
+
+  open AnomaMap using {mkAnoma} public;
 end;
 
 open Private using {AnomaMap} public;

@@ -18,6 +18,8 @@ type Tx (M : Type -> Type) :=
     txThrow {A} : String -> M A;
   };
 
+open Tx using {mkTx} public;
+
 open Tx public;
 
 module Private;

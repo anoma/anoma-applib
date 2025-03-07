@@ -10,6 +10,8 @@ module ExternalIdentity;
       unExternalIdentity : ByteArray;
     };
 
+  open ExternalIdentity using {mkExternalIdentity} public;
+
   fromByteArray : ByteArray -> ExternalIdentity := mkExternalIdentity;
 
   toByteArray : ExternalIdentity -> ByteArray :=
