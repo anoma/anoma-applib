@@ -8,7 +8,7 @@ package : Package :=
     version :=
       mkVersion@{
         major := 0;
-        minor := 9;
+        minor := 10;
         patch := 0;
         release := just "rc.1";
       };
