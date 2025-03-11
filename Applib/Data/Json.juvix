@@ -4,7 +4,6 @@ import Stdlib.Prelude open;
 
 builtin json
 type Json :=
-  | null
   | array (List Json)
   | bool Bool
   | object (List (Pair String Json))
