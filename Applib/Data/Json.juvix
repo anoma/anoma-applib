@@ -1,0 +1,24 @@
+module Applib.Data.Json;
+
+import Stdlib.Prelude open;
+
+builtin json
+type Json :=
+  | null
+  | array (List Json)
+  | bool Bool
+  | object (List (Pair String Json))
+  | number Nat
+  | string String;
+
+trait
+type ToJson A :=
+  mk@{
+    toJson : A -> Json;
+  };
+
+trait
+type FromJson A :=
+  mk@{
+    fromJson : Json -> Maybe A;
+  };

@@ -1,0 +1,133 @@
+module BaseLayer.ShieldedResourceMachine;
+
+import BaseLayer.ResourceMachine open;
+import Anoma.Encode open;
+import Stdlib.Debug.Fail open;
+import Anoma.Builtin.ByteArray open;
+import Stdlib.Prelude open;
+import Stdlib.Data.Map as Map open;
+import Anoma.Primitives.FixedSize open;
+import Applib.Data.Json open;
+
+type InputResource :=
+  mk@{
+    label : Label;
+    quantity : Nat;
+    value : AnomaAtom;
+    ephemeral : Bool;
+    nonce : Nonce;
+    randSeed : Nat;
+  };
+
+instance
+InputResource-ToJson : ToJson InputResource :=
+  ToJson.mk@{
+    toJson : InputResource -> Json
+      | InputResource.mk@{label; quantity; value; ephemeral; nonce; randSeed} :=
+        Json.object
+          [
+            "label_ref", ToJson.toJson label;
+            "quantity", Json.number quantity;
+            "value_ref", ToJson.toJson value;
+            "is_ephemeral", Json.bool ephemeral;
+            "nonce", ToJson.toJson nonce;
+            "rand_seed", Json.number randSeed;
+          ];
+  };
+
+type OutputResource :=
+  mk@{
+    label : Label;
+    quantity : Nat;
+    value : AnomaAtom;
+    ephemeral : Bool;
+    nonce : Nonce;
+    nullifierKeyCommitment : NullifierKeyCommitment;
+    randSeed : Nat;
+  };
+
+instance
+OutputResource-ToJson : ToJson OutputResource :=
+  ToJson.mk@{
+    toJson : OutputResource -> Json
+      | OutputResource.mk@{
+          label;
+          quantity;
+          value;
+          ephemeral;
+          nonce;
+          nullifierKeyCommitment;
+          randSeed;
+        } :=
+        Json.object
+          [
+            "label_ref", ToJson.toJson label;
+            "quantity", Json.number quantity;
+            "value_ref", ToJson.toJson value;
+            "is_ephemeral", Json.bool ephemeral;
+            "nonce", ToJson.toJson nonce;
+            "nk_commitment", ToJson.toJson nullifierKeyCommitment;
+            "rand_seed", Json.number randSeed;
+          ];
+  };
+
+type MerklePath :=
+  mk@{
+    path : List (Pair Nat Bool);
+  };
+
+instance
+MerklePath-ToJson : ToJson MerklePath :=
+  ToJson.mk@{
+    toJson : MerklePath -> Json
+      | MerklePath.mk@{path} :=
+        Json.array
+          (map
+            \{x :=
+              Json.object
+                ["fst", Json.number (fst x); "snd", Json.bool (snd x)]}
+            path);
+  };
+
+builtin anoma-compliance-inputs
+type ComplianceInputs :=
+  mk@{
+    inputResource : InputResource;
+    outputResource : OutputResource;
+    inputNullifierKey : NullifierKey;
+    merklePath : MerklePath;
+    rcv : Nat;
+    ephRoot : Nat;
+  };
+
+instance
+ComplianceInputs-ToJson : ToJson ComplianceInputs :=
+  ToJson.mk@{
+    toJson : ComplianceInputs -> Json
+      | ComplianceInputs.mk@{
+          inputResource;
+          outputResource;
+          inputNullifierKey;
+          merklePath;
+          rcv;
+          ephRoot;
+        } :=
+        Json.object
+          [
+            "input", ToJson.toJson inputResource;
+            "output", ToJson.toJson outputResource;
+            "input_nf_key", ToJson.toJson inputNullifierKey;
+            "merkle_path", ToJson.toJson merklePath;
+            "rcv", Json.number rcv;
+            "eph_root", Json.number ephRoot;
+          ];
+  };
+
+builtin anoma-create-from-compliance-inputs
+axiom createFromComplianceInputs :
+  (complianceInputs : List Json) ->
+  (inputLogics : List ByteArray) ->
+  (inputWitnesses : List Json) ->
+  (outputLogics : List ByteArray) ->
+  (outputWitnesses : List Json) ->
+  Transaction;
