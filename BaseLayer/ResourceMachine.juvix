@@ -8,6 +8,7 @@ import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
 import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
+import Applib.Data.Json open;
 
 type Tag :=
   | Created Commitment
@@ -65,6 +66,13 @@ with
 
   deriving instance
   NullifierKey-Eq : Eq NullifierKey;
+
+  instance
+  NullifierKey-ToJson : ToJson NullifierKey :=
+    ToJson.mk@{
+      toJson : NullifierKey -> Json
+        | (privateMk b) := Json.number (toAnomaContents b);
+    };
 end;
 
 type Commitment := privateMk Nat
@@ -166,6 +174,34 @@ with
 
   deriving instance
   Label-Eq : Eq Label;
+
+  instance
+  Label-ToJson : ToJson Label :=
+    ToJson.mk@{
+      toJson : Label -> Json
+        | (mk l) := Json.number l;
+    };
+end;
+
+type AnomaAtom := mk Nat
+with
+  fromNat : Nat -> AnomaAtom := mk;
+
+  toNat : AnomaAtom -> Nat
+    | (mk n) := n;
+
+  deriving instance
+  AnomaAtomEqI : Eq AnomaAtom;
+
+  deriving instance
+  AnomaAtomOrdI : Ord AnomaAtom;
+
+  instance
+  AnomaAtom-ToJson : ToJson AnomaAtom :=
+    ToJson.mk@{
+      toJson : AnomaAtom -> Json
+        | (mk n) := Json.number n;
+    };
 end;
 
 --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
@@ -189,6 +225,13 @@ with
 
   deriving instance
   Nonce-Eq : Eq Nonce;
+
+  instance
+  Nonce-ToJson : ToJson Nonce :=
+    ToJson.mk@{
+      toJson : Nonce -> Json
+        | (internalMk b) := Json.number (toAnomaContents b);
+    };
 end;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
@@ -208,6 +251,13 @@ with
 
   deriving instance
   NullifierKeyCommitment-Eq : Eq NullifierKeyCommitment;
+
+  instance
+  NullifierKeyCommitment-ToJson : ToJson NullifierKeyCommitment :=
+    ToJson.mk@{
+      toJson : NullifierKeyCommitment -> Json
+        | (mk b) := Json.number (toAnomaContents b);
+    };
 end;
 
 builtin anoma-resource
@@ -260,20 +310,6 @@ with
 
   fromMap {key} {value} : Map key value -> AnomaMap key value :=
     Map.toList >> fromList;
-end;
-
-type AnomaAtom := mk Nat
-with
-  fromNat : Nat -> AnomaAtom := mk;
-
-  toNat : AnomaAtom -> Nat
-    | (mk n) := n;
-
-  deriving instance
-  AnomaAtomEqI : Eq AnomaAtom;
-
-  deriving instance
-  AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
 type RawTag := privateMk Nat
@@ -448,6 +484,7 @@ with
   mk : DeltaProof := privateMk 0;
 end;
 
+builtin anoma-transaction
 type Transaction :=
   privateMk@{
     roots : AnomaSet CommitmentRoot;
