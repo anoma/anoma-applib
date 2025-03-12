@@ -9,7 +9,7 @@ import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
 import Applib.Data.Json open;
 
-type InputResource :=
+type ConsumedResource :=
   mk@{
     label : Label;
     quantity : Nat;
@@ -20,10 +20,10 @@ type InputResource :=
   };
 
 instance
-InputResource-ToJson : ToJson InputResource :=
+ConsumedResource-ToJson : ToJson ConsumedResource :=
   ToJson.mk@{
-    toJson : InputResource -> Json
-      | InputResource.mk@{label; quantity; value; ephemeral; nonce; randSeed} :=
+    toJson : ConsumedResource -> Json
+      | ConsumedResource.mk@{label; quantity; value; ephemeral; nonce; randSeed} :=
         Json.object
           [
             "label_ref", ToJson.toJson label;
@@ -35,7 +35,7 @@ InputResource-ToJson : ToJson InputResource :=
           ];
   };
 
-type OutputResource :=
+type CreatedResource :=
   mk@{
     label : Label;
     quantity : Nat;
@@ -47,10 +47,10 @@ type OutputResource :=
   };
 
 instance
-OutputResource-ToJson : ToJson OutputResource :=
+CreatedResource-ToJson : ToJson CreatedResource :=
   ToJson.mk@{
-    toJson : OutputResource -> Json
-      | OutputResource.mk@{
+    toJson : CreatedResource -> Json
+      | CreatedResource.mk@{
           label;
           quantity;
           value;
@@ -92,8 +92,8 @@ MerklePath-ToJson : ToJson MerklePath :=
 builtin anoma-compliance-inputs
 type ComplianceInputs :=
   mk@{
-    inputResource : InputResource;
-    outputResource : OutputResource;
+    consumedResource : ConsumedResource;
+    createdResource : CreatedResource;
     inputNullifierKey : NullifierKey;
     merklePath : MerklePath;
     rcv : Nat;
@@ -105,8 +105,8 @@ ComplianceInputs-ToJson : ToJson ComplianceInputs :=
   ToJson.mk@{
     toJson : ComplianceInputs -> Json
       | ComplianceInputs.mk@{
-          inputResource;
-          outputResource;
+          consumedResource;
+          createdResource;
           inputNullifierKey;
           merklePath;
           rcv;
@@ -114,8 +114,8 @@ ComplianceInputs-ToJson : ToJson ComplianceInputs :=
         } :=
         Json.object
           [
-            "input", ToJson.toJson inputResource;
-            "output", ToJson.toJson outputResource;
+            "input", ToJson.toJson consumedResource;
+            "output", ToJson.toJson createdResource;
             "input_nf_key", ToJson.toJson inputNullifierKey;
             "merkle_path", ToJson.toJson merklePath;
             "rcv", Json.number rcv;
