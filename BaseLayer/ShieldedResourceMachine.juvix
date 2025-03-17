@@ -124,7 +124,7 @@ ComplianceInputs-ToJson : ToJson ComplianceInputs :=
   };
 
 builtin anoma-create-from-compliance-inputs
-axiom createFromComplianceInputsRaw
+axiom createFromJsonComplianceInputs
   : (complianceInputs : List Json)
     -> (inputLogics : List ByteArray)
     -> (inputWitnesses : List Json)
@@ -139,4 +139,4 @@ createFromComplianceInputs
     -> (outputLogics : List ByteArray)
     -> (outputWitnesses : List Json)
     -> Transaction :=
-  createFromComplianceInputsRaw (map ToJson.toJson complianceInputs);
+  createFromJsonComplianceInputs (map ToJson.toJson complianceInputs);
