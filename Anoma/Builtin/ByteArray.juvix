@@ -3,6 +3,7 @@ module Anoma.Builtin.ByteArray;
 import Stdlib.Prelude open;
 import BaseLayer.AnomaAtom open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Anoma.Data.Json open;
 
 module ByteArray;
   builtin bytearray
@@ -30,6 +31,12 @@ module ByteArray;
     rawFromAnomaContents@{
       size;
       contents := AnomaAtom.toNat contents;
+    };
+
+  instance
+  ByteArray-ToJson : ToJson ByteArray :=
+    ToJson.mk@{
+      toJson (b : ByteArray) : Json := Json.number (rawToAnomaContents b);
     };
 end;
 

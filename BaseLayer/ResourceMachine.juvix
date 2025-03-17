@@ -8,7 +8,7 @@ import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
 import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
-import Applib.Data.Json open;
+import Anoma.Data.Json open;
 
 type Tag :=
   | Created Commitment
@@ -75,7 +75,7 @@ with
   NullifierKey-ToJson : ToJson NullifierKey :=
     ToJson.mk@{
       toJson : NullifierKey -> Json
-        | (privateMk b) := Json.number (toAnomaContents b);
+        | (privateMk b) := ToJson.toJson b;
     };
 end;
 
@@ -261,7 +261,7 @@ with
   Nonce-ToJson : ToJson Nonce :=
     ToJson.mk@{
       toJson : Nonce -> Json
-        | (internalMk b) := Json.number (toAnomaContents b);
+        | (internalMk b) := ToJson.toJson b;
     };
 end;
 
@@ -297,7 +297,7 @@ with
   NullifierKeyCommitment-ToJson : ToJson NullifierKeyCommitment :=
     ToJson.mk@{
       toJson : NullifierKeyCommitment -> Json
-        | (mk b) := Json.number (toAnomaContents b);
+        | (mk b) := ToJson.toJson b;
     };
 end;
 
