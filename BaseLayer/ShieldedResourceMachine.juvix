@@ -1,13 +1,9 @@
 module BaseLayer.ShieldedResourceMachine;
 
-import BaseLayer.ResourceMachine open;
-import Anoma.Encode open;
-import Stdlib.Debug.Fail open;
-import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
-import Stdlib.Data.Map as Map open;
-import Anoma.Primitives.FixedSize open;
+import Anoma.Builtin.ByteArray open;
 import Anoma.Data.Json open;
+import BaseLayer.ResourceMachine open;
 
 type ConsumedResource :=
   mk@{
@@ -23,7 +19,14 @@ instance
 ConsumedResource-ToJson : ToJson ConsumedResource :=
   ToJson.mk@{
     toJson : ConsumedResource -> Json
-      | ConsumedResource.mk@{label; quantity; value; ephemeral; nonce; randSeed} :=
+      | ConsumedResource.mk@{
+          label;
+          quantity;
+          value;
+          ephemeral;
+          nonce;
+          randSeed;
+        } :=
         Json.object
           [
             "label_ref", ToJson.toJson label;
