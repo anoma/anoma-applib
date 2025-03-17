@@ -2,6 +2,7 @@ module Anoma.Builtin.ByteArray;
 
 import Stdlib.Prelude open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Anoma.Data.Json open;
 
 module ByteArray;
   builtin bytearray
@@ -21,6 +22,12 @@ module ByteArray;
 
   builtin anoma-bytearray-from-anoma-contents
   axiom fromAnomaContents : Nat -> Nat -> ByteArray;
+
+  instance
+  ByteArray-ToJson : ToJson ByteArray :=
+    ToJson.mk@{
+      toJson (b : ByteArray) : Json := Json.number (toAnomaContents b);
+    };
 end;
 
 open ByteArray using {ByteArray; fromAnomaContents; toAnomaContents} public;

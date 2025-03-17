@@ -1,4 +1,4 @@
-module Applib.Data.Json;
+module Anoma.Data.Json;
 
 import Stdlib.Prelude open;
 
