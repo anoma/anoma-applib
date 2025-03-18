@@ -143,3 +143,12 @@ createFromComplianceInputs
     -> (outputWitnesses : List Json)
     -> Transaction :=
   createFromJsonComplianceInputs (map ToJson.toJson complianceInputs);
+
+mkDefaultWitness (isConsumed : Bool) : Json :=
+  Json.object
+    [
+      "self_resource", Json.string "";
+      "is_consumed", Json.bool isConsumed;
+      "resource_nf_key", Json.string "";
+      "merkle_path", Json.string "";
+    ];
