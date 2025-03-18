@@ -389,10 +389,10 @@ with
   fromNat : Nat -> RawTag := privateMk;
 
   deriving instance
-  RawTag-Ord : Ord RawTag;
+  RawTag-Eq : Eq RawTag;
 
   deriving instance
-  RawTag-Eq : Eq RawTag;
+  RawTag-Ord : Ord RawTag;
 end;
 
 type AppData := privateMk (AnomaMap RawTag (List AppData.Value))
