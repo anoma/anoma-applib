@@ -2,3 +2,6 @@ module BaseLayer;
 
 import BaseLayer.ResourceMachine open public;
 import BaseLayer.TransactionRequest open public;
+
+import BaseLayer.ShieldedResourceMachine as Shielded public;
+import BaseLayer.Cairo as Cairo public;

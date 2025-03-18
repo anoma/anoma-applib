@@ -1,6 +1,0 @@
-module Anoma.Resource;
-
-import Anoma.Resource.Types open public;
-import Anoma.Resource.Object open public;
-import Anoma.Resource.Tag open public;
-import Anoma.Resource.Computable open public;

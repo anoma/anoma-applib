@@ -8,28 +8,29 @@ import Anoma.Identity.Internal open;
 --- A record describing an identity.
 --- NOTE: For the private testnet, this deviates from the specs https://specs.anoma.net/v2/system_architecture/identity/identity.html.
 type Identity :=
-  mkIdentity@{
+  mk@{
     external : ExternalIdentity;
     internal : InternalIdentity;
-  };
+  }
+with
+  module Internal;
+    --- Compares two ;Identity; objects.
+    compare (lhs rhs : Identity) : Ordering :=
+      Ord.compare (Identity.external lhs) (Identity.external rhs);
 
-module IdentityInternal;
-  --- Compares two ;Identity; objects.
-  compare (lhs rhs : Identity) : Ordering :=
-    Ord.cmp (Identity.external lhs) (Identity.external rhs);
+    --- Implements the ;Ord; trait for ;Identity;.
+    instance
+    Identity-Ord : Ord Identity := Ord.mk compare;
 
-  --- Implements the ;Ord; trait for ;Identity;.
-  instance
-  Identity-Ord : Ord Identity := mkOrd compare;
-
-  --- Implements the ;Eq; trait for ;Identity;.
-  instance
-  Identity-Eq : Eq Identity := fromOrdToEq;
+    --- Implements the ;Eq; trait for ;Identity;.
+    instance
+    Identity-Eq : Eq Identity := fromOrdToEq;
+  end;
 end;
 
 instance
 Identity-Show : Show Identity :=
-  mkShow
+  Show.mk
     \{id :=
       "{"
         ++str "external : "

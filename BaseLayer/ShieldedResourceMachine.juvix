@@ -1,0 +1,154 @@
+module BaseLayer.ShieldedResourceMachine;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.ByteArray open;
+import Anoma.Data.Json open;
+import BaseLayer.ResourceMachine open;
+
+type ConsumedResource :=
+  mk@{
+    label : Label;
+    quantity : Nat;
+    value : AnomaAtom;
+    ephemeral : Bool;
+    nonce : Nonce;
+    randSeed : Nat;
+  };
+
+instance
+ConsumedResource-ToJson : ToJson ConsumedResource :=
+  ToJson.mk@{
+    toJson : ConsumedResource -> Json
+      | ConsumedResource.mk@{
+          label;
+          quantity;
+          value;
+          ephemeral;
+          nonce;
+          randSeed;
+        } :=
+        Json.object
+          [
+            "label_ref", ToJson.toJson label;
+            "quantity", Json.number quantity;
+            "value_ref", ToJson.toJson value;
+            "is_ephemeral", Json.bool ephemeral;
+            "nonce", ToJson.toJson nonce;
+            "rand_seed", Json.number randSeed;
+          ];
+  };
+
+type CreatedResource :=
+  mk@{
+    label : Label;
+    quantity : Nat;
+    value : AnomaAtom;
+    ephemeral : Bool;
+    nonce : Nonce;
+    nullifierKeyCommitment : NullifierKeyCommitment;
+    randSeed : Nat;
+  };
+
+instance
+CreatedResource-ToJson : ToJson CreatedResource :=
+  ToJson.mk@{
+    toJson : CreatedResource -> Json
+      | CreatedResource.mk@{
+          label;
+          quantity;
+          value;
+          ephemeral;
+          nonce;
+          nullifierKeyCommitment;
+          randSeed;
+        } :=
+        Json.object
+          [
+            "label_ref", ToJson.toJson label;
+            "quantity", Json.number quantity;
+            "value_ref", ToJson.toJson value;
+            "is_ephemeral", Json.bool ephemeral;
+            "nonce", ToJson.toJson nonce;
+            "nk_commitment", ToJson.toJson nullifierKeyCommitment;
+            "rand_seed", Json.number randSeed;
+          ];
+  };
+
+type MerklePath :=
+  mk@{
+    path : List (Pair Nat Bool);
+  };
+
+instance
+MerklePath-ToJson : ToJson MerklePath :=
+  ToJson.mk@{
+    toJson : MerklePath -> Json
+      | MerklePath.mk@{path} :=
+        Json.array
+          (map
+            \{x :=
+              Json.object
+                ["fst", Json.number (fst x); "snd", Json.bool (snd x)]}
+            path);
+  };
+
+builtin anoma-compliance-inputs
+type ComplianceInputs :=
+  mk@{
+    consumedResource : ConsumedResource;
+    createdResource : CreatedResource;
+    inputNullifierKey : NullifierKey;
+    merklePath : MerklePath;
+    rcv : Nat;
+    ephRoot : ByteArray;
+  };
+
+instance
+ComplianceInputs-ToJson : ToJson ComplianceInputs :=
+  ToJson.mk@{
+    toJson : ComplianceInputs -> Json
+      | ComplianceInputs.mk@{
+          consumedResource;
+          createdResource;
+          inputNullifierKey;
+          merklePath;
+          rcv;
+          ephRoot;
+        } :=
+        Json.object
+          [
+            "input", ToJson.toJson consumedResource;
+            "output", ToJson.toJson createdResource;
+            "input_nf_key", ToJson.toJson inputNullifierKey;
+            "merkle_path", ToJson.toJson merklePath;
+            "rcv", Json.number rcv;
+            "eph_root", ToJson.toJson ephRoot;
+          ];
+  };
+
+builtin anoma-create-from-compliance-inputs
+axiom createFromJsonComplianceInputs
+  : (complianceInputs : List Json)
+    -> (inputLogics : List ByteArray)
+    -> (inputWitnesses : List Json)
+    -> (outputLogics : List ByteArray)
+    -> (outputWitnesses : List Json)
+    -> Transaction;
+
+createFromComplianceInputs
+  (complianceInputs : List ComplianceInputs)
+  : (inputLogics : List ByteArray)
+    -> (inputWitnesses : List Json)
+    -> (outputLogics : List ByteArray)
+    -> (outputWitnesses : List Json)
+    -> Transaction :=
+  createFromJsonComplianceInputs (map ToJson.toJson complianceInputs);
+
+mkDefaultWitness (isConsumed : Bool) : Json :=
+  Json.object
+    [
+      "self_resource", Json.string "";
+      "is_consumed", Json.bool isConsumed;
+      "resource_nf_key", Json.string "";
+      "merkle_path", Json.string "";
+    ];

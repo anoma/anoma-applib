@@ -3,14 +3,13 @@ module Anoma.Identity.External;
 import Stdlib.Prelude open;
 import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
 
-module ExternalIdentity;
-  --- A fixed-size data type describing an external identity.
-  type ExternalIdentity :=
-    mkExternalIdentity@{
-      unExternalIdentity : ByteArray;
-    };
-
-  fromByteArray : ByteArray -> ExternalIdentity := mkExternalIdentity;
+--- A fixed-size data type describing an external identity.
+type ExternalIdentity :=
+  mk@{
+    unExternalIdentity : ByteArray;
+  }
+with
+  fromByteArray : ByteArray -> ExternalIdentity := ExternalIdentity.mk;
 
   toByteArray : ExternalIdentity -> ByteArray :=
     ExternalIdentity.unExternalIdentity;
@@ -25,7 +24,5 @@ module ExternalIdentity;
 
   instance
   ExternalIdentity-Show : Show ExternalIdentity :=
-    mkShow \{iden := "<<ExternalIdentity>>"};
+    Show.mk \{iden := "<<ExternalIdentity>>"};
 end;
-
-open ExternalIdentity using {ExternalIdentity} public;
