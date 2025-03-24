@@ -155,6 +155,8 @@ with
       created : List Resource;
       appData : AppData;
     };
+
+   alwaysTrue : Logic := Logic.mk \{_ := true};
 end;
 
 type Label := mk Nat
@@ -234,7 +236,7 @@ end;
 
 builtin anoma-resource
 type Resource :=
-  privateMk@{
+  mk@{
     logic : Encoded Logic;
     label : Label;
     value : AnomaAtom;
