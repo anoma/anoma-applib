@@ -18,19 +18,28 @@ isNullifierPresent
   Set.isMember nullifier nullifierSet;
 
 mkActionHelper
+  {M : Type -> Type}
+  {{Tx M}}
+  {{Monad M}}
   (consumed created : List Resource)
   (appData : AppData)
-  : Action :=
- Action.create@{
-  consumed := map NullifiableResource.Transparent.mk consumed;
-  created := created;
-       appData;
-     };
+  : M Action :=
+  do {
+    env <- getTxContext;
+    let
+      root := TxContext.currentRoot env;
+    in
+    pure
+      Action.create@{
+        consumed :=
+          map (RootedNullifiableResource.Transparent.mk root) consumed;
+        created := created;
+        appData;
+      };
+  };
 
 mkTransactionHelper
-  (roots : List CommitmentRoot)
-  (actions : List Action)
-  : Transaction :=
+  (roots : List CommitmentRoot) (actions : List Action) : Transaction :=
   Transaction.mk@{
     roots := AnomaSet.fromList roots;
     actions := AnomaSet.fromList actions;
@@ -40,6 +49,24 @@ emptyTx : Transaction :=
   mkTransactionHelper@{
     roots := [];
     actions := [];
+  };
+
+--- Create a ;Transaction; with ;Action;s that do not use
+--- the proof ;Instance; publicData field
+mkTransactionNoPublicData
+  {M : Type -> Type}
+  {{Tx M}}
+  {{Monad M}}
+  (consumed created : List Resource)
+  : M Transaction :=
+  do {
+    si <- getTxContext;
+    a <- mkActionHelper consumed created AppData.empty;
+    pure
+      mkTransactionHelper@{
+        roots := [TxContext.currentRoot si];
+        actions := [a];
+      };
   };
 
 --- A helper function preparing the transaction object by creating an action object
@@ -57,10 +84,11 @@ prepareStandardTransaction
   : M Transaction :=
   do {
     si <- getTxContext;
+    a <- mkActionHelper consumed created appData;
     pure
       mkTransactionHelper@{
         roots := [TxContext.currentRoot si];
-        actions := [mkActionHelper consumed created appData];
+        actions := [a];
       };
   };
 

@@ -435,8 +435,8 @@ with
           failwith "mkEphemeral requires an ephemeral resource as an argument";
 
     mk
-      (resource : Resource)
       (root : CommitmentRoot)
+      (resource : Resource)
       : RootedNullifiableResource :=
       RootedNullifiableResource.mk@{
         resource;
