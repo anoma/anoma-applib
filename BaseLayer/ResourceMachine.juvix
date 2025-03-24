@@ -156,7 +156,7 @@ with
       appData : AppData;
     };
 
-   alwaysTrue : Logic := Logic.mk \{_ := true};
+  alwaysTrue : Logic := Logic.mk \{_ := true};
 end;
 
 type Label := mk Nat
@@ -296,6 +296,12 @@ with
 
   toNat : AnomaAtom -> Nat
     | (mk n) := n;
+
+  instance
+  AnomaAtom-FromNatural : FromNatural AnomaAtom :=
+    mkFromNatural@{
+      fromNat : Nat -> AnomaAtom := AnomaAtom.fromNat;
+    };
 
   deriving instance
   AnomaAtomEqI : Eq AnomaAtom;
@@ -482,8 +488,8 @@ with
 
   builtin anoma-action-create
   axiom create
-    (consumed : AnomaSet NullifiableResource)
-    (created : AnomaSet Resource)
+    (consumed : List RootedNullifiableResource)
+    (created : List Resource)
     (appData : AppData)
     : Action;
 end;

@@ -22,8 +22,8 @@ mkActionHelper
   (appData : AppData)
   : Action :=
  Action.create@{
-  consumed := AnomaSet.fromList (map NullifiableResource.Transparent.mk consumed);
-  created := AnomaSet.fromList created;
+  consumed := map NullifiableResource.Transparent.mk consumed;
+  created := created;
        appData;
      };
 
