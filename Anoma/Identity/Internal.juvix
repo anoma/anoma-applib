@@ -1,6 +1,7 @@
 module Anoma.Identity.Internal;
 
 import Stdlib.Prelude open;
+import BaseLayer.AnomaAtom open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
 
@@ -15,7 +16,9 @@ with
   toByteArray : InternalIdentity -> ByteArray :=
     InternalIdentity.unInternalIdentity;
 
-  toNat : InternalIdentity -> Nat := toByteArray >> toAnomaContents;
+  toAnomaAtom : InternalIdentity -> AnomaAtom := toByteArray >> toAnomaContents;
+
+  toNat : InternalIdentity -> Nat := toAnomaAtom >> AnomaAtom.toNat;
 
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=

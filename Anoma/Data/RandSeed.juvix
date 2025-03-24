@@ -3,6 +3,7 @@ module Anoma.Data.RandSeed;
 import Stdlib.Prelude open;
 import Anoma.Builtin.System open;
 import Anoma.Builtin.ByteArray open;
+import BaseLayer.AnomaAtom open;
 import Anoma.Primitives.FixedSize open;
 
 --- A fixed-size data type encoding a randomness seed.
@@ -22,7 +23,7 @@ instance
 RandSeetFromNaturalI : FromNatural RandSeed :=
   mkFromNatural@{
     fromNat (n : Nat) : RandSeed :=
-      RandSeed.fromByteArray (fromAnomaContents (FixedSize.byteSize {RandSeed}) n);
+      RandSeed.fromByteArray (fromAnomaContents (FixedSize.byteSize {RandSeed}) (AnomaAtom.fromNat n));
   };
 
 deriving instance

@@ -1,5 +1,6 @@
 module BaseLayer.ResourceMachine;
 
+import BaseLayer.AnomaAtom open;
 import Anoma.Encode open;
 import Stdlib.Debug.Fail open;
 import Anoma.Builtin.System open;
@@ -36,8 +37,7 @@ end;
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 type NullifierKey := privateMk ByteArray
 with
-  -- should be mk AnomaAtom
-  type Raw := mk Nat;
+  type Raw := mk AnomaAtom;
 
   fromRaw : NullifierKey.Raw -> NullifierKey
     | (Raw.mk n) := privateMk (fromAnomaContents size n);
@@ -178,7 +178,7 @@ end;
 type Nonce := privateMk ByteArray
 with
   -- should be mk AnomaAtom
-  type Raw := mk Nat;
+  type Raw := mk AnomaAtom;
 
   fromRaw : Nonce.Raw -> Nonce
     | (Raw.mk n) := privateMk (fromAnomaContents size n);
@@ -191,13 +191,11 @@ with
 
   size : Nat := 32;
 
-  fromNat : Nat -> Nonce := fromAnomaContents size >> privateMk;
+  fromAnomaAtom : AnomaAtom -> Nonce := fromAnomaContents size >> privateMk;
 
   from32SizedByteArray : ByteArray -> Nonce := privateMk;
 
-  toAnomaAtom : Nonce -> AnomaAtom := toNat >> AnomaAtom.fromNat;
-
-  toNat : Nonce -> Nat
+  toAnomaAtom : Nonce -> AnomaAtom
     | (privateMk nonce) := toAnomaContents nonce;
 
   deriving instance
@@ -216,7 +214,7 @@ with
   fromByteArray : ByteArray -> NullifierKeyCommitment := mk;
 
   toAnomaAtom : NullifierKeyCommitment -> AnomaAtom :=
-    toByteArray >> toAnomaContents >> AnomaAtom.fromNat;
+    toByteArray >> toAnomaContents;
 
   toByteArray : NullifierKeyCommitment -> ByteArray
     | (mk b) := b;
@@ -288,26 +286,6 @@ with
 
   fromMap {key} {value} : Map key value -> AnomaMap key value :=
     Map.toList >> fromList;
-end;
-
-type AnomaAtom := mk Nat
-with
-  fromNat : Nat -> AnomaAtom := mk;
-
-  toNat : AnomaAtom -> Nat
-    | (mk n) := n;
-
-  instance
-  AnomaAtom-FromNatural : FromNatural AnomaAtom :=
-    mkFromNatural@{
-      fromNat : Nat -> AnomaAtom := AnomaAtom.fromNat;
-    };
-
-  deriving instance
-  AnomaAtomEqI : Eq AnomaAtom;
-
-  deriving instance
-  AnomaAtomOrdI : Ord AnomaAtom;
 end;
 
 deriving instance

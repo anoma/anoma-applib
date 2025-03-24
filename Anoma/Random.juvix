@@ -1,6 +1,7 @@
 module Anoma.Random;
 
 import Stdlib.Prelude open;
+import BaseLayer.AnomaAtom open;
 import Anoma.Primitives.FixedSize open;
 import Anoma.Builtin.ByteArray as ByteArray open using {ByteArray};
 import Anoma.Builtin.System as SystemBuiltins;
@@ -18,7 +19,7 @@ import BaseLayer.ResourceMachine open;
 {-# inline: true #-}
 pseudoRandomNumberGeneratorInit (randSeed : RandSeed) : PRNG :=
   SystemBuiltins.pseudoRandomNumberGeneratorInit
-    (toAnomaContents (RandSeed.toByteArray randSeed));
+    (AnomaAtom.toNat (toAnomaContents (RandSeed.toByteArray randSeed)));
 
 syntax alias prngInit := pseudoRandomNumberGeneratorInit;
 

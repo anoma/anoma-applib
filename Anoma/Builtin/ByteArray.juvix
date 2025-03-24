@@ -1,6 +1,7 @@
 module Anoma.Builtin.ByteArray;
 
 import Stdlib.Prelude open;
+import BaseLayer.AnomaAtom open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 
 module ByteArray;
@@ -17,10 +18,19 @@ module ByteArray;
   axiom size : ByteArray -> Nat;
 
   builtin anoma-bytearray-to-anoma-contents
-  axiom toAnomaContents : ByteArray -> Nat;
+  axiom rawToAnomaContents : ByteArray -> Nat;
+
+  toAnomaContents : ByteArray -> AnomaAtom :=
+    rawToAnomaContents >> AnomaAtom.fromNat;
 
   builtin anoma-bytearray-from-anoma-contents
-  axiom fromAnomaContents : Nat -> Nat -> ByteArray;
+  axiom rawFromAnomaContents (size : Nat) (contents : Nat) : ByteArray;
+
+  fromAnomaContents (size : Nat) (contents : AnomaAtom) : ByteArray :=
+    rawFromAnomaContents@{
+      size;
+      contents := AnomaAtom.toNat contents;
+    };
 end;
 
 open ByteArray using {ByteArray; fromAnomaContents; toAnomaContents} public;
