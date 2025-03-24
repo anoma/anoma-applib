@@ -1,6 +1,6 @@
 module BaseLayer.ResourceMachine;
 
-import BaseLayer.AnomaAtom open;
+import BaseLayer.AnomaAtom open public;
 import Anoma.Encode open;
 import Stdlib.Debug.Fail open;
 import Anoma.Builtin.System open;
