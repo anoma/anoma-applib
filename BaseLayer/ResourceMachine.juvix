@@ -1,4 +1,3 @@
--- based on anoma checkout d2cd5ec8646655e320db979aa5aa3d78fb7665ae
 module BaseLayer.ResourceMachine;
 
 import Anoma.Encode open;
@@ -185,11 +184,14 @@ with
   toRaw : Nonce -> Nonce.Raw
     | (Nonce.privateMk bs) := Raw.mk (toAnomaContents bs);
 
+  instance
+  Nonce-FixedSize : FixedSize Nonce := FixedSize.mk size;
+
   size : Nat := 32;
 
   fromNat : Nat -> Nonce := fromAnomaContents size >> privateMk;
 
-  from32SizedByteArray : ByteArray -> Nonce :=  privateMk;
+  from32SizedByteArray : ByteArray -> Nonce := privateMk;
 
   toAnomaAtom : Nonce -> AnomaAtom := toNat >> AnomaAtom.fromNat;
 
@@ -207,7 +209,7 @@ end;
 type NullifierKeyCommitment := mk ByteArray
 with
   zero : NullifierKeyCommitment :=
-    NullifierKeyCommitment.mk (ByteArray.zero 32);
+    NullifierKeyCommitment.mk (ByteArray.zero size);
 
   fromByteArray : ByteArray -> NullifierKeyCommitment := mk;
 
@@ -217,9 +219,11 @@ with
   toByteArray : NullifierKeyCommitment -> ByteArray
     | (mk b) := b;
 
+  size : Nat := 32;
+
   instance
   NullifierKeyCommitment-FixedSize : FixedSize NullifierKeyCommitment :=
-    FixedSize.mk 32;
+    FixedSize.mk size;
 
   deriving instance
   NullifierKeyCommitment-Ord : Ord NullifierKeyCommitment;
