@@ -16,6 +16,10 @@ with
   toNat : Tag -> Nat
     | (Created x) := Commitment.toNat x
     | (Consumed x) := Nullifier.toNat x;
+
+  fromCommitment : Commitment -> Tag := Created;
+
+  fromNullifier : Nullifier -> Tag := Consumed;
 end;
 
 open Tag using {Consumed; Created} public;
@@ -26,6 +30,8 @@ with
     | (privateMk c) := c;
 
   fromNat : Nat -> Nullifier := privateMk;
+
+  toRawTag : Nullifier -> RawTag := toNat >> RawTag.fromNat;
 
   deriving instance
   Nullifier-Ord : Ord Nullifier;
@@ -70,18 +76,14 @@ with
 
   fromNat : Nat -> Commitment := privateMk;
 
+  toRawTag : Commitment -> RawTag := toNat >> RawTag.fromNat;
+
   deriving instance
   Commitment-Eq : Eq Commitment;
 
   deriving instance
   Commitment-Ord : Ord Commitment;
 end;
-
-deriving instance
-Tag-Eq : Eq Tag;
-
-deriving instance
-Tag-Ord : Ord Tag;
 
 -- always 0
 -- in compliance_unit.ex it is checked that the proof is 0, otherwise it errors
@@ -522,3 +524,9 @@ with
   builtin anoma-transaction-compose
   axiom compose (tx1 tx2 : Transaction) : Transaction;
 end;
+
+deriving instance
+Tag-Ord : Ord Tag;
+
+deriving instance
+Tag-Eq : Eq Tag;
