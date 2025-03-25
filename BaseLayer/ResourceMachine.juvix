@@ -156,7 +156,20 @@ with
       consumed : List Resource;
       created : List Resource;
       appData : AppData;
-    };
+    }
+  with
+    nullifiers (a : Arg) : List Nullifier :=
+      map Resource.Transparent.nullifier (Arg.consumed a);
+
+    commitments (a : Arg) : List Commitment := map commitment (Arg.created a);
+
+    selfTag (a : Arg) : Tag :=
+      let
+        self := Arg.self a;
+      in if
+        | Arg.isConsumed a := Consumed (Resource.Transparent.nullifier self)
+        | else := Created (commitment self);
+  end;
 
   alwaysTrue : Logic := Logic.mk \{_ := true};
 end;
