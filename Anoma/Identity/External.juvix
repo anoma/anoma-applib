@@ -2,7 +2,12 @@ module Anoma.Identity.External;
 
 import Stdlib.Prelude open;
 import BaseLayer.AnomaAtom open;
-import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
+import Anoma.Primitives.FixedSize open;
+import Anoma.Builtin.ByteArray open using {
+  ByteArray;
+  toAnomaContents;
+  fromAnomaContents;
+};
 
 --- A fixed-size data type describing an external identity.
 type ExternalIdentity :=
@@ -11,6 +16,14 @@ type ExternalIdentity :=
   }
 with
   fromByteArray : ByteArray -> ExternalIdentity := ExternalIdentity.mk;
+
+  fromAnomaAtom : AnomaAtom -> ExternalIdentity :=
+    fromAnomaContents size >> fromByteArray;
+
+  instance
+  ExternalIdentity-FixedSize : FixedSize ExternalIdentity := FixedSize.mk size;
+
+  size : Nat := 32;
 
   toByteArray : ExternalIdentity -> ByteArray :=
     ExternalIdentity.unExternalIdentity;
