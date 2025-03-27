@@ -17,6 +17,8 @@ with
     | (Created x) := Commitment.toNat x
     | (Consumed x) := Nullifier.toNat x;
 
+  toRaw : Tag -> RawTag := RawTag.fromTag;
+
   fromCommitment : Commitment -> Tag := Created;
 
   fromNullifier : Nullifier -> Tag := Consumed;
@@ -144,12 +146,12 @@ end;
 
 type Logic : Type :=
   mk@{
-    compute : Logic.Arg -> Bool;
+    compute : Logic.Args -> Bool;
   }
 with
   -- called RLPS.Instance
   positive
-  type Arg :=
+  type Args :=
     mk@{
       self : Resource;
       isConsumed : Bool;
@@ -158,16 +160,16 @@ with
       appData : AppData;
     }
   with
-    nullifiers (a : Arg) : List Nullifier :=
-      map Resource.Transparent.nullifier (Arg.consumed a);
+    nullifiers (a : Args) : List Nullifier :=
+      map Resource.Transparent.nullifier (Args.consumed a);
 
-    commitments (a : Arg) : List Commitment := map commitment (Arg.created a);
+    commitments (a : Args) : List Commitment := map commitment (Args.created a);
 
-    selfTag (a : Arg) : Tag :=
+    selfTag (a : Args) : Tag :=
       let
-        self := Arg.self a;
+        self := Args.self a;
       in if
-        | Arg.isConsumed a := Consumed (Resource.Transparent.nullifier self)
+        | Args.isConsumed a := Consumed (Resource.Transparent.nullifier self)
         | else := Created (commitment self);
   end;
 
@@ -221,8 +223,10 @@ with
 end;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
+-- dev: if this has to interact with anoma, replace ByteArray with AnomaAtom
 type NullifierKeyCommitment := mk ByteArray
 with
+  -- TODO use universal instead of zero
   zero : NullifierKeyCommitment :=
     NullifierKeyCommitment.mk (ByteArray.zero size);
 
@@ -335,7 +339,7 @@ with
   fromNat : Nat -> RawTag := privateMk;
 end;
 
-type AppData := privateMk (AnomaMap RawTag AppData.Value)
+type AppData := privateMk (AnomaMap RawTag (List AppData.Value))
 with
   type Value :=
     mk@{
@@ -352,13 +356,28 @@ with
 
   empty : AppData := privateMk AnomaMap.empty;
 
-  toMap : AppData -> Map RawTag AnomaAtom
+  toMap1 : AppData -> Map RawTag AnomaAtom
     | (privateMk m) :=
-      AnomaMap.toList m |> map \{(k, v) := k, Value.atom v} |> Map.fromList;
+      AnomaMap.toList m
+        |> map
+          \{(k, vs) :=
+            k
+              , case vs of {
+                  | [v] := Value.atom v
+                  | _ :=
+                    failwith "expected exaclty one value in the AppData item"
+                }}
+        |> Map.fromList;
 
-  fromMap : Map RawTag AnomaAtom -> AppData :=
+  toMap : AppData -> Map RawTag (List AnomaAtom)
+    | (privateMk m) :=
+      AnomaMap.toList m |> map \{(k, v) := k, map Value.atom v} |> Map.fromList;
+
+  fromMap1 : Map RawTag AnomaAtom -> AppData := map \{x := [x]} >> fromMap;
+
+  fromMap : Map RawTag (List AnomaAtom) -> AppData :=
     Map.toList
-      >> map \{(k, v) := k, Value.fromAnomaAtom v}
+      >> map \{(k, v) := k, map Value.fromAnomaAtom v}
       >> AnomaMap.fromList
       >> privateMk;
 end;
@@ -525,6 +544,7 @@ type Transaction :=
   }
 with
   mk
+    -- TODO change anomaset to list?
     (roots : AnomaSet CommitmentRoot)
     (actions : AnomaSet Action)
     : Transaction :=
