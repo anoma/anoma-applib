@@ -1,0 +1,20 @@
+module Nockma.Term;
+
+import Stdlib.Prelude open;
+
+type Term :=
+  | atom Nat
+  | cell@{
+      left : Term;
+      right : Term;
+    };
+
+type instance Reify (T : Type) :=
+  mk@{
+    reify : T -> Term;
+  };
+
+type Reflect (T : Type) :=
+  mk@{
+    reflect : Term -> T;
+  };
