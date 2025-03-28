@@ -1,41 +1,54 @@
 module Anoma.Identity.Internal;
 
 import Stdlib.Prelude open;
+import BaseLayer.AnomaAtom open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
-import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
+import Anoma.Primitives.FixedSize open;
+import Anoma.Builtin.ByteArray open using {
+  ByteArray;
+  fromAnomaContents;
+  toAnomaContents;
+};
 
-module InternalIdentity;
-  --- A fixed-size data type describing an internal identity.
-  type InternalIdentity :=
-    mkInternalIdentity@{
-      unInternalIdentity : ByteArray;
-    };
+--- A fixed-size data type describing an internal identity.
+type InternalIdentity :=
+  mk@{
+    unInternalIdentity : ByteArray;
+  }
+with
+  fromByteArray : ByteArray -> InternalIdentity := InternalIdentity.mk;
 
-  fromByteArray : ByteArray -> InternalIdentity := mkInternalIdentity;
+  fromAnomaAtom : AnomaAtom -> InternalIdentity :=
+    fromAnomaContents size >> fromByteArray;
+
+  instance
+  InternalIdentity-FixedSize : FixedSize InternalIdentity := FixedSize.mk size;
+
+  size : Nat := 32;
 
   toByteArray : InternalIdentity -> ByteArray :=
     InternalIdentity.unInternalIdentity;
 
-  toNat : InternalIdentity -> Nat := toByteArray >> toAnomaContents;
+  toAnomaAtom : InternalIdentity -> AnomaAtom := toByteArray >> toAnomaContents;
+
+  toNat : InternalIdentity -> Nat := toAnomaAtom >> AnomaAtom.toNat;
 
   --- Compares two ;InternalIdentity; objects.
   compare (lhs rhs : InternalIdentity) : Ordering :=
-    Ord.cmp
+    Ord.compare
       (InternalIdentity.unInternalIdentity lhs)
       (InternalIdentity.unInternalIdentity rhs);
 
   --- Implements the ;Ord; trait for ;InternalIdentity;.
   instance
-  InternalIdentity-Ord : Ord InternalIdentity := mkOrd compare;
+  InternalIdentity-Ord : Ord InternalIdentity := Ord.mk compare;
 
   --- Implements the ;Eq; trait for ;InternalIdentity;.
   instance
   InternalIdentity-Eq : Eq InternalIdentity := fromOrdToEq;
 end;
 
-open InternalIdentity using {InternalIdentity} public;
-
 --- The Anoma backend does not support converting natural numbers to strings
 instance
 InternalIdentity-Show : Show InternalIdentity :=
-  mkShow \{id := "<<InternalIdentity>>"};
+  Show.mk \{id := "<<InternalIdentity>>"};

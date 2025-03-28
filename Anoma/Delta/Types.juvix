@@ -9,22 +9,22 @@ import BaseLayer.ResourceMachine as B;
 open B using {Delta} public;
 
 type VerifyingKey :=
-  mkVerifyingKey@{
+  mk@{
     unVerifyingKey : UNUSED;
   };
 
 type ProvingKey :=
-  mkProvingKey@{
+  mk@{
     unProvingKey : UNUSED;
   };
 
 type Instance :=
-  mkInstance@{
+  mk@{
     unInstance : UNUSED;
   };
 
 type Witness :=
-  mkWitness@{
+  mk@{
     unWitness : UNUSED;
   };
 

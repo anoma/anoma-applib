@@ -1,0 +1,23 @@
+module BaseLayer.AnomaAtom;
+
+import Stdlib.Prelude open;
+
+type AnomaAtom := mk Nat
+with
+  fromNat : Nat -> AnomaAtom := mk;
+
+  toNat : AnomaAtom -> Nat
+    | (mk n) := n;
+
+  instance
+  AnomaAtom-FromNatural : FromNatural AnomaAtom :=
+    mkFromNatural@{
+      fromNat : Nat -> AnomaAtom := AnomaAtom.fromNat;
+    };
+
+  deriving instance
+  AnomaAtomEqI : Eq AnomaAtom;
+
+  deriving instance
+  AnomaAtomOrdI : Ord AnomaAtom;
+end;

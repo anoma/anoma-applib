@@ -1,0 +1,33 @@
+module Anoma.Data.RandSeed;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.System open;
+import Anoma.Builtin.ByteArray open;
+import BaseLayer.AnomaAtom open;
+import Anoma.Primitives.FixedSize open;
+
+--- A fixed-size data type encoding a randomness seed.
+--- NOTE: This seed provides pseudo randomness and cannot be expected to provide true randomness.
+type RandSeed :=
+  internalMk@{
+    unRandSeed : ByteArray;
+  } with
+  toByteArray : RandSeed -> ByteArray := unRandSeed;
+  fromByteArray : ByteArray  -> RandSeed := internalMk;
+end;
+
+instance
+RandSeed-FixedSize : FixedSize RandSeed := FixedSize.mk 32;
+
+instance
+RandSeetFromNaturalI : FromNatural RandSeed :=
+  mkFromNatural@{
+    fromNat (n : Nat) : RandSeed :=
+      RandSeed.fromByteArray (fromAnomaContents (FixedSize.byteSize {RandSeed}) (AnomaAtom.fromNat n));
+  };
+
+deriving instance
+RandSeed-Ord : Ord RandSeed;
+
+deriving instance
+RandSeed-Eq : Eq RandSeed;

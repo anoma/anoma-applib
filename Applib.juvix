@@ -2,7 +2,6 @@ module Applib;
 
 import Anoma open hiding {
   kind;
-  nullifier;
   commitment;
   module ExternalIdentity;
   module InternalIdentity;

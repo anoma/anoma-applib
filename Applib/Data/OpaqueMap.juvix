@@ -1,0 +1,28 @@
+module Applib.Data.OpaqueMap;
+
+import Stdlib.Prelude open;
+import Stdlib.Data.Map as Map open using {Map};
+import Anoma.Builtin.System open using {builtinAnomaEncode; builtinAnomaDecode};
+import Anoma.Encode open;
+
+--- A map where both keys and values are anomaEncoded.
+--- Type safety is not ensured by the compiler.
+--- Giving the wrong type may lead to runtime crashes or unexpected behaviour.
+type OpaqueMap := internalMk (Map Nat Nat)
+with
+  empty : OpaqueMap := internalMk Map.empty;
+
+  size : OpaqueMap -> Nat
+    | (internalMk m) := Map.size m;
+
+  lookup {Key Value : Type} : Key -> OpaqueMap -> Maybe (Encoded Value)
+    | key (internalMk a) :=
+      Map.lookup (builtinAnomaEncode key) a |> map Encoded.coerceFromNat;
+
+  lookupDecode {Key Value : Type} (k : Key) (m : OpaqueMap) : Maybe Value :=
+    map decode (lookup k m);
+
+  insert {Key Value : Type} : Key -> Value -> OpaqueMap -> OpaqueMap
+    | k v (internalMk a) :=
+      internalMk (Map.insert (builtinAnomaEncode k) (builtinAnomaEncode v) a);
+end;
