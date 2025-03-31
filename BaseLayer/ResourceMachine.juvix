@@ -205,27 +205,6 @@ with
     };
 end;
 
-type AnomaAtom := mk Nat
-with
-  fromNat : Nat -> AnomaAtom := mk;
-
-  toNat : AnomaAtom -> Nat
-    | (mk n) := n;
-
-  deriving instance
-  AnomaAtomEqI : Eq AnomaAtom;
-
-  deriving instance
-  AnomaAtomOrdI : Ord AnomaAtom;
-
-  instance
-  AnomaAtom-ToJson : ToJson AnomaAtom :=
-    ToJson.mk@{
-      toJson : AnomaAtom -> Json
-        | (mk n) := Json.number n;
-    };
-end;
-
 --- A fixed-size data type encoding a number to be used once ensuring that the resource commitment is unique.
 --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
 type Nonce := privateMk ByteArray
@@ -261,7 +240,7 @@ with
   Nonce-ToJson : ToJson Nonce :=
     ToJson.mk@{
       toJson : Nonce -> Json
-        | (internalMk b) := ToJson.toJson b;
+        | (privateMk b) := ToJson.toJson b;
     };
 end;
 
@@ -387,12 +366,6 @@ with
     | (privateMk c) := c;
 
   fromNat : Nat -> RawTag := privateMk;
-
-  deriving instance
-  RawTag-Eq : Eq RawTag;
-
-  deriving instance
-  RawTag-Ord : Ord RawTag;
 end;
 
 type AppData := privateMk (AnomaMap RawTag (List AppData.Value))
