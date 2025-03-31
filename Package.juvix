@@ -10,7 +10,6 @@ package : Package :=
         major := 0;
         minor := 10;
         patch := 0;
-        release := just "rc.14";
       };
     dependencies :=
       [
