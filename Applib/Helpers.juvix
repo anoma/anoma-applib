@@ -5,106 +5,68 @@ import Stdlib.Debug.Fail open using {failwith};
 
 import Applib.Data.TxContext open public;
 import Applib.Identities open;
-import Stdlib.Data.Set as Set open using {Set; empty; insert; union; isMember};
+import Stdlib.Data.Set as Set open using {Set; insert; union; isMember};
 import Applib.Trait.Tx open public;
 import Stdlib.Data.Map as Map open using {Map};
 import Anoma open;
-import Anoma.State open;
 import Anoma.Builtin.ByteArray open;
 import Anoma.Builtin.System open;
-import BaseLayer.ResourceMachine as BaseLayer;
 import Mtl open hiding {Identity};
-
-findResourceByNullifier
-  (nf : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
-  let
-    hasNullifier (nf : Nat) (r : Resource) : Bool :=
-      BaseLayer.nullifier r == nf;
-    getConsumed (nf : Nat) : Maybe Resource :=
-      find (hasNullifier nf) (BaseLayer.Witness.consumed privateInputs);
-  in getConsumed nf;
-
-findResourceByCommitment
-  (cm : Nat) (privateInputs : BaseLayer.Witness) : Maybe Resource :=
-  let
-    hasCommitment (cm : Nat) (r : Resource) : Bool :=
-      BaseLayer.commitment r == cm;
-    getCreated (cm : Nat) : Maybe Resource :=
-      find (hasCommitment cm) (BaseLayer.Witness.created privateInputs);
-  in getCreated cm;
-
-type ResourceStatus :=
-  | NonExisting
-  | CreatedRes Resource
-  | ConsumedRes Resource;
-
-findResource (tag : Nat) (privateInputs : BaseLayer.Witness) : ResourceStatus :=
-  case findResourceByNullifier tag privateInputs of
-    | just consumed := ConsumedRes consumed
-    | nothing :=
-      case findResourceByCommitment tag privateInputs of
-        | just created := CreatedRes created
-        | nothing := NonExisting;
 
 isNullifierPresent
   (nullifier : Nullifier) (nullifierSet : Set Nullifier) : Bool :=
   Set.isMember nullifier nullifierSet;
 
 mkActionHelper
+  {M : Type -> Type}
+  {{Tx M}}
+  {{Monad M}}
   (consumed created : List Resource)
-  (appData : BaseLayer.AppData)
-  : BaseLayer.Action :=
-  let
-    nullifiers := map BaseLayer.nullifier consumed;
-    commitments := map BaseLayer.commitment created;
-    all-resources := zip consumed nullifiers ++ zip created commitments;
-    appDataMap : Map Nat BaseLayer.AnomaAtom := BaseLayer.AppData.toMap appData;
-    getOtherPublic (n : Nat) : BaseLayer.AnomaAtom :=
-      case Map.lookup n appDataMap of
-        | nothing := failwith "missing value"
-        | just x := x;
-
-    public-inputs (tag : Nat) : BaseLayer.Instance :=
-      BaseLayer.mkInstance@{
-        commitments;
-        nullifiers;
-        tag;
-        otherPublic := getOtherPublic tag;
+  (appData : AppData)
+  : M Action :=
+  do {
+    env <- getTxContext;
+    let
+      root := TxContext.currentRoot env;
+    in
+    pure
+      Action.create@{
+        consumed :=
+          map (RootedNullifiableResource.Transparent.mk root) consumed;
+        created := created;
+        appData;
       };
-
-    private :=
-      BaseLayer.mkWitness@{
-        created;
-        consumed;
-        otherPrivate := BaseLayer.AnomaAtom.fromNat 0;
-      };
-    -- Compute proofs
-    logicProofs : List BaseLayer.Proof :=
-      map (resource, tag in all-resources) {
-        BaseLayer.proofLogic resource (public-inputs tag, private)
-      };
-  in BaseLayer.mkAction@{
-       commitments;
-       nullifiers;
-       proofs := logicProofs;
-       appData;
-     };
-
-mkTransactionHelper
-  {roots : List CommitmentTree.Root := []}
-  (actions : List BaseLayer.Action)
-  : BaseLayer.Transaction :=
-  BaseLayer.mkTransaction@{
-    roots := map CommitmentTree.unRoot roots;
-    actions;
-    delta := BaseLayer.zeroDelta;
-    deltaProof := 0;
   };
 
-emptyTx : BaseLayer.Transaction :=
+mkTransactionHelper
+  (roots : List CommitmentRoot) (actions : List Action) : Transaction :=
+  Transaction.mk@{
+    roots := AnomaSet.fromList roots;
+    actions := AnomaSet.fromList actions;
+  };
+
+emptyTx : Transaction :=
   mkTransactionHelper@{
     roots := [];
     actions := [];
+  };
+
+--- Create a ;Transaction; with ;Action;s that do not use
+--- the proof ;Instance; publicData field
+mkTransactionNoPublicData
+  {M : Type -> Type}
+  {{Tx M}}
+  {{Monad M}}
+  (consumed created : List Resource)
+  : M Transaction :=
+  do {
+    si <- getTxContext;
+    a <- mkActionHelper consumed created AppData.empty;
+    pure
+      mkTransactionHelper@{
+        roots := [TxContext.currentRoot si];
+        actions := [a];
+      };
   };
 
 --- A helper function preparing the transaction object by creating an action object
@@ -118,20 +80,21 @@ prepareStandardTransaction
   {{Tx M}}
   {{Monad M}}
   (consumed created : List Resource)
-  {appData : BaseLayer.AppData := BaseLayer.AnomaSet.empty}
-  : M BaseLayer.Transaction :=
+  (appData : AppData)
+  : M Transaction :=
   do {
     si <- getTxContext;
+    a <- mkActionHelper consumed created appData;
     pure
       mkTransactionHelper@{
         roots := [TxContext.currentRoot si];
-        actions := [mkActionHelper consumed created appData];
+        actions := [a];
       };
   };
 
-composeAll (txs : List BaseLayer.Transaction) : BaseLayer.Transaction :=
+composeAll (txs : List Transaction) : Transaction :=
   for (acc := emptyTx) (tx in txs) {
-    BaseLayer.compose acc tx
+    Transaction.compose acc tx
   };
 
 fromResult

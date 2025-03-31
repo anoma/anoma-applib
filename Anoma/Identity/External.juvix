@@ -1,21 +1,36 @@
 module Anoma.Identity.External;
 
 import Stdlib.Prelude open;
-import Anoma.Builtin.ByteArray open using {ByteArray; toAnomaContents};
+import BaseLayer.AnomaAtom open;
+import Anoma.Primitives.FixedSize open;
+import Anoma.Builtin.ByteArray open using {
+  ByteArray;
+  toAnomaContents;
+  fromAnomaContents;
+};
 
-module ExternalIdentity;
-  --- A fixed-size data type describing an external identity.
-  type ExternalIdentity :=
-    mkExternalIdentity@{
-      unExternalIdentity : ByteArray;
-    };
+--- A fixed-size data type describing an external identity.
+type ExternalIdentity :=
+  mk@{
+    unExternalIdentity : ByteArray;
+  }
+with
+  fromByteArray : ByteArray -> ExternalIdentity := ExternalIdentity.mk;
 
-  fromByteArray : ByteArray -> ExternalIdentity := mkExternalIdentity;
+  fromAnomaAtom : AnomaAtom -> ExternalIdentity :=
+    fromAnomaContents size >> fromByteArray;
+
+  instance
+  ExternalIdentity-FixedSize : FixedSize ExternalIdentity := FixedSize.mk size;
+
+  size : Nat := 32;
 
   toByteArray : ExternalIdentity -> ByteArray :=
     ExternalIdentity.unExternalIdentity;
 
-  toNat : ExternalIdentity -> Nat := toByteArray >> toAnomaContents;
+  toAnomaAtom : ExternalIdentity -> AnomaAtom := toByteArray >> toAnomaContents;
+
+  toNat : ExternalIdentity -> Nat := toAnomaAtom >> AnomaAtom.toNat;
 
   deriving instance
   ExternalIdentity-Ord : Ord ExternalIdentity;
@@ -25,7 +40,5 @@ module ExternalIdentity;
 
   instance
   ExternalIdentity-Show : Show ExternalIdentity :=
-    mkShow \{iden := "<<ExternalIdentity>>"};
+    Show.mk \{iden := "<<ExternalIdentity>>"};
 end;
-
-open ExternalIdentity using {ExternalIdentity} public;

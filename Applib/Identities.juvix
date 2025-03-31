@@ -4,10 +4,11 @@ import Stdlib.Prelude open;
 
 import Anoma open;
 import Anoma.Builtin.ByteArray open;
+import BaseLayer.ResourceMachine open;
 
 module InternalIdentity;
   toNullifierKey (internalIdentity : InternalIdentity) : NullifierKey :=
-    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.fromByteArray;
 end;
 
 module ExternalIdentity;
@@ -15,7 +16,7 @@ module ExternalIdentity;
     (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
     externalIdentity
       |> ExternalIdentity.toByteArray
-      |> mkNullifierKeyCommitment;
+      |> NullifierKeyCommitment.mk;
 end;
 
 toNullifierKey (identity : Identity) : NullifierKey :=
@@ -63,18 +64,18 @@ module Universal;
       0x29;
     ];
 
-  pub : ByteArray := mkByteArray bytes;
+  pub : ByteArray := ByteArray.mk bytes;
 
-  secret : ByteArray := mkByteArray (replicate 32 0x0 ++ bytes);
+  secret : ByteArray := ByteArray.mk (replicate 32 0x0 ++ bytes);
 
   identity : Identity :=
     let
       pubKeyBytes := bytes;
-    in mkIdentity@{
-         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
+    in Identity.mk@{
+         external := ExternalIdentity.fromByteArray (ByteArray.mk pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
-             (mkByteArray (replicate 32 0x0 ++ pubKeyBytes));
+             (ByteArray.mk (replicate 32 0x0 ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
@@ -82,12 +83,12 @@ module Universal;
   internalIdentity : InternalIdentity := Identity.internal identity;
 
   nullifierKey : NullifierKey :=
-    internalIdentity |> InternalIdentity.toByteArray |> mkNullifierKey;
+    internalIdentity |> InternalIdentity.toByteArray |> NullifierKey.fromByteArray;
 
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity
       |> ExternalIdentity.toByteArray
-      |> mkNullifierKeyCommitment;
+      |> NullifierKeyCommitment.mk;
 end;
 
 module Alice;
@@ -128,11 +129,11 @@ module Alice;
           0xba;
           0x29;
         ];
-    in mkIdentity@{
-         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
+    in Identity.mk@{
+         external := ExternalIdentity.fromByteArray (ByteArray.mk pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
-             (mkByteArray (replicate 31 0x0 ++ [0x1] ++ pubKeyBytes));
+             (ByteArray.mk (replicate 31 0x0 ++ [0x1] ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
@@ -178,11 +179,11 @@ module Bob;
           0x26;
           0x74;
         ];
-    in mkIdentity@{
-         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
+    in Identity.mk@{
+         external := ExternalIdentity.fromByteArray (ByteArray.mk pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
-             (mkByteArray (replicate 31 0x0 ++ [0x2] ++ pubKeyBytes));
+             (ByteArray.mk (replicate 31 0x0 ++ [0x2] ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
@@ -228,11 +229,11 @@ module Carol;
           0xa5;
           0x4b;
         ];
-    in mkIdentity@{
-         external := ExternalIdentity.fromByteArray (mkByteArray pubKeyBytes);
+    in Identity.mk@{
+         external := ExternalIdentity.fromByteArray (ByteArray.mk pubKeyBytes);
          internal :=
            InternalIdentity.fromByteArray
-             (mkByteArray (replicate 31 0x0 ++ [0x3] ++ pubKeyBytes));
+             (ByteArray.mk (replicate 31 0x0 ++ [0x3] ++ pubKeyBytes));
        };
 
   externalIdentity : ExternalIdentity := Identity.external identity;
@@ -244,5 +245,5 @@ end;
 --- for which the ;InternalIdentity; is not known.
 module Zero;
   externalIdentity : ExternalIdentity :=
-    ExternalIdentity.fromByteArray (mkByteArray (replicate 32 0x0));
+    ExternalIdentity.fromByteArray (ByteArray.mk (replicate 32 0x0));
 end;

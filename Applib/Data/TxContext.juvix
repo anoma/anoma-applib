@@ -1,13 +1,12 @@
 module Applib.Data.TxContext;
 
 import Stdlib.Prelude open;
-import Anoma.State open;
 import Anoma open;
 import Applib.Identities open;
 
 --- The context of an Anoma transaction
 type TxContext :=
-  mkTxContext@{
+  mk@{
     caller : Identity;
-    currentRoot : CommitmentTree.Root;
+    currentRoot : CommitmentRoot;
   };
