@@ -1,6 +1,7 @@
 module BaseLayer.AnomaAtom;
 
 import Stdlib.Prelude open;
+import Anoma.Data.Json open;
 
 type AnomaAtom := mk Nat
 with
@@ -20,4 +21,11 @@ with
 
   deriving instance
   AnomaAtomOrdI : Ord AnomaAtom;
+
+  instance
+  AnomaAtom-ToJson : ToJson AnomaAtom :=
+    ToJson.mk@{
+      toJson : AnomaAtom -> Json
+        | (mk n) := Json.number n;
+    };
 end;
