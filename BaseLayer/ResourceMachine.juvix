@@ -46,15 +46,7 @@ end;
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 type NullifierKey := privateMk ByteArray
 with
-  type Raw := mk AnomaAtom;
-
-  fromRaw : NullifierKey.Raw -> NullifierKey
-    | (Raw.mk n) := privateMk (fromAnomaContents size n);
-
-  toRaw : NullifierKey -> NullifierKey.Raw
-    | (NullifierKey.privateMk bs) := Raw.mk (toAnomaContents bs);
-
-  size : Nat := 64;
+  size : Nat := 32;
 
   fromByteArray : ByteArray -> NullifierKey := privateMk;
 
@@ -209,15 +201,6 @@ end;
 --- NOTE: This should be a number having an at most negligible chance of repeating is sufficient, e.g., a pseudo-random number.
 type Nonce := privateMk ByteArray
 with
-  -- should be mk AnomaAtom
-  type Raw := mk AnomaAtom;
-
-  fromRaw : Nonce.Raw -> Nonce
-    | (Raw.mk n) := privateMk (fromAnomaContents size n);
-
-  toRaw : Nonce -> Nonce.Raw
-    | (Nonce.privateMk bs) := Raw.mk (toAnomaContents bs);
-
   instance
   Nonce-FixedSize : FixedSize Nonce := FixedSize.mk size;
 
@@ -288,8 +271,8 @@ type Resource :=
     value : AnomaAtom;
     quantity : Nat;
     ephemeral : Bool;
-    nonce : Nonce.Raw;
-    nullifierKeyCommitment : AnomaAtom;
+    nonce : Nonce;
+    nullifierKeyCommitment : NullifierKeyCommitment;
     --- Currently unused. It is safe to set it to 0
     unusedRandSeed : Nat;
   }
@@ -459,7 +442,7 @@ end;
 
 type RootedNullifiableResource :=
   mk@{
-    key : NullifierKey.Raw;
+    key : NullifierKey;
     resource : Resource;
     root : CommitmentRoot;
   }
@@ -482,14 +465,14 @@ with
       RootedNullifiableResource.mk@{
         resource;
         root;
-        key := NullifierKey.toRaw NullifierKey.Transparent.mk;
+        key := NullifierKey.Transparent.mk;
       };
   end;
 end;
 
 type NullifiableResource :=
   mk@{
-    key : NullifierKey.Raw;
+    key : NullifierKey;
     resource : Resource;
   }
 with
@@ -505,7 +488,7 @@ with
     mk (resource : Resource) : NullifiableResource :=
       NullifiableResource.mk@{
         resource;
-        key := NullifierKey.toRaw NullifierKey.Transparent.mk;
+        key := NullifierKey.Transparent.mk;
       };
   end;
 end;
