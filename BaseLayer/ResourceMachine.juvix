@@ -586,6 +586,9 @@ with
 
   builtin anoma-transaction-compose
   axiom compose (tx1 tx2 : Transaction) : Transaction;
+
+  builtin anoma-prove-delta
+  axiom proveDelta : Transaction -> Transaction;
 end;
 
 deriving instance
