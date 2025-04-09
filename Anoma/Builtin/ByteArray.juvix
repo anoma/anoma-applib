@@ -281,8 +281,29 @@ Show-Byte-Hex : Show Byte :=
             | n == 14 := "E"
             | n == 15 := "F"
             | else := failwith "impossible";
-      in "0x" ++str nibble (div (Byte.toNat x) 16) ++str nibble (mod (Byte.toNat x) 16);
+      in "0x"
+        ++str nibble (div (Byte.toNat x) 16)
+        ++str nibble (mod (Byte.toNat x) 16);
   };
+
+instance
+ToBytes-Bool : ToBytes Bool :=
+  ToBytes.mk
+    \{
+      | false := BytesBuilder.byte 0
+      | true := BytesBuilder.byte 1
+    };
+
+instance
+FromBytes-Bool : FromBytes Bool :=
+  FromBytes.mk
+    do {
+      b <- Byte.toNat <$> BytesConsumer.byte;
+      pure
+        if
+          | b == 0 := false
+          | else := true;
+    };
 
 test {A} {{ToBytes A}} {{FromBytes A}} {{Show A}} (a : A) : String :=
   Show.show (fromByteArray {A} (toByteArray a));
