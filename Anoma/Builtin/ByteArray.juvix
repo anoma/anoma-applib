@@ -4,6 +4,7 @@ import Stdlib.Prelude open;
 import BaseLayer.AnomaAtom open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Anoma.Data.Json open;
+import Mtl open;
 
 module ByteArray;
   builtin bytearray
@@ -11,6 +12,17 @@ module ByteArray;
 
   builtin bytearray-from-list-byte
   axiom mk : List Byte -> ByteArray;
+
+  -- builtin bytearray-to-list-byte
+  toList (b : ByteArray) : List Byte :=
+   let
+    numBytes : Nat := size b;
+     go (acc : List Byte) (n : Nat) : (len : Nat) -> List Byte
+       | zero := fromNat n :: acc
+       -- Note `fromNat` takes the modulo
+       | (suc ibyte) := go (fromNat n :: acc) (div n 256) ibyte
+    in
+    reverse (go [] (rawToAnomaContents b) numBytes);
 
   zero (length : Nat) : ByteArray := mk (replicate length 0x0);
 
@@ -53,3 +65,114 @@ ByteArray-Ord : Ord ByteArray :=
 
 instance
 ByteArray-Eq : Eq ByteArray := fromOrdToEq;
+
+Builder : Type := List Byte;
+
+execState
+  {S A : Type}
+  {M : Type → Type}
+  {{Functor M}}
+  (s : S)
+  (m : StateT S M A)
+  : M S := Functor.map snd (runState s m);
+
+type BytesBuilder (A : Type) := mk (StateT Builder Identity A)
+with
+  run {A} : BytesBuilder A -> ByteArray
+    | (mk st) := ByteArray.mk (Identity.run (execState [] st));
+
+  byte (b : Byte) : BytesBuilder Unit := mk (modify \{acc := b :: acc});
+end;
+
+type BytesConsumer A :=
+  mk@{
+    unwrap : StateT (List Byte) (ErrorT BytesConsumer.ConsumerError Identity) A;
+  }
+with
+  type ConsumerError := mk String
+  with
+    instance
+    ConsumerError-Show : Show ConsumerError :=
+      Show.mk \{(ConsumerError.mk err) := err};
+  end;
+
+  run {A} : BytesConsumer A -> ByteArray -> Result ConsumerError A
+    | (mk p) str :=
+      Identity.run (runError (evalState (ByteArray.toList str) p));
+
+  instance
+  BytesConsumer-Functor : Functor BytesConsumer :=
+    Functor.mk@{
+      map {A} {B} (f : A -> B) : BytesConsumer A -> BytesConsumer B
+        | (mk p) := mk (Functor.map f p);
+    };
+
+  instance
+  BytesConsumer-Applicative : Applicative BytesConsumer :=
+    Applicative.mk@{
+      pure {A} (a : A) : BytesConsumer A := mk (Applicative.pure a);
+      ap {A} {B} : BytesConsumer (A -> B) -> BytesConsumer A -> BytesConsumer B
+        | (mk f) (mk p) := mk (Applicative.ap f p);
+    };
+
+  instance
+  BytesConsumer-Monad : Monad BytesConsumer :=
+    Monad.mk@{
+      bind
+        {A} {B} : BytesConsumer A -> (A -> BytesConsumer B) -> BytesConsumer B
+        | (mk x) m :=
+          mk
+            do {
+              a <- x;
+              BytesConsumer.unwrap (m a);
+            };
+    };
+
+  byte : BytesConsumer Byte :=
+    mk
+      do {
+        l <- get;
+        case l of {
+          | [] := throw (ConsumerError.mk "end of input")
+          | x :: xs :=
+            do {
+              put xs;
+              pure x;
+            }
+        };
+      };
+end;
+
+trait
+type FromBytes (T : Type) :=
+  mk@{
+    fromBytes : BytesConsumer T;
+  };
+
+trait
+type ToBytes (T : Type) :=
+  mk@{
+    toBytes : T -> BytesBuilder Unit;
+  };
+
+instance
+Byte-FromBytes : FromBytes Byte :=
+  FromBytes.mk@{
+    fromBytes := BytesConsumer.byte;
+  };
+
+instance
+Byte-ToBytes : ToBytes Byte :=
+  ToBytes.mk@{
+    toBytes (b : Byte) : BytesBuilder Unit := BytesBuilder.byte b;
+  };
+
+instance
+ByteArray-FromBytes : FromBytes ByteArray :=
+  FromBytes.mk@{
+    fromBytes :=
+      do {
+        numBytes <- BytesConsumer.byte;
+        pure (ByteArray.mk []);
+      };
+  };
