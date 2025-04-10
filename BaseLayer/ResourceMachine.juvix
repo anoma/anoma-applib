@@ -44,6 +44,7 @@ with
 end;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
+builtin anoma-nullifier-key
 type NullifierKey := privateMk ByteArray
 with
   type Raw := mk AnomaAtom;
@@ -299,7 +300,7 @@ with
 
   module Transparent;
     nullifier : Resource -> Nullifier :=
-      NullifiableResource.Transparent.mk >> NullifiableResource.nullifier;
+      NullifiableResource.Transparent.mk >> NullifiableResource.nullifier NullifierKey.Transparent.mk;
   end;
 end;
 
@@ -493,13 +494,11 @@ type NullifiableResource :=
     resource : Resource;
   }
 with
-  -- FIXME The computation of the nullifier should depend on the nullifier key
-  -- TODO add NullifierKey argument
   builtin anoma-resource-nullifier
-  axiom rawNullifier : Resource -> Nat;
+  axiom rawNullifier : NullifierKey -> Resource -> Nat;
 
-  nullifier : NullifiableResource -> Nullifier :=
-    resource >> rawNullifier >> Nullifier.fromNat;
+  nullifier (nfk : NullifierKey) : NullifiableResource -> Nullifier :=
+    resource >> rawNullifier nfk >> Nullifier.fromNat;
 
   module Transparent;
     mk (resource : Resource) : NullifiableResource :=
