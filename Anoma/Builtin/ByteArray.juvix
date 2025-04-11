@@ -18,12 +18,11 @@ module ByteArray;
 
   toList (b : ByteArray) : List Byte :=
     let
-      numBytes : Nat := size b;
-      go (acc : List Byte) (n : Nat) : (len : Nat) -> List Byte
+      go (acc : List Byte) (payload : Nat) : (len : Nat) -> List Byte
         | zero := reverse acc
         -- Note `fromNat` takes the modulo
-        | (suc ibyte) := go (fromNat n :: acc) (div n 256) ibyte;
-    in go [] (rawToAnomaContents b) numBytes;
+        | (suc ibyte) := go (fromNat payload :: acc) (div payload 256) ibyte;
+    in go [] (rawToAnomaContents b) (size b);
 
   zero (length : Nat) : ByteArray := mk (replicate length 0x0);
 
@@ -47,6 +46,12 @@ module ByteArray;
     };
 
   instance
+  ByteArray-Show : Show ByteArray :=
+    Show.mk@{
+      show : ByteArray -> String := toList >> Show.show;
+    };
+
+  instance
   ByteArray-ToJson : ToJson ByteArray :=
     ToJson.mk@{
       toJson (b : ByteArray) : Json := Json.number (rawToAnomaContents b);
@@ -67,8 +72,6 @@ ByteArray-Ord : Ord ByteArray :=
 instance
 ByteArray-Eq : Eq ByteArray := fromOrdToEq;
 
-Builder : Type := List Byte;
-
 execState
   {S A : Type}
   {M : Type → Type}
@@ -79,9 +82,11 @@ execState
 
 type BytesBuilder (A : Type) :=
   mk@{
-    unwrap : StateT Builder Identity A;
+    unwrap : StateT BytesBuilder.State Identity A;
   }
 with
+  State : Type := List Byte;
+
   run {A} : BytesBuilder A -> ByteArray
     | (mk st) := ByteArray.mk (reverse (Identity.run (execState [] st)));
 
@@ -172,13 +177,27 @@ with
             }
         };
       };
+
 end;
 
 trait
 type FromBytes (T : Type) :=
   mk@{
     fromBytes : BytesConsumer T;
-  };
+  }
+with
+  -- Big endian
+  WordN {A} {{FromNatural A}} (numBytes : Nat) : FromBytes A :=
+    let
+      go (acc : Nat) : (numByte : Nat) -> BytesConsumer A
+        | zero := pure (fromNat acc)
+        | (suc ibyte) :=
+          do {
+            bi <- Byte.toNat <$> BytesConsumer.byte;
+            go (acc + bi * pow 256 ibyte) ibyte;
+          };
+    in FromBytes.mk (go 0 numBytes);
+end;
 
 open FromBytes using {fromBytes} public;
 
@@ -186,7 +205,20 @@ trait
 type ToBytes (T : Type) :=
   mk@{
     toBytes : T -> BytesBuilder Unit;
-  };
+  }
+with
+  -- Big endian
+  WordN {A} (toNat : A -> Nat) (numBytes : Nat) : ToBytes A :=
+    let
+      go (n : Nat) : (numByte : Nat) -> BytesBuilder Unit
+        | zero := pure unit
+        | (suc ibyte) :=
+          do {
+            BytesBuilder.byte (FromNatural.fromNat (div n (pow 256 ibyte)));
+            go n ibyte;
+          };
+    in ToBytes.mk \{n := go (toNat n) numBytes};
+end;
 
 open ToBytes using {toBytes} public;
 
@@ -219,72 +251,37 @@ ByteArray-FromBytes : FromBytes ByteArray :=
       };
   };
 
-pow : Nat -> Nat -> Nat
+pow {A} {{FromNatural A}} {{Natural A}} : A -> Nat -> A
   | a zero := 1
   | a (suc b) := a * pow a b;
 
 --- 8 byte word
-type Word64 := privateMk Nat
+type Word32 := privateMk Nat
 with
-  fromNat (n : Nat) : Word64 := privateMk n;
+  fromNat (n : Nat) : Word32 := privateMk n;
 
-  toNat : Word64 -> Nat
-    | (privateMk n) := mod n (pow 2 64);
-
-  instance
-  FromNat-Word64 : FromNatural Word64 := FromNatural.mkFromNatural fromNat;
+  toNat : Word32 -> Nat
+    | (privateMk n) := mod n (pow 2 32);
 
   instance
-  FixedSize-Word64 : FixedSize Word64 := FixedSize.mk 8;
+  FromNat-Word32 : FromNatural Word32 := FromNatural.mkFromNatural fromNat;
 
   instance
-  Show-Word64 : Show Word64 :=
+  FixedSize-Word32 : FixedSize Word32 := FixedSize.mk 8;
+
+  instance
+  Show-Word32 : Show Word32 :=
     Show.mk@{
-      show : Word64 -> String
+      show : Word32 -> String
         | (privateMk n) := Show.show n;
     };
 
   instance
-  FromBytes-Word64 : FromBytes Word64 :=
-    FromBytes.mk
-      do {
-        b0 <- Byte.toNat <$> BytesConsumer.byte;
-        b1 <- Byte.toNat <$> BytesConsumer.byte;
-        b2 <- Byte.toNat <$> BytesConsumer.byte;
-        b3 <- Byte.toNat <$> BytesConsumer.byte;
-        pure (privateMk (b0 + b1 * 256 + b2 * pow 256 2 + b3 * pow 256 3));
-      };
+  FromBytes-Word32 : FromBytes Word32 := FromBytes.WordN 4;
 
   instance
-  ToBytes-Word64 : ToBytes Word64 :=
-    ToBytes.mk
-      \{(privateMk n) :=
-        do {
-          BytesBuilder.byte (FromNatural.fromNat n);
-          BytesBuilder.byte (FromNatural.fromNat (div n 256));
-          BytesBuilder.byte (FromNatural.fromNat (div n (pow 256 2)));
-          BytesBuilder.byte (FromNatural.fromNat (div n (pow 256 3)));
-        }};
+  ToBytes-Word32 : ToBytes Word32 := ToBytes.WordN toNat 4;
 end;
-
-Show-Byte-Hex : Show Byte :=
-  Show.mk@{
-    show (x : Byte) : String :=
-      let
-        nibble (n : Nat) : String :=
-          if
-            | n <= 9 := Show.show n
-            | n == 10 := "A"
-            | n == 11 := "B"
-            | n == 12 := "C"
-            | n == 13 := "D"
-            | n == 14 := "E"
-            | n == 15 := "F"
-            | else := failwith "impossible";
-      in "0x"
-        ++str nibble (div (Byte.toNat x) 16)
-        ++str nibble (mod (Byte.toNat x) 16);
-  };
 
 instance
 ToBytes-Bool : ToBytes Bool :=
@@ -299,16 +296,83 @@ FromBytes-Bool : FromBytes Bool :=
   FromBytes.mk
     do {
       b <- Byte.toNat <$> BytesConsumer.byte;
-      pure
-        if
-          | b == 0 := false
-          | else := true;
+      pure (b /= 0);
     };
 
-test {A} {{ToBytes A}} {{FromBytes A}} {{Show A}} (a : A) : String :=
-  Show.show (fromByteArray {A} (toByteArray a));
+instance
+ToBytes-List {A} {{ToBytes A}} : ToBytes (List A) :=
+  ToBytes.mk
+    \{l :=
+      do {
+        let
+          len : Word32 := fromNat (length l);
+        in
+        toBytes len;
+        mapA_ toBytes l;
+      }};
 
-main : String :=
+instance
+FromBytes-List {A} {{FromBytes A}} : FromBytes (List A) :=
+  FromBytes.mk
+    do {
+      len <- fromBytes {Word32};
+      replicateA (Word32.toNat len) fromBytes;
+    };
+
+--- 8 byte integer
+type Int32 := privateMk Int
+with
+  fromInt (n : Int) : Int32 := privateMk n;
+
+  toInt : Int32 -> Int
+    | (privateMk n) :=
+      case n of
+        | Int.ofNat pos := Int.ofNat (mod pos (pow 2 31))
+        | Int.negSuc neg := Int.negSuc (mod neg (pow 2 31));
+
+  instance
+  FromNat-Int32 : FromNatural Int32 := FromNatural.mkFromNatural fromNat;
+
+  instance
+  FixedSize-Int32 : FixedSize Int32 := FixedSize.mk 4;
+
+  instance
+  Show-Int32 : Show Int32 :=
+    Show.mk@{
+      show : Int32 -> String
+        | (privateMk n) := Show.show n;
+    };
+
+  instance
+  FromBytes-Int32 : FromBytes Int32 :=
+    FromBytes.mk
+      do {
+        w <- Word32.toNat <$> fromBytes;
+        if
+          | w < pow 2 31 := pure (privateMk (Int.fromNat w))
+          | else := pure (privateMk -1);
+      };
+
+  -- TODO padding
+  instance
+  ToBytes-Int32 : ToBytes Int32 :=
+    ToBytes.mk
+      \{i :=
+        case toInt i of
+          | Int.ofNat n := toBytes {Word32} (fromNat n)
+          | Int.negSuc n :=
+            toBytes {Word32} (fromNat (sub (pow 2 32) (n + 1)))};
+
+end;
+
+-- test {A} {{ToBytes A}} {{FromBytes A}} {{Show A}} (a : A) : String :=
+--   show (fromByteArray {A} (toByteArray a));
+
+main : _ :=
   let
-    n : Word64 := 234;
-  in trace (Show.show (ByteArray.toList (toByteArray n))) >-> test n;
+    -- n : List Word32 := [234; 12; 10; 77];
+    n : Int32 := Int32.fromInt (pow 2 31 - 1);
+  -- n : Word32 := Word32.fromNat 7;
+  in trace n
+    >-> trace (show (toByteArray n))
+    >-> show (fromByteArray {Int32} (toByteArray n));
