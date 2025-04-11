@@ -16,6 +16,8 @@ module ByteArray;
   builtin bytearray-from-list-byte
   axiom mk : List Byte -> ByteArray;
 
+  fromList : List Byte -> ByteArray := mk;
+
   toList (b : ByteArray) : List Byte :=
     let
       go (acc : List Byte) (payload : Nat) : (len : Nat) -> List Byte
@@ -240,16 +242,6 @@ Byte-ToBytes : ToBytes Byte :=
     toBytes (b : Byte) : BytesBuilder Unit := BytesBuilder.byte b;
   };
 
-instance
-ByteArray-FromBytes : FromBytes ByteArray :=
-  FromBytes.mk@{
-    fromBytes :=
-      do {
-        numBytes <- BytesConsumer.byte;
-        pure (ByteArray.mk []);
-      };
-  };
-
 pow {A} {{FromNatural A}} {{Natural A}} : A -> Nat -> A
   | a zero := 1
   | a (suc b) := a * pow a b;
@@ -281,6 +273,47 @@ with
   instance
   ToBytes-Word32 : ToBytes Word32 := ToBytes.WordN toNat 4;
 end;
+
+align32 (n : Nat) : Nat :=
+  if
+    | mod n 32 == 0 := n
+    | else := 32 * (div n 32 + 1);
+
+alignByteArray (b : ByteArray) : ByteArray :=
+  let
+    len := ByteArray.size b;
+    len' := align32 len;
+    numPad := sub len' len;
+    b' :=
+      if
+        | numPad == 0 := b
+        -- TODO improve efficiency
+        | else := ByteArray.mk (ByteArray.toList b ++ replicate numPad 0);
+  in b';
+
+instance
+ByteArray-ToBytes : ToBytes ByteArray :=
+  ToBytes.mk@{
+    toBytes (b : ByteArray) : BytesBuilder Unit :=
+      do {
+        let
+          b' := alignByteArray b;
+        in
+        ToBytes.toBytes (Word32.fromNat (ByteArray.size b'));
+        mapA_ ToBytes.toBytes (ByteArray.toList b');
+      };
+  };
+
+instance
+ByteArray-FromBytes : FromBytes ByteArray :=
+  FromBytes.mk@{
+    fromBytes :=
+      do {
+        numBytes <- fromBytes {Word32};
+        bytes <- replicateA (Word32.toNat numBytes) BytesConsumer.byte;
+        pure (ByteArray.fromList bytes);
+      };
+  };
 
 instance
 ToBytes-Bool : ToBytes Bool :=
@@ -365,11 +398,31 @@ with
             toBytes {Word32} (fromNat (sub (pow 2 32) (n + 1)))};
 end;
 
+type Evm :=
+  | bytes ByteArray
+  | tuple (List Evm)
+  | uint Word32
+  | int Int32;
+
+isDynamic : Evm -> Bool
+  | Evm.bytes@{} := true
+  | (Evm.tuple t) := anyIsDynamic t
+  | Evm.uint@{} := false
+  | Evm.int@{} := false;
+
+-- needed for termination
+anyIsDynamic : List Evm -> Bool
+  | [] := false;
+  | (t :: ts) := isDynamic t || anyIsDynamic ts;
+
+type Tuple := mk (List Evm);
+
 main : _ :=
   let
-    -- n : List Word32 := [234; 12; 10; 77];
-    n : Int32 := Int32.fromInt (-12359);
+    l : List Byte := [234; 12; 10; 77];
+    n : ByteArray := alignByteArray (ByteArray.fromList l);
+  -- n : Int32 := Int32.fromInt -12359;
   -- n : Word32 := Word32.fromNat 7;
   in trace n
-    >-> trace (show (toByteArray n))
-    >-> show (fromByteArray {Int32} (toByteArray n));
+    >-> trace (show n)
+    >-> show (fromByteArray {ByteArray} (toByteArray n));
