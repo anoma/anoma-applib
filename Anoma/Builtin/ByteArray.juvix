@@ -177,7 +177,6 @@ with
             }
         };
       };
-
 end;
 
 trait
@@ -350,10 +349,12 @@ with
         w <- Word32.toNat <$> fromBytes;
         if
           | w < pow 2 31 := pure (privateMk (Int.fromNat w))
-          | else := pure (privateMk -1);
+          | else :=
+            let
+              subs : Nat := mod w (pow 2 31) + 1;
+            in pure (privateMk (Int.negSuc (Nat.sub (pow 2 31) subs)));
       };
 
-  -- TODO padding
   instance
   ToBytes-Int32 : ToBytes Int32 :=
     ToBytes.mk
@@ -362,16 +363,12 @@ with
           | Int.ofNat n := toBytes {Word32} (fromNat n)
           | Int.negSuc n :=
             toBytes {Word32} (fromNat (sub (pow 2 32) (n + 1)))};
-
 end;
-
--- test {A} {{ToBytes A}} {{FromBytes A}} {{Show A}} (a : A) : String :=
---   show (fromByteArray {A} (toByteArray a));
 
 main : _ :=
   let
     -- n : List Word32 := [234; 12; 10; 77];
-    n : Int32 := Int32.fromInt (pow 2 31 - 1);
+    n : Int32 := Int32.fromInt (-12359);
   -- n : Word32 := Word32.fromNat 7;
   in trace n
     >-> trace (show (toByteArray n))
