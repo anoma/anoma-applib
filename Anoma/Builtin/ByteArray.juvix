@@ -84,51 +84,53 @@ execState
 
 type BytesBuilder (A : Type) :=
   mk@{
-    unwrap : StateT BytesBuilder.State Identity A;
+    unwrap : StateT BytesBuilder.Builder Identity A;
   }
 with
-  type State : Type :=
+  type Builder : Type :=
     mk@{
       bytes : List Byte;
       size : Nat;
     }
   with
-    cons (b : Byte) (s : BytesBuilder.State) : BytesBuilder.State :=
-      s@BytesBuilder.State{
+    cons (b : Byte) (s : BytesBuilder.Builder) : BytesBuilder.Builder :=
+      s@BytesBuilder.Builder{
         bytes := b :: bytes s;
         size := 1 + size s;
       };
 
     -- TODO efficient concatenation
-    append (b1 b2 : BytesBuilder.State) : BytesBuilder.State :=
-      BytesBuilder.State.mk@{
+    append (b1 b2 : BytesBuilder.Builder) : BytesBuilder.Builder :=
+      BytesBuilder.Builder.mk@{
         bytes := bytes b2 ++ bytes b1;
         size := size b1 + size b2;
       };
 
-    toByteArray (s : BytesBuilder.State) : ByteArray :=
+    toByteArray (s : BytesBuilder.Builder) : ByteArray :=
       ByteArray.mk (reverse (bytes s));
 
-    empty : State :=
-      BytesBuilder.State.mk@{
+    empty : Builder :=
+      BytesBuilder.Builder.mk@{
         bytes := [];
         size := 0;
       };
   end;
 
-  run {A} : BytesBuilder A -> ByteArray := runBuilder >> State.toByteArray;
+  run {A} : BytesBuilder A -> ByteArray := runBuilder >> Builder.toByteArray;
 
-  runBuilder {A} : BytesBuilder A -> State
-    | (mk st) := Identity.run (execState State.empty st);
+  runWith {A} (ini : Builder) : BytesBuilder A -> Builder
+    | (mk st) := Identity.run (execState ini st);
+
+  runBuilder {A} : BytesBuilder A -> Builder := runWith Builder.empty;
 
   --- append a byte
-  byte (b : Byte) : BytesBuilder Unit := mk (modify (State.cons b));
+  byte (b : Byte) : BytesBuilder Unit := mk (modify (Builder.cons b));
 
-  builder {B} (b : BytesBuilder B) : BytesBuilder Unit :=
-    mk (modify (State.append (runBuilder b)));
+  builder (b : BytesBuilder.Builder) : BytesBuilder Unit :=
+    mk (modify (Builder.append b));
 
   --- get the current size
-  size : BytesBuilder Nat := mk (BytesBuilder.State.size <$> get);
+  size : BytesBuilder Nat := mk (BytesBuilder.Builder.size <$> get);
 
   instance
   BytesBuilder-Functor : Functor BytesBuilder :=
@@ -440,13 +442,11 @@ type EvmSize :=
     }
   | dynamic
 with
-
   empty : EvmSize := static 0;
 
   append : EvmSize -> EvmSize -> EvmSize
     | (static s1) (static s2) := static (s1 + s2)
     | _ _ := dynamic;
-
 end;
 
 -- TODO abstract over size
@@ -489,17 +489,29 @@ tupleToBytes (l : List Evm) : BytesBuilder Unit :=
   let
     lWithSize : List (Pair Evm EvmSize) := map \{x := x, evmSize x} l;
     totalHeadSize : Nat := foldl (+) 0 (map (snd >> headSize) lWithSize);
-    goHead
-      (buildTail : BytesBuilder Unit)
+    go
+      (tailBuilder : BytesBuilder.Builder)
       : List (Pair Evm EvmSize) -> BytesBuilder Unit
-      | [] := BytesBuilder.builder buildTail
+      | [] := BytesBuilder.builder tailBuilder
       | ((x, sz) :: xs) :=
         case sz of
-          | EvmSize.dynamic := let
-            offset : Word32 := todo
-            in toBytes offset;
-          | EvmSize.static _ := toBytes {{ToBytes-Evm}} x;
-  in goHead (pure unit) lWithSize;
+          | EvmSize.dynamic :=
+            let
+              offset : Word32 :=
+                Word32.fromNat
+                  (totalHeadSize + BytesBuilder.Builder.size tailBuilder);
+              tailBuilder' : BytesBuilder.Builder :=
+                BytesBuilder.runWith tailBuilder (toBytes {{ToBytes-Evm}} x);
+            in do {
+              toBytes offset;
+              go tailBuilder' xs;
+            }
+          | EvmSize.static _ :=
+            do {
+              toBytes {{ToBytes-Evm}} x;
+              go tailBuilder xs;
+            };
+  in go BytesBuilder.Builder.empty lWithSize;
 
 tupleEvmSize (l : List Evm) : EvmSize :=
   let
