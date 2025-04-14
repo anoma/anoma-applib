@@ -87,12 +87,48 @@ type BytesBuilder (A : Type) :=
     unwrap : StateT BytesBuilder.State Identity A;
   }
 with
-  State : Type := List Byte;
+  type State : Type :=
+    mk@{
+      bytes : List Byte;
+      size : Nat;
+    }
+  with
+    cons (b : Byte) (s : BytesBuilder.State) : BytesBuilder.State :=
+      s@BytesBuilder.State{
+        bytes := b :: bytes s;
+        size := 1 + size s;
+      };
 
-  run {A} : BytesBuilder A -> ByteArray
-    | (mk st) := ByteArray.mk (reverse (Identity.run (execState [] st)));
+    -- TODO efficient concatenation
+    append (b1 b2 : BytesBuilder.State) : BytesBuilder.State :=
+      BytesBuilder.State.mk@{
+        bytes := bytes b2 ++ bytes b1;
+        size := size b1 + size b2;
+      };
 
-  byte (b : Byte) : BytesBuilder Unit := mk (modify \{acc := b :: acc});
+    toByteArray (s : BytesBuilder.State) : ByteArray :=
+      ByteArray.mk (reverse (bytes s));
+
+    empty : State :=
+      BytesBuilder.State.mk@{
+        bytes := [];
+        size := 0;
+      };
+  end;
+
+  run {A} : BytesBuilder A -> ByteArray := runBuilder >> State.toByteArray;
+
+  runBuilder {A} : BytesBuilder A -> State
+    | (mk st) := Identity.run (execState State.empty st);
+
+  --- append a byte
+  byte (b : Byte) : BytesBuilder Unit := mk (modify (State.cons b));
+
+  builder {B} (b : BytesBuilder B) : BytesBuilder Unit :=
+    mk (modify (State.append (runBuilder b)));
+
+  --- get the current size
+  size : BytesBuilder Nat := mk (BytesBuilder.State.size <$> get);
 
   instance
   BytesBuilder-Functor : Functor BytesBuilder :=
@@ -398,24 +434,79 @@ with
             toBytes {Word32} (fromNat (sub (pow 2 32) (n + 1)))};
 end;
 
+type EvmSize :=
+  | static@{
+      numBytes : Nat;
+    }
+  | dynamic
+with
+
+  empty : EvmSize := static 0;
+
+  append : EvmSize -> EvmSize -> EvmSize
+    | (static s1) (static s2) := static (s1 + s2)
+    | _ _ := dynamic;
+
+end;
+
+-- TODO abstract over size
+--- ByteArray of exactly 32 bytes
+type ByteArray32 := ByteArray;
+
+instance
+FixedSize-ByteArray32 : FixedSize ByteArray32 := FixedSize.mk 32;
+
 type Evm :=
-  | bytes ByteArray
+  | dynamicBytes ByteArray
+  | staticBytes ByteArray32
   | tuple (List Evm)
   | uint Word32
   | int Int32;
 
-isDynamic : Evm -> Bool
-  | Evm.bytes@{} := true
-  | (Evm.tuple t) := anyIsDynamic t
-  | Evm.uint@{} := false
-  | Evm.int@{} := false;
+evmSize : Evm -> EvmSize
+  | Evm.dynamicBytes@{} := EvmSize.dynamic
+  | Evm.staticBytes@{} := EvmSize.static (byteSize {ByteArray32})
+  | (Evm.tuple t) := tupleEvmSize t
+  | Evm.uint@{} := EvmSize.static (byteSize {Word32})
+  | Evm.int@{} := EvmSize.static (byteSize {Int32});
 
--- needed for termination
-anyIsDynamic : List Evm -> Bool
-  | [] := false;
-  | (t :: ts) := isDynamic t || anyIsDynamic ts;
+instance
+ToBytes-Evm : ToBytes Evm :=
+  ToBytes.mk
+    \{
+      | (Evm.uint n) := toBytes n
+      | (Evm.int n) := toBytes n
+      | (Evm.dynamicBytes n) := toBytes n
+      | (Evm.staticBytes n) := todo
+      | (Evm.tuple n) := tupleToBytes n
+    };
 
-type Tuple := mk (List Evm);
+headSize : EvmSize -> Nat
+  | (EvmSize.static n) := n
+  | EvmSize.dynamic := 32;
+
+tupleToBytes (l : List Evm) : BytesBuilder Unit :=
+  let
+    lWithSize : List (Pair Evm EvmSize) := map \{x := x, evmSize x} l;
+    totalHeadSize : Nat := foldl (+) 0 (map (snd >> headSize) lWithSize);
+    goHead
+      (buildTail : BytesBuilder Unit)
+      : List (Pair Evm EvmSize) -> BytesBuilder Unit
+      | [] := BytesBuilder.builder buildTail
+      | ((x, sz) :: xs) :=
+        case sz of
+          | EvmSize.dynamic := let
+            offset : Word32 := todo
+            in toBytes offset;
+          | EvmSize.static _ := toBytes {{ToBytes-Evm}} x;
+  in goHead (pure unit) lWithSize;
+
+tupleEvmSize (l : List Evm) : EvmSize :=
+  let
+    go : List Evm -> EvmSize -> EvmSize
+      | [] acc := acc
+      | (s :: xs) acc := go xs (EvmSize.append acc (evmSize s));
+  in go l EvmSize.empty;
 
 main : _ :=
   let
