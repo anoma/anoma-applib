@@ -452,14 +452,17 @@ end;
 trait
 type IsEvmType (T : Type) :=
   mk@{
-    evmSize : EvmSize;
+    evmSize : T -> EvmSize;
   }
 with
   fromFixedSize {T} {{FixedSize T}} : IsEvmType T :=
-    mk (EvmSize.static (byteSize {T}));
+    mk (const (EvmSize.static (byteSize {T})));
 
-  dynamic {T} : IsEvmType T := mk EvmSize.dynamic;
+  dynamic {T} : IsEvmType T := mk (const EvmSize.dynamic);
 end;
+
+instance
+IsEvmType-ByteArray : IsEvmType ByteArray := IsEvmType.dynamic;
 
 instance
 IsEvmType-Word32 : IsEvmType Word32 := IsEvmType.fromFixedSize;
@@ -471,36 +474,15 @@ type ByteArray32 := ByteArray;
 instance
 FixedSize-ByteArray32 : FixedSize ByteArray32 := FixedSize.mk 32;
 
-type Evm :=
-  | dynamicBytes ByteArray
-  | staticBytes ByteArray32
-  | tuple EvmTuple
-  | uint Word32
-  | int Int32;
-
-type EvmTuple := mk (List Evm);
-
-type EvmTuple2 :=
-  | nil : EvmTuple2
-  | cons : {A : Type} -> {{IsEvmType A}} -> {{ToBytes A}} -> A -> EvmTuple2 -> EvmTuple2;
-
-evmSize : Evm -> EvmSize
-  | Evm.dynamicBytes@{} := EvmSize.dynamic
-  | Evm.staticBytes@{} := EvmSize.static (byteSize {ByteArray32})
-  | (Evm.tuple t) := tupleEvmSize t
-  | Evm.uint@{} := EvmSize.static (byteSize {Word32})
-  | Evm.int@{} := EvmSize.static (byteSize {Int32});
-
-instance
-ToBytes-Evm : ToBytes Evm :=
-  ToBytes.mk
-    \{
-      | (Evm.uint n) := toBytes n
-      | (Evm.int n) := toBytes n
-      | (Evm.dynamicBytes n) := toBytes n
-      | (Evm.staticBytes n) := todo
-      | (Evm.tuple n) := tupleToBytes n
-    };
+type EvmTuple :=
+  | nil : EvmTuple
+  | cons
+      : {A : Type}
+        -> {{IsEvmType A}}
+        -> {{ToBytes A}}
+        -> A
+        -> EvmTuple
+        -> EvmTuple;
 
 headSize : EvmSize -> Nat
   | (EvmSize.static n) := n
@@ -508,68 +490,48 @@ headSize : EvmSize -> Nat
 
 totalHeadSize : List EvmSize -> Nat := map headSize >> foldl (+) 0;
 
-tupleToBytes : EvmTuple -> BytesBuilder Unit
-  | (EvmTuple.mk l) :=
-    let
-      lWithSize : List (Pair Evm EvmSize) := map \{x := x, evmSize x} l;
-      total : Nat := totalHeadSize (map snd lWithSize);
-      go
-        (tailBuilder : BytesBuilder.Builder)
-        : List (Pair Evm EvmSize) -> BytesBuilder Unit
-        | [] := BytesBuilder.builder tailBuilder
-        | ((x, sz) :: xs) :=
-          case sz of
-            | EvmSize.dynamic :=
-              let
-                offset : Word32 :=
-                  Word32.fromNat
-                    (total + BytesBuilder.Builder.size tailBuilder);
-                tailBuilder' : BytesBuilder.Builder :=
-                  BytesBuilder.runWith tailBuilder (toBytes {{ToBytes-Evm}} x);
-              in do {
-                toBytes offset;
-                go tailBuilder' xs;
-              }
-            | EvmSize.static _ :=
-              do {
-                toBytes {{ToBytes-Evm}} x;
-                go tailBuilder xs;
-              };
-    in go BytesBuilder.Builder.empty lWithSize;
-
 instance
 ToBytes-EvmTuple : ToBytes EvmTuple := ToBytes.mk tupleToBytes;
 
-tupleToBytes2 (l : EvmTuple2) : BytesBuilder Unit :=
-    let
-      total : Nat := let
-        aux : Nat -> EvmTuple2 -> Nat
-          | acc EvmTuple2.nil := acc
-          | acc (EvmTuple2.cons {_} {{_}} {{_}} x xs) := aux acc xs;
-        in aux 0 l;
-      go
-        (tailBuilder : BytesBuilder.Builder)
-        : EvmTuple2 -> BytesBuilder Unit
-        | EvmTuple2.nil := BytesBuilder.builder tailBuilder
-        | (EvmTuple2.cons {_} {{isEvmTypeI}} {{toBytesI}} x xs) :=
-          case IsEvmType.evmSize {{isEvmTypeI}} of
-            | EvmSize.dynamic :=
-              let
-                offset : Word32 :=
-                  Word32.fromNat
-                    (total + BytesBuilder.Builder.size tailBuilder);
-                tailBuilder' : BytesBuilder.Builder :=
-                  BytesBuilder.runWith tailBuilder (toBytes {{toBytesI}} x);
-              in do {
-                toBytes offset;
-                go tailBuilder' xs;
-              }
-            | EvmSize.static _ :=
-              do {
-                toBytes {{toBytesI}} x;
-                go tailBuilder xs;
-              };
-    in go BytesBuilder.Builder.empty l;
+instance
+IsEvmType-EvmTuple : IsEvmType EvmTuple := IsEvmType.mk tupleEvmSize;
+
+tupleEvmSize (t : EvmTuple) : EvmSize :=
+  let
+    go : EvmSize -> EvmTuple -> EvmSize
+      | acc EvmTuple.nil := acc
+      | acc (EvmTuple.cons {_} {{_}} {{_}} x xs) :=
+        go (EvmSize.append acc (IsEvmType.evmSize x)) xs;
+  in go EvmSize.empty t;
+
+tupleToBytes (l : EvmTuple) : BytesBuilder Unit :=
+  let
+    total : Nat :=
+      let
+        aux : Nat -> EvmTuple -> Nat
+          | acc EvmTuple.nil := acc
+          | acc (EvmTuple.cons {_} {{_}} {{_}} x xs) := aux acc xs;
+      in aux 0 l;
+    go (tailBuilder : BytesBuilder.Builder) : EvmTuple -> BytesBuilder Unit
+      | EvmTuple.nil := BytesBuilder.builder tailBuilder
+      | (EvmTuple.cons {_} {{_}} {{toBytesI}} x xs) :=
+        case IsEvmType.evmSize x of
+          | EvmSize.dynamic :=
+            let
+              offset : Word32 :=
+                Word32.fromNat (total + BytesBuilder.Builder.size tailBuilder);
+              tailBuilder' : BytesBuilder.Builder :=
+                BytesBuilder.runWith tailBuilder (toBytes {{toBytesI}} x);
+            in do {
+              toBytes offset;
+              go tailBuilder' xs;
+            }
+          | EvmSize.static _ :=
+            do {
+              toBytes {{toBytesI}} x;
+              go tailBuilder xs;
+            };
+  in go BytesBuilder.Builder.empty l;
 
 -- decodeTupleHelper (l : List EvmSize) : BytesConsumer (List Byte) :=
 --  let
@@ -578,20 +540,11 @@ tupleToBytes2 (l : EvmTuple2) : BytesBuilder Unit :=
 --   pure todo;
 -- };
 
-tupleEvmSize : EvmTuple -> EvmSize
-  | (EvmTuple.mk l) :=
-    let
-      go : List Evm -> EvmSize -> EvmSize
-        | [] acc := acc
-        | (s :: xs) acc := go xs (EvmSize.append acc (evmSize s));
-    in go l EvmSize.empty;
-
 main : _ :=
   let
-    l : List Byte := [234; 12; 10; 77];
-    n : ByteArray := alignByteArray (ByteArray.fromList l);
-  -- n : Int32 := Int32.fromInt -12359;
-  -- n : Word32 := Word32.fromNat 7;
-  in trace n
-    >-> trace (show n)
-    >-> show (fromByteArray {ByteArray} (toByteArray n));
+    -- l : List Byte := [234; 12; 10; 77];
+    -- n : ByteArray := ByteArray.fromList l;
+    n : Word32 := 12;
+    -- n : EvmTuple := EvmTuple.cons num (EvmTuple.cons b EvmTuple.nil);
+  in n;
+    -- >-> show (fromByteArray {ByteArray} (toByteArray n));
