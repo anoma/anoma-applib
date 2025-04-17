@@ -312,6 +312,34 @@ pow {A} {{FromNatural A}} {{Natural A}} : A -> Nat -> A
   | a zero := 1
   | a (suc b) := a * pow a b;
 
+type Word256 := privateMk Nat
+with
+  fromNat (n : Nat) : Word256 := privateMk n;
+
+  toNat : Word256 -> Nat
+    | (privateMk n) := mod n (pow 256 size);
+
+  instance
+  FromNat-Word256 : FromNatural Word256 := FromNatural.mkFromNatural fromNat;
+
+  size : Nat := 32;
+
+  instance
+  FixedSize-Word256 : FixedSize Word256 := FixedSize.mk size;
+
+  instance
+  Show-Word256 : Show Word256 :=
+    Show.mk@{
+      show : Word256 -> String := toNat >> Show.show;
+    };
+
+  instance
+  FromBytes-Word256 : FromBytes Word256 := FromBytes.WordN;
+
+  instance
+  ToBytes-Word256 : ToBytes Word256 := ToBytes.WordN toNat;
+end;
+
 --- 8 byte word
 type Word32 := privateMk Nat
 with
@@ -331,8 +359,7 @@ with
   instance
   Show-Word32 : Show Word32 :=
     Show.mk@{
-      show : Word32 -> String
-        | (privateMk n) := Show.show n;
+      show : Word32 -> String := toNat >> Show.show;
     };
 
   instance
@@ -410,21 +437,82 @@ FromBytes-List {A} {{FromBytes A}} : FromBytes (List A) :=
       replicateA (Word32.toNat len) fromBytes;
     };
 
+--- 32 byte integer
+type Int256 := privateMk Int
+with
+  fromInt (n : Int) : Int256 := privateMk n;
+
+  size : Nat := 32;
+
+  numBits : Nat := size * 8;
+
+  -- better name?
+  threshold : Nat := pow 2 (sub numBits 1);
+
+  toInt : Int256 -> Int
+    | (privateMk n) :=
+      case n of
+        | Int.ofNat pos := Int.ofNat (mod pos threshold)
+        | Int.negSuc neg := Int.negSuc (mod neg threshold);
+
+  instance
+  FromNat-Int256 : FromNatural Int256 := FromNatural.mkFromNatural fromNat;
+
+  instance
+  FixedSize-Int256 : FixedSize Int256 := FixedSize.mk size;
+
+  instance
+  Show-Int256 : Show Int256 :=
+    Show.mk@{
+      show : Int256 -> String := toInt >> Show.show;
+    };
+
+  instance
+  FromBytes-Int256 : FromBytes Int256 :=
+    FromBytes.mk
+      do {
+        w <- Word256.toNat <$> fromBytes;
+        if
+          | w < threshold := pure (privateMk (Int.fromNat w))
+          | else :=
+            let
+              subs : Nat := mod w threshold + 1;
+            in pure (privateMk (Int.negSuc (Nat.sub threshold subs)));
+      };
+
+  instance
+  ToBytes-Int256 : ToBytes Int256 :=
+    ToBytes.mk
+      \{i :=
+        case toInt i of
+          | Int.ofNat n := toBytes {Word256} (fromNat n)
+          | Int.negSuc n :=
+            toBytes {Word256} (fromNat (sub (pow 2 numBits) (n + 1)))};
+
+  instance
+  HasEvmSize-Int256 : HasEvmSize Int256 := HasEvmSize.evmWord;
+end;
+
 --- 8 byte integer
 type Int32 := privateMk Int
 with
   fromInt (n : Int) : Int32 := privateMk n;
 
+  size : Nat := 4;
+
+  numBits : Nat := size * 8;
+
+  -- better name?
+  threshold : Nat := pow 2 (sub numBits 1);
+
   toInt : Int32 -> Int
     | (privateMk n) :=
       case n of
-        | Int.ofNat pos := Int.ofNat (mod pos (pow 2 31))
-        | Int.negSuc neg := Int.negSuc (mod neg (pow 2 31));
+        | Int.ofNat pos := Int.ofNat (mod pos threshold)
+        | Int.negSuc neg := Int.negSuc (mod neg threshold);
 
   instance
   FromNat-Int32 : FromNatural Int32 := FromNatural.mkFromNatural fromNat;
-
-  size : Nat := 4;
 
   instance
   FixedSize-Int32 : FixedSize Int32 := FixedSize.mk size;
@@ -432,8 +520,7 @@ with
   instance
   Show-Int32 : Show Int32 :=
     Show.mk@{
-      show : Int32 -> String
-        | (privateMk n) := Show.show n;
+      show : Int32 -> String := toInt >> Show.show;
     };
 
   instance
@@ -481,8 +568,7 @@ type HasEvmSize (T : Type) :=
     evmSizeI : EvmSize;
   }
 with
-  evmWord {T} {{FixedSize T}} : HasEvmSize T :=
-    mk (EvmSize.static evmAlign);
+  evmWord {T} : HasEvmSize T := mk (EvmSize.static evmAlign);
 
   dynamic {T} : HasEvmSize T := mk EvmSize.dynamic;
 
@@ -588,7 +674,8 @@ type Example : Type :=
   mk@{
     word : Word32;
     bytearray : ByteArray;
-    int : Int32;
+    int : Int256;
+    int32 : Int32;
   };
 
 instance
@@ -602,7 +689,9 @@ ToBytes-Example : ToBytes Example :=
               (Example.word e)
               (EvmTuple.cons
                 (Example.bytearray e)
-                (EvmTuple.cons (Example.int e) EvmTuple.nil));
+                (EvmTuple.cons
+                  (Example.int e)
+                  (EvmTuple.cons (Example.int32 e) EvmTuple.nil)));
         in
         ToBytes.toBytes tup;
       };
@@ -613,28 +702,27 @@ FromBytes-Example : FromBytes Example :=
   FromBytes.mk@{
     fromBytes : BytesConsumer Example :=
       do {
-        l <- tupleSplit [evmSize Word32; evmSize ByteArray; evmSize Int32];
-        word, bytearray, int <- case l of
-                                  | [sword; sint] :=
-                                    do {
-                                      w <- BytesConsumer.local
-                                        FromBytes.fromBytes
-                                        sword;
-                                      i <- BytesConsumer.local
-                                        FromBytes.fromBytes
-                                        sint;
-                                      b <- FromBytes.fromBytes;
-                                      pure (w, b, i);
-                                    }
-                                  | _ :=
-                                    failwith
-                                      "FromBytes-Example wrong number of static arguments";
-        pure
-          Example.mk@{
-            word;
-            bytearray;
-            int;
-          };
+        l <- tupleSplit
+          [evmSize Word32; evmSize ByteArray; evmSize Int256; evmSize Int32];
+        case l of {
+          | [sword; sint; sint32] :=
+            do {
+              -- static
+              word <- BytesConsumer.local FromBytes.fromBytes sword;
+              int <- BytesConsumer.local FromBytes.fromBytes sint;
+              int32 <- BytesConsumer.local FromBytes.fromBytes sint32;
+              -- dynamic
+              bytearray <- FromBytes.fromBytes;
+              pure
+                Example.mk@{
+                  word;
+                  bytearray;
+                  int;
+                  int32;
+                };
+            }
+          | _ := failwith "FromBytes-Example wrong number of static arguments"
+        };
       };
   };
 
@@ -646,20 +734,26 @@ Show-Example : Show Example :=
         ++str ", "
         ++str Show.show (Example.bytearray e)
         ++str ", "
-        ++str Show.show (Example.int e);
+        ++str Show.show (Example.int e)
+        ++str ", "
+        ++str Show.show (Example.int32 e);
   };
 
 main : _ :=
   let
     n : List Byte := [3; 4; 5];
     b : ByteArray := ByteArray.mk n;
-    i : Int32 := Int32.fromInt 2147483647;
+    i : Int256 := Int256.fromInt -88888888888888;
+    i' : Int32 := Int32.fromInt -2147483647;
     e : Example :=
       Example.mk@{
         word := Word32.fromNat (sub (pow 256 4) 1);
         bytearray := b;
         int := i;
+        int32 := i';
       };
   in trace (show e)
     >-> trace (show (toByteArray e))
+    >-> trace (show (toByteArray i))
+    >-> trace (mod (ByteArray.size (toByteArray e)) 32)
     >-> show (fromByteArray {Example} (toByteArray e));
