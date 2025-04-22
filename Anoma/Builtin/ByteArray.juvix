@@ -254,7 +254,7 @@ type FromBytes (T : Type) :=
   }
 with
   -- Big endian
-  WordN {A} {{FromNatural A}} : FromBytes A :=
+  UIntN {A} {{FromNatural A}} : FromBytes A :=
     let
       go (acc : Nat) : (numByte : Nat) -> BytesConsumer A
         | zero := pure (fromNat acc)
@@ -275,7 +275,7 @@ type ToBytes (T : Type) :=
   }
 with
   -- Big endian
-  WordN {A} (toNat : A -> Nat) : ToBytes A :=
+  UIntN {A} (toNat : A -> Nat) : ToBytes A :=
     let
       go (n : Nat) : (numByte : Nat) -> BytesBuilder Unit
         | zero := pure unit
@@ -312,61 +312,61 @@ pow {A} {{FromNatural A}} {{Natural A}} : A -> Nat -> A
   | a zero := 1
   | a (suc b) := a * pow a b;
 
-type Word256 := privateMk Nat
+type UInt256 := privateMk Nat
 with
-  fromNat (n : Nat) : Word256 := privateMk n;
+  fromNat (n : Nat) : UInt256 := privateMk n;
 
-  toNat : Word256 -> Nat
+  toNat : UInt256 -> Nat
     | (privateMk n) := mod n (pow 256 size);
 
   instance
-  FromNat-Word256 : FromNatural Word256 := FromNatural.mkFromNatural fromNat;
+  FromNat-UInt256 : FromNatural UInt256 := FromNatural.mkFromNatural fromNat;
 
   size : Nat := 32;
 
   instance
-  FixedSize-Word256 : FixedSize Word256 := FixedSize.mk size;
+  FixedSize-UInt256 : FixedSize UInt256 := FixedSize.mk size;
 
   instance
-  Show-Word256 : Show Word256 :=
+  Show-UInt256 : Show UInt256 :=
     Show.mk@{
-      show : Word256 -> String := toNat >> Show.show;
+      show : UInt256 -> String := toNat >> Show.show;
     };
 
   instance
-  FromBytes-Word256 : FromBytes Word256 := FromBytes.WordN;
+  FromBytes-UInt256 : FromBytes UInt256 := FromBytes.UIntN;
 
   instance
-  ToBytes-Word256 : ToBytes Word256 := ToBytes.WordN toNat;
+  ToBytes-UInt256 : ToBytes UInt256 := ToBytes.UIntN toNat;
 end;
 
 --- 8 byte word
-type Word32 := privateMk Nat
+type UInt32 := privateMk Nat
 with
-  fromNat (n : Nat) : Word32 := privateMk n;
+  fromNat (n : Nat) : UInt32 := privateMk n;
 
-  toNat : Word32 -> Nat
+  toNat : UInt32 -> Nat
     | (privateMk n) := mod n (pow 256 size);
 
   instance
-  FromNat-Word32 : FromNatural Word32 := FromNatural.mkFromNatural fromNat;
+  FromNat-UInt32 : FromNatural UInt32 := FromNatural.mkFromNatural fromNat;
 
   size : Nat := 4;
 
   instance
-  FixedSize-Word32 : FixedSize Word32 := FixedSize.mk size;
+  FixedSize-UInt32 : FixedSize UInt32 := FixedSize.mk size;
 
   instance
-  Show-Word32 : Show Word32 :=
+  Show-UInt32 : Show UInt32 :=
     Show.mk@{
-      show : Word32 -> String := toNat >> Show.show;
+      show : UInt32 -> String := toNat >> Show.show;
     };
 
   instance
-  FromBytes-Word32 : FromBytes Word32 := FromBytes.WordN;
+  FromBytes-UInt32 : FromBytes UInt32 := FromBytes.UIntN;
 
   instance
-  ToBytes-Word32 : ToBytes Word32 := ToBytes.WordN toNat;
+  ToBytes-UInt32 : ToBytes UInt32 := ToBytes.UIntN toNat;
 end;
 
 align32 (n : Nat) : Nat :=
@@ -384,7 +384,7 @@ ByteArray-ToBytes : ToBytes ByteArray :=
         let
           pad := pad32 (ByteArray.size b);
         in
-        ToBytes.toBytes (Word32.fromNat (ByteArray.size b));
+        ToBytes.toBytes (UInt32.fromNat (ByteArray.size b));
         mapA_ ToBytes.toBytes (ByteArray.toList b);
         BytesBuilder.pad pad;
       };
@@ -395,8 +395,8 @@ ByteArray-FromBytes : FromBytes ByteArray :=
   FromBytes.mk@{
     fromBytes :=
       do {
-        numBytes <- fromBytes {Word32};
-        bytes <- replicateA (Word32.toNat numBytes) BytesConsumer.byte;
+        numBytes <- fromBytes {UInt32};
+        bytes <- replicateA (UInt32.toNat numBytes) BytesConsumer.byte;
         pure (ByteArray.fromList bytes);
       };
   };
@@ -423,7 +423,7 @@ ToBytes-List {A} {{ToBytes A}} : ToBytes (List A) :=
     \{l :=
       do {
         let
-          len : Word32 := fromNat (length l);
+          len : UInt32 := fromNat (length l);
         in
         toBytes len;
         mapA_ toBytes l;
@@ -433,8 +433,8 @@ instance
 FromBytes-List {A} {{FromBytes A}} : FromBytes (List A) :=
   FromBytes.mk
     do {
-      len <- fromBytes {Word32};
-      replicateA (Word32.toNat len) fromBytes;
+      len <- fromBytes {UInt32};
+      replicateA (UInt32.toNat len) fromBytes;
     };
 
 --- 32 byte integer
@@ -471,7 +471,7 @@ with
   FromBytes-Int256 : FromBytes Int256 :=
     FromBytes.mk
       do {
-        w <- Word256.toNat <$> fromBytes;
+        w <- UInt256.toNat <$> fromBytes;
         if
           | w < threshold := pure (privateMk (Int.fromNat w))
           | else :=
@@ -485,12 +485,12 @@ with
     ToBytes.mk
       \{i :=
         case toInt i of
-          | Int.ofNat n := toBytes {Word256} (fromNat n)
+          | Int.ofNat n := toBytes {UInt256} (fromNat n)
           | Int.negSuc n :=
-            toBytes {Word256} (fromNat (sub (pow 2 numBits) (n + 1)))};
+            toBytes {UInt256} (fromNat (sub (pow 2 numBits) (n + 1)))};
 
   instance
-  HasEvmSize-Int256 : HasEvmSize Int256 := HasEvmSize.evmWord;
+  HasEvmSize-Int256 : HasEvmSize Int256 := HasEvmSize.evmUInt;
 end;
 
 --- 8 byte integer
@@ -527,7 +527,7 @@ with
   FromBytes-Int32 : FromBytes Int32 :=
     FromBytes.mk
       do {
-        w <- Word32.toNat <$> fromBytes;
+        w <- UInt32.toNat <$> fromBytes;
         if
           | w < pow 2 31 := pure (privateMk (Int.fromNat w))
           | else :=
@@ -541,12 +541,12 @@ with
     ToBytes.mk
       \{i :=
         case toInt i of
-          | Int.ofNat n := toBytes {Word32} (fromNat n)
+          | Int.ofNat n := toBytes {UInt32} (fromNat n)
           | Int.negSuc n :=
-            toBytes {Word32} (fromNat (sub (pow 2 32) (n + 1)))};
+            toBytes {UInt32} (fromNat (sub (pow 2 32) (n + 1)))};
 
   instance
-  HasEvmSize-Int32 : HasEvmSize Int32 := HasEvmSize.evmWord;
+  HasEvmSize-Int32 : HasEvmSize Int32 := HasEvmSize.evmUInt;
 end;
 
 type EvmSize :=
@@ -568,7 +568,7 @@ type HasEvmSize (T : Type) :=
     evmSizeI : EvmSize;
   }
 with
-  evmWord {T} : HasEvmSize T := mk (EvmSize.static evmAlign);
+  evmUInt {T} : HasEvmSize T := mk (EvmSize.static evmAlign);
 
   dynamic {T} : HasEvmSize T := mk EvmSize.dynamic;
 
@@ -581,7 +581,7 @@ instance
 HasEvmSize-ByteArray : HasEvmSize ByteArray := HasEvmSize.dynamic;
 
 instance
-HasEvmSize-Word32 : HasEvmSize Word32 := HasEvmSize.evmWord;
+HasEvmSize-UInt32 : HasEvmSize UInt32 := HasEvmSize.evmUInt;
 
 -- TODO abstract over size
 --- ByteArray of exactly 32 bytes
@@ -600,6 +600,10 @@ type EvmTuple :=
         -> EvmTuple
         -> EvmTuple
 with
+  syntax operator ::: cons;
+  ::: {A} {{HasEvmSize A}} {{ToBytes A}} : A -> EvmTuple -> EvmTuple :=
+    EvmTuple.cons;
+
   sizeList : EvmTuple -> List EvmSize :=
     let
       go : List EvmSize -> EvmTuple -> List EvmSize
@@ -608,6 +612,8 @@ with
           go (evmSizeI {{sizeI}} :: acc) xs;
     in go [];
 end;
+
+open EvmTuple using {:::} public;
 
 headSize : EvmSize -> Nat
   | (EvmSize.static n) := n
@@ -635,8 +641,8 @@ tupleToBytes (l : EvmTuple) : BytesBuilder Unit :=
         case evmSizeI {{szI}} of
           | EvmSize.dynamic :=
             let
-              offset : Word32 :=
-                Word32.fromNat
+              offset : UInt32 :=
+                UInt32.fromNat
                   -- headSize EvmSize.dynamic
                     (sizeOfHeads
                     + BytesBuilder.Builder.size tailBuilder);
@@ -672,7 +678,7 @@ tupleSplit (l : List EvmSize) : BytesConsumer (List (List Byte)) :=
 
 type Example : Type :=
   mk@{
-    word : Word32;
+    word : UInt32;
     bytearray : ByteArray;
     int : Int256;
     int32 : Int32;
@@ -685,13 +691,11 @@ ToBytes-Example : ToBytes Example :=
       do {
         let
           tup : EvmTuple :=
-            EvmTuple.cons
-              (Example.word e)
-              (EvmTuple.cons
-                (Example.bytearray e)
-                (EvmTuple.cons
-                  (Example.int e)
-                  (EvmTuple.cons (Example.int32 e) EvmTuple.nil)));
+            Example.word e
+              ::: Example.bytearray e
+              ::: Example.int e
+              ::: Example.int32 e
+              ::: EvmTuple.nil;
         in
         ToBytes.toBytes tup;
       };
@@ -702,14 +706,13 @@ FromBytes-Example : FromBytes Example :=
   FromBytes.mk@{
     fromBytes : BytesConsumer Example :=
       do {
-        l <- tupleSplit
-          [evmSize Word32; evmSize ByteArray; evmSize Int256; evmSize Int32];
+        l <- tupleSplit [evmSize UInt32; evmSize ByteArray; evmSize Int256; evmSize Int32];
         case l of {
           | [sword; sint; sint32] :=
             do {
               -- static
-              word <- BytesConsumer.local FromBytes.fromBytes sword;
-              int <- BytesConsumer.local FromBytes.fromBytes sint;
+              word <- BytesConsumer.local (FromBytes.fromBytes {UInt32}) sword;
+              int <- BytesConsumer.local (FromBytes.fromBytes {Int256}) sint;
               int32 <- BytesConsumer.local FromBytes.fromBytes sint32;
               -- dynamic
               bytearray <- FromBytes.fromBytes;
@@ -747,7 +750,7 @@ main : _ :=
     i' : Int32 := Int32.fromInt -2147483647;
     e : Example :=
       Example.mk@{
-        word := Word32.fromNat (sub (pow 256 4) 1);
+        word := UInt32.fromNat (sub (pow 256 4) 1);
         bytearray := b;
         int := i;
         int32 := i';
