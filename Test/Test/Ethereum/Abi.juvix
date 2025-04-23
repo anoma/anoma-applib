@@ -1,0 +1,7 @@
+module Test.Ethereum.Abi;
+
+import Stdlib.Prelude open;
+import Test.JuvixUnit open;
+
+test : TestSuite :=
+  testSuite "TestPass" [testCase "1 == 1" (assertEqual "1 /= 1" 1 1)];
