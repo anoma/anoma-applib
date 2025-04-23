@@ -25,9 +25,9 @@ module TupleUsageExample;
   Eq-Example : Eq Example;
 
   {-- To define the ;ToBytes; instance we must create an ;EvmTuple; with the fields
-                    of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
-                    as shown below.
-                    Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
+                                    of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
+                                    as shown below.
+                                    Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
    --}
   instance
   ToBytes-Example : ToBytes Example :=
@@ -47,14 +47,14 @@ module TupleUsageExample;
     };
 
   {-- To define the ;FromBytes; instance we must follow these steps:
-                1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
-                   the type of each field.
-                2. case on `l`. `l` will exactly `n` elements, where `n` is the number
-                   of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
-                3. For each element `s` of `l`, we call:
-                     `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
-                4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
-                     `f <- FromBytes.fromBytes`
+                                1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
+                                   the type of each field.
+                                2. case on `l`. `l` will exactly `n` elements, where `n` is the number
+                                   of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
+                                3. For each element `s` of `l`, we call:
+                                     `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
+                                4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
+                                     `f <- FromBytes.fromBytes`
 
   For a concrete example, see the code below:
    --}
@@ -101,50 +101,41 @@ module TupleUsageExample;
     };
 
   test : TestSuite :=
-    let
-      n : List Byte := [3; 4; 5];
-      b : ByteArray := ByteArray.mk n;
-      i : Int256 := Int256.fromInt -88888888888888;
-      i' : Int32 := Int32.fromInt -2147483647;
-      example : Example :=
-        Example.mk@{
-          word := UInt32.fromNat (sub (pow 256 4) 1);
-          bytearray := b;
-          int := i;
-          int32 := i';
-        };
-      encodedExample : ByteArray := toByteArray example;
-      resDecodedExample : Result BytesConsumer.ConsumerError Example :=
-        fromByteArray {Example} encodedExample;
-    in testCase
-      "decode (encode Tuple) == Tuple"
-      case resDecodedExample of {
-        | error err := Assertion.fail "decoding failed"
-        | ok decodedExample := assertEqual "not equal" decodedExample example
-      };
+    TestSuite.group
+      "Tuple"
+      [
+        let
+          n : List Byte := [3; 4; 5];
+          b : ByteArray := ByteArray.mk n;
+          i : Int256 := Int256.fromInt -88888888888888;
+          i' : Int32 := Int32.fromInt -2147483647;
+          example : Example :=
+            Example.mk@{
+              word := UInt32.fromNat (sub (pow 256 4) 1);
+              bytearray := b;
+              int := i;
+              int32 := i';
+            };
+          encodedExample : ByteArray := toByteArray example;
+          resDecodedExample : Result BytesConsumer.ConsumerError Example :=
+            fromByteArray {Example} encodedExample;
+        in testCase "Example" (assertRoundTrip example);
+      ];
 end;
 
+assertEqualShow {A} {{Eq A}} {{Show A}} (a b : A) : Assertion :=
+  assertEqual ("\n" ++str show a ++str "\nnot equal to:\n" ++str show b) a b;
+
 assertRoundTrip
-  {A}
-  {{Show A}}
-  {{Eq A}}
-  {{FromBytes A}}
-  {{ToBytes A}}
-  (name : String)
-  (a : A)
-  : Assertion :=
+  {A} {{Show A}} {{Eq A}} {{FromBytes A}} {{ToBytes A}} (a : A) : Assertion :=
   let
     encoded : ByteArray := toByteArray a;
     resDecoded : Result BytesConsumer.ConsumerError A := fromByteArray encoded;
   in case resDecoded of
        | error err :=
          Assertion.fail
-           ("decoding " ++str name ++str " failed:\n" ++str show err)
-       | ok decoded :=
-         assertEqual
-           ("\n" ++str show a ++str "\nnot equal to:\n" ++str show decoded)
-           decoded
-           a;
+           ("round trip for '" ++str show a ++str "' failed:\n" ++str show err)
+       | ok decoded := assertEqualShow a decoded;
 
 module UIntN;
   test
@@ -165,27 +156,88 @@ module UIntN;
       [
         testCase
           "encode(0)"
-          (assertEqual
-            "not equal"
+          (assertEqualShow
             (toByteArray (fromNat {A} 0))
             (ByteArray.fromList (replicate evmAlign 0)));
         testCase
           ("encode(2 ^ " ++str show numBits ++str ")")
-          (assertEqual
-            "not equal"
+          (assertEqualShow
             (toByteArray (fromNat {A} (pow 256 size)))
             (ByteArray.fromList (replicate evmAlign 0)));
         testCase
           ("encode(2 ^ " ++str show numBits ++str " - 1)")
-          (assertEqual
-            "not equal"
-            (toByteArray {A} (fromNat (sub (pow 256 size) 1)))
+          (assertEqualShow
+            (toByteArray (fromNat {A} (sub (pow 256 size) 1)))
             (ByteArray.fromList
               (replicate (pad32 size) 0 ++ replicate size 255)));
-        testCase "decode(encode(0))" (assertRoundTrip {A} "0" 0);
+        testCase "decode(encode(0))" (assertRoundTrip {A} 0);
         testCase
           ("decode(encode(2 ^ " ++str show numBits ++str " - 1)")
-          (assertRoundTrip {A} "0" (fromNat (sub (pow 256 size) 1)));
+          (assertRoundTrip (fromNat {A} (sub (pow 256 size) 1)));
+      ];
+end;
+
+module IntN;
+  test
+    (A : Type)
+    {{Show A}}
+    {{Eq A}}
+    {{FixedSize A}}
+    {{ToBytes A}}
+    {{FromBytes A}}
+    (fromInt : Int -> A)
+    (name : String)
+    : TestSuite :=
+    let
+      size := byteSize {A};
+      numBits := 8 * size;
+    in TestSuite.group
+      name
+      [
+        testCase
+          "encode(0)"
+          (assertEqualShow
+            (toByteArray (fromInt 0))
+            (ByteArray.fromList (replicate evmAlign 0)));
+        testCase
+          "encode(1)"
+          (assertEqualShow
+            (toByteArray (fromInt 1))
+            (ByteArray.fromList (replicate (sub evmAlign 1) 0 ++ [1])));
+        testCase
+          "encode(-1)"
+          (assertEqualShow
+            (toByteArray (fromInt -1))
+            (ByteArray.fromList (replicate evmAlign 255)));
+        testCase "decode(encode(0))" (assertRoundTrip {A} (fromInt 0));
+        testCase
+          ("decode(encode(2 ^ " ++str show (sub numBits 1) ++str " - 1)")
+          (assertRoundTrip (fromInt (fromNat (sub (pow 2 (sub numBits 1)) 1))));
+        testCase
+          ("decode(encode(- 2 ^ " ++str show (sub numBits 1) ++str ")")
+          (assertRoundTrip (fromInt (fromNat (pow 2 (sub numBits 1)))));
+        testCase "decode(encode(1)" (assertRoundTrip (fromInt 1));
+        testCase "decode(encode(-1)" (assertRoundTrip (fromInt -1));
+      ];
+end;
+
+module Bool;
+  test : TestSuite :=
+    TestSuite.group
+      "Bool"
+      [
+        testCase "true" (assertRoundTrip true);
+        testCase "false" (assertRoundTrip false);
+      ];
+end;
+
+module List;
+  test : TestSuite :=
+    TestSuite.group
+      "List"
+      [
+        testCase "[]" (assertRoundTrip {List UInt32} []);
+        testCase "[1;2;3]" (assertRoundTrip {List UInt32} [1; 2; 3]);
       ];
 end;
 
@@ -197,7 +249,23 @@ module UInt256;
   test : TestSuite := UIntN.test UInt256 "UInt256";
 end;
 
+module Int32;
+  test : TestSuite := IntN.test Int32 Int32.fromInt "Int32";
+end;
+
+module Int256;
+  test : TestSuite := IntN.test Int256 Int256.fromInt "Int256";
+end;
+
 test : TestSuite :=
   TestSuite.group
     "Abi Encoding"
-    [TupleUsageExample.test; UInt32.test; UInt256.test];
+    [
+      TupleUsageExample.test;
+      UInt32.test;
+      UInt256.test;
+      Int32.test;
+      Int256.test;
+      Bool.test;
+      List.test;
+    ];

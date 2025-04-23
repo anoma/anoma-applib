@@ -30,4 +30,4 @@ jobs:
         run: juvix format
 
       - name: Run tests
-        run: cd Tests && juvix eval Main.juvix
+        run: cd Test && juvix eval Main.juvix

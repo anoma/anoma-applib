@@ -411,17 +411,22 @@ with
       show : Int256 -> String := toInt >> Show.show;
     };
 
+  twosComplement (n : UInt256) : Int256 :=
+    let
+      w := UInt256.toNat n;
+    in if
+      | w < threshold := privateMk (Int.fromNat w)
+      | else :=
+        let
+          subs : Nat := mod w threshold + 1;
+        in privateMk (Int.negSuc (Nat.sub threshold subs));
+
   instance
   FromBytes-Int256 : FromBytes Int256 :=
     FromBytes.mk
       do {
-        w <- UInt256.toNat <$> fromBytes;
-        if
-          | w < threshold := pure (privateMk (Int.fromNat w))
-          | else :=
-            let
-              subs : Nat := mod w threshold + 1;
-            in pure (privateMk (Int.negSuc (Nat.sub threshold subs)));
+        w <- fromBytes;
+        pure (twosComplement w);
       };
 
   instance
@@ -477,23 +482,13 @@ with
   FromBytes-Int32 : FromBytes Int32 :=
     FromBytes.mk
       do {
-        w <- UInt32.toNat <$> fromBytes;
-        if
-          | w < pow 2 31 := pure (privateMk (Int.fromNat w))
-          | else :=
-            let
-              subs : Nat := mod w (pow 2 31) + 1;
-            in pure (privateMk (Int.negSuc (Nat.sub (pow 2 31) subs)));
+        w <- fromBytes;
+        pure (privateMk (Int256.toInt (Int256.twosComplement w)));
       };
 
   instance
   ToBytes-Int32 : ToBytes Int32 :=
-    ToBytes.mk
-      \{i :=
-        case toInt i of
-          | Int.ofNat n := toBytes {UInt32} (fromNat n)
-          | Int.negSuc n :=
-            toBytes {UInt32} (fromNat (sub (pow 2 32) (n + 1)))};
+    ToBytes.mk \{(privateMk i) := ToBytes.toBytes {Int256} (Int256.fromInt i)};
 
   instance
   HasEvmSize-Int32 : HasEvmSize Int32 := HasEvmSize.evmUInt;
@@ -627,121 +622,3 @@ tupleSplit (l : List EvmSize) : BytesConsumer (List (List Byte)) :=
           };
         };
   in go [] l;
-
-{-- In order to define ;ToBytes; and ;FromBytes; instances for a
- tuple, we need to follow some mechanical steps.
- This module provides a concrete example. See the comments in the instances
- declarations below.
- --}
-module TupleUsageExample;
-
-  type Example : Type :=
-    mk@{
-      word : UInt32;
-      bytearray : ByteArray;
-      int : Int256;
-      int32 : Int32;
-    };
-
-  deriving instance
-  Eq-Example : Eq Example;
-
-  {-- To define the ;ToBytes; instance we must create an ;EvmTuple; with the fields
-        of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
-        as shown below.
-        Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
-   --}
-  instance
-  ToBytes-Example : ToBytes Example :=
-    ToBytes.mk@{
-      toBytes (e : Example) : BytesBuilder Unit :=
-        do {
-          let
-            tup : EvmTuple :=
-              Example.word e
-                ::: Example.bytearray e
-                ::: Example.int e
-                ::: Example.int32 e
-                ::: EvmTuple.nil;
-          in
-          ToBytes.toBytes tup;
-        };
-    };
-
-  {-- To define the ;FromBytes; instance we must follow these steps:
-    1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
-       the type of each field.
-    2. case on `l`. `l` will exactly `n` elements, where `n` is the number
-       of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
-    3. For each element `s` of `l`, we call:
-         `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
-    4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
-         `f <- FromBytes.fromBytes`
-
-  For a concrete example, see the code below:
-   --}
-  instance
-  FromBytes-Example : FromBytes Example :=
-    FromBytes.mk@{
-      fromBytes : BytesConsumer Example :=
-        do {
-          l <- tupleSplit
-            [evmSize UInt32; evmSize ByteArray; evmSize Int256; evmSize Int32];
-          case l of {
-            | [sword; sint; sint32] :=
-              do {
-                -- static
-                word <- BytesConsumer.local FromBytes.fromBytes sword;
-                int <- BytesConsumer.local FromBytes.fromBytes sint;
-                int32 <- BytesConsumer.local FromBytes.fromBytes sint32;
-                -- dynamic
-                bytearray <- FromBytes.fromBytes;
-                pure
-                  Example.mk@{
-                    word;
-                    bytearray;
-                    int;
-                    int32;
-                  };
-              }
-            | _ := failwith "FromBytes-Example wrong number of static arguments"
-          };
-        };
-    };
-
-  instance
-  Show-Example : Show Example :=
-    Show.mk@{
-      show (e : Example) : String :=
-        Show.show (Example.word e)
-          ++str ", "
-          ++str Show.show (Example.bytearray e)
-          ++str ", "
-          ++str Show.show (Example.int e)
-          ++str ", "
-          ++str Show.show (Example.int32 e);
-    };
-
-  main : _ :=
-    let
-      n : List Byte := [3; 4; 5];
-      b : ByteArray := ByteArray.mk n;
-      i : Int256 := Int256.fromInt -88888888888888;
-      i' : Int32 := Int32.fromInt -2147483647;
-      example : Example :=
-        Example.mk@{
-          word := UInt32.fromNat (sub (pow 256 4) 1);
-          bytearray := b;
-          int := i;
-          int32 := i';
-        };
-      encodedExample : ByteArray := toByteArray example;
-      resDecodedExample : Result BytesConsumer.ConsumerError Example :=
-        fromByteArray {Example} encodedExample;
-    in trace (show example)
-      >-> trace (show encodedExample)
-      >-> case resDecodedExample of {
-            | error err := false
-            | ok decodedExample := decodedExample == example
-          };
-end;
