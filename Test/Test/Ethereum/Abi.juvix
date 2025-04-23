@@ -25,9 +25,9 @@ module TupleUsageExample;
   Eq-Example : Eq Example;
 
   {-- To define the ;ToBytes; instance we must create an ;EvmTuple; with the fields
-                                    of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
-                                    as shown below.
-                                    Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
+                                      of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
+                                      as shown below.
+                                      Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
    --}
   instance
   ToBytes-Example : ToBytes Example :=
@@ -47,14 +47,14 @@ module TupleUsageExample;
     };
 
   {-- To define the ;FromBytes; instance we must follow these steps:
-                                1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
-                                   the type of each field.
-                                2. case on `l`. `l` will exactly `n` elements, where `n` is the number
-                                   of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
-                                3. For each element `s` of `l`, we call:
-                                     `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
-                                4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
-                                     `f <- FromBytes.fromBytes`
+                                  1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
+                                     the type of each field.
+                                  2. case on `l`. `l` will exactly `n` elements, where `n` is the number
+                                     of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
+                                  3. For each element `s` of `l`, we call:
+                                       `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
+                                  4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
+                                       `f <- FromBytes.fromBytes`
 
   For a concrete example, see the code below:
    --}
@@ -241,6 +241,16 @@ module List;
       ];
 end;
 
+module ByteArray;
+  test : TestSuite :=
+    TestSuite.group
+      "Dynamic ByteArray"
+      [
+        testCase "[]" (assertRoundTrip (ByteArray.fromList []));
+        testCase "[1;2;3]" (assertRoundTrip (ByteArray.fromList [1; 2; 3]));
+      ];
+end;
+
 module UInt32;
   test : TestSuite := UIntN.test UInt32 "UInt32";
 end;
@@ -268,4 +278,5 @@ test : TestSuite :=
       Int256.test;
       Bool.test;
       List.test;
+      ByteArray.test;
     ];
