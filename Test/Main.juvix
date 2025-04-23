@@ -6,5 +6,5 @@ import Test.Ethereum.Abi as Ethereum;
 
 main : IO :=
   runTestSuite
-  (testSuite "Applib Tests" [Ethereum.test]);
+  (TestSuite.group "Applib Tests" [Ethereum.test]);
     ;

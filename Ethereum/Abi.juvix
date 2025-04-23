@@ -535,10 +535,12 @@ HasEvmSize-UInt32 : HasEvmSize UInt32 := HasEvmSize.evmUInt;
 
 -- TODO abstract over size
 --- ByteArray of exactly 32 bytes
-type ByteArray32 := ByteArray;
+type ByteArray32 := privateMk ByteArray
 
-instance
-FixedSize-ByteArray32 : FixedSize ByteArray32 := FixedSize.mk 32;
+with
+  instance
+  FixedSize-ByteArray32 : FixedSize ByteArray32 := FixedSize.mk 32;
+end;
 
 type EvmTuple :=
   | nil : EvmTuple
@@ -626,8 +628,7 @@ tupleSplit (l : List EvmSize) : BytesConsumer (List (List Byte)) :=
         };
   in go [] l;
 
-{--
- In order to define ;ToBytes; and ;FromBytes; instances for a
+{-- In order to define ;ToBytes; and ;FromBytes; instances for a
  tuple, we need to follow some mechanical steps.
  This module provides a concrete example. See the comments in the instances
  declarations below.
@@ -646,10 +647,10 @@ module TupleUsageExample;
   Eq-Example : Eq Example;
 
   {-- To define the ;ToBytes; instance we must create an ;EvmTuple; with the fields
-      of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
-      as shown below.
-      Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
-  --}
+        of the record given in order. Then we use the ;ToBytes; instance of the ;EvmTuple;
+        as shown below.
+        Note that each of the fields must be an instance of ;ToBytes; and ;HasEvmSize;.
+   --}
   instance
   ToBytes-Example : ToBytes Example :=
     ToBytes.mk@{
@@ -668,17 +669,17 @@ module TupleUsageExample;
     };
 
   {-- To define the ;FromBytes; instance we must follow these steps:
-  1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
-     the type of each field.
-  2. case on `l`. `l` will exactly `n` elements, where `n` is the number
-     of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
-  3. For each element `s` of `l`, we call:
-       `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
-  4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
-       `f <- FromBytes.fromBytes`
+    1. call `l <- tupleSplit sizes`, where `sizes` is a list of the ;EvmSize; of
+       the type of each field.
+    2. case on `l`. `l` will exactly `n` elements, where `n` is the number
+       of fields with a type `T` such that `evmSize T` is ;EvmSize.static;
+    3. For each element `s` of `l`, we call:
+         `fieldName <- BytesConsumer.local FromBytes.fromBytes s`
+    4. Then, for each field `f` with a dynamic ;EvmSize;, we call:
+         `f <- FromBytes.fromBytes`
 
   For a concrete example, see the code below:
-  --}
+   --}
   instance
   FromBytes-Example : FromBytes Example :=
     FromBytes.mk@{
