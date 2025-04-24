@@ -386,7 +386,6 @@ with
 
   numBits : Nat := size * 8;
 
-  -- better name?
   threshold : Nat := pow 2 (sub numBits 1);
 
   toInt : Int256 -> Int
@@ -453,7 +452,6 @@ with
 
   numBits : Nat := size * 8;
 
-  -- better name?
   threshold : Nat := pow 2 (sub numBits 1);
 
   toInt : Int32 -> Int
