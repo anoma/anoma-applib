@@ -312,9 +312,9 @@ alignN (align n : Nat) : Nat :=
     | mod n align == 0 := n
     | else := align * (div n align + 1);
 
-align32 (n : Nat) : Nat := alignN 32 n;
+alignEvm (n : Nat) : Nat := alignN evmAlign n;
 
-pad32 (n : Nat) : Nat := sub (align32 n) n;
+padEvm (n : Nat) : Nat := sub (alignEvm n) n;
 
 instance
 ByteArray-ToBytes : ToBytes ByteArray :=
@@ -322,7 +322,7 @@ ByteArray-ToBytes : ToBytes ByteArray :=
     toBytes (b : ByteArray) : BytesBuilder Unit :=
       do {
         let
-          pad := pad32 (ByteArray.size b);
+          pad := padEvm (ByteArray.size b);
         in
         ToBytes.toBytes (UInt256.fromNat (ByteArray.size b));
         mapA_ ToBytes.toBytes (ByteArray.toList b);
@@ -546,7 +546,7 @@ with
     | (privateMk b) :=
       let
         b' := take size (ByteArray.toList b);
-        pad := pad32 (length b');
+        pad := padEvm (length b');
       in if
         | pad == 0 := b'
         | else := b' ++ replicate pad 0;
@@ -573,7 +573,7 @@ with
       toBytes (b : StaticByteArray32) : BytesBuilder Unit :=
         do {
           let
-            pad := pad32 size;
+            pad := padEvm size;
           in
           mapA_ ToBytes.toBytes (toList b);
           BytesBuilder.pad pad;

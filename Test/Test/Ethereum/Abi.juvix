@@ -169,7 +169,7 @@ module UIntN;
           (assertEqualShow
             (toByteArray (fromNat {A} (sub (pow 256 size) 1)))
             (ByteArray.fromList
-              (replicate (pad32 size) 0 ++ replicate size 255)));
+              (replicate (padEvm size) 0 ++ replicate size 255)));
         testCase "decode(encode(0))" (assertRoundTrip {A} 0);
         testCase
           ("decode(encode(2 ^ " ++str show numBits ++str " - 1)")
