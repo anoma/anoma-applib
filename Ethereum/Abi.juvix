@@ -307,10 +307,12 @@ with
   ToBytes-UInt32 : ToBytes UInt32 := ToBytes.UIntN toNat;
 end;
 
-align32 (n : Nat) : Nat :=
+alignN (align n : Nat) : Nat :=
   if
-    | mod n 32 == 0 := n
-    | else := 32 * (div n 32 + 1);
+    | mod n align == 0 := n
+    | else := align * (div n align + 1);
+
+align32 (n : Nat) : Nat := alignN 32 n;
 
 pad32 (n : Nat) : Nat := sub (align32 n) n;
 
@@ -322,7 +324,7 @@ ByteArray-ToBytes : ToBytes ByteArray :=
         let
           pad := pad32 (ByteArray.size b);
         in
-        ToBytes.toBytes (UInt32.fromNat (ByteArray.size b));
+        ToBytes.toBytes (UInt256.fromNat (ByteArray.size b));
         mapA_ ToBytes.toBytes (ByteArray.toList b);
         BytesBuilder.pad pad;
       };
@@ -333,8 +335,8 @@ ByteArray-FromBytes : FromBytes ByteArray :=
   FromBytes.mk@{
     fromBytes :=
       do {
-        numBytes <- fromBytes {UInt32};
-        bytes <- replicateA (UInt32.toNat numBytes) BytesConsumer.byte;
+        numBytes <- fromBytes {UInt256};
+        bytes <- replicateA (UInt256.toNat numBytes) BytesConsumer.byte;
         pure (ByteArray.fromList bytes);
       };
   };
@@ -361,7 +363,7 @@ ToBytes-List {A} {{ToBytes A}} : ToBytes (List A) :=
     \{l :=
       do {
         let
-          len : UInt32 := fromNat (length l);
+          len : UInt256 := fromNat (length l);
         in
         toBytes len;
         mapA_ toBytes l;
@@ -371,8 +373,8 @@ instance
 FromBytes-List {A} {{FromBytes A}} : FromBytes (List A) :=
   FromBytes.mk
     do {
-      len <- fromBytes {UInt32};
-      replicateA (UInt32.toNat len) fromBytes;
+      len <- fromBytes {UInt256};
+      replicateA (UInt256.toNat len) fromBytes;
     };
 
 --- 32 byte integer
@@ -528,13 +530,64 @@ HasEvmSize-ByteArray : HasEvmSize ByteArray := HasEvmSize.dynamic;
 instance
 HasEvmSize-UInt32 : HasEvmSize UInt32 := HasEvmSize.evmUInt;
 
--- TODO abstract over size
 --- ByteArray of exactly 32 bytes
-type ByteArray32 := privateMk ByteArray
-
+type StaticByteArray32 := privateMk ByteArray
 with
+  size : Nat := 32;
+
+  fromList : List Byte -> StaticByteArray32 :=
+    ByteArray.fromList >> fromByteArray;
+
+  fromByteArray : ByteArray -> StaticByteArray32 := privateMk;
+
+  --- forall a. ByteArray.size (toByteArray a) = 32
+  toByteArray : StaticByteArray32 -> ByteArray := toList >> ByteArray.fromList;
+
+  --- forall a. length (toList a) = 32
+  toList : StaticByteArray32 -> List Byte
+    | (privateMk b) :=
+      let
+        b' := take size (ByteArray.toList b);
+        pad := pad32 (length b');
+      in if
+        | pad == 0 := b'
+        | else := b' ++ replicate pad 0;
+
   instance
-  FixedSize-ByteArray32 : FixedSize ByteArray32 := FixedSize.mk 32;
+  FixedSize-StaticByteArray32 : FixedSize StaticByteArray32 :=
+    FixedSize.mk size;
+
+  instance
+  Show-StaticByteArray32 : Show StaticByteArray32 :=
+    Show.mk@{
+      show : StaticByteArray32 -> String := toList >> Show.show;
+    };
+
+  instance
+  Eq-StaticByteArray32 : Eq StaticByteArray32 :=
+    Eq.mk@{
+      isEqual (a b : StaticByteArray32) : Bool := toList a == toList b;
+    };
+
+  instance
+  StaticByteArray32-ToBytes : ToBytes StaticByteArray32 :=
+    ToBytes.mk@{
+      toBytes (b : StaticByteArray32) : BytesBuilder Unit :=
+        do {
+          let
+            pad := pad32 size;
+          in
+          mapA_ ToBytes.toBytes (toList b);
+          BytesBuilder.pad pad;
+        };
+    };
+
+  instance
+  StaticByteArray32-FromBytes : FromBytes StaticByteArray32 :=
+    FromBytes.mk@{
+      fromBytes : BytesConsumer StaticByteArray32 :=
+        fromList <$> replicateA size BytesConsumer.byte;
+    };
 end;
 
 type EvmTuple :=
@@ -588,8 +641,8 @@ tupleToBytes (l : EvmTuple) : BytesBuilder Unit :=
         case evmSizeI {{szI}} of
           | EvmSize.dynamic :=
             let
-              offset : UInt32 :=
-                UInt32.fromNat
+              offset : UInt256 :=
+                UInt256.fromNat
                   -- headSize EvmSize.dynamic
                     (sizeOfHeads
                     + BytesBuilder.Builder.size tailBuilder);
