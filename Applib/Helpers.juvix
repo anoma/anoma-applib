@@ -106,3 +106,14 @@ fromResult
   case result of
     | ok data := data
     | error err := failwith (Show.show err);
+
+modulesAppData (modules : List Nat) : AppData :=
+  Map.fromList [RawTag.fromNat 0, map (AnomaAtom.fromNat) modules]
+    |> AppData.fromMap;
+
+moduleSubmissionTransaction
+  {M : Type -> Type}
+  {{Tx M}}
+  {{Monad M}}
+  (modules : List Nat)
+  : M Transaction := prepareStandardTransaction [] [] (modulesAppData modules);
