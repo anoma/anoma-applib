@@ -158,7 +158,7 @@ with
       isConsumed : Bool;
       consumed : List Resource;
       created : List Resource;
-      appData : AppData;
+      appData : List AppData.Value;
     }
   with
     nullifiers (a : Args) : List Nullifier :=
