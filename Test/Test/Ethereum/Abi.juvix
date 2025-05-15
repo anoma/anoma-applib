@@ -1,6 +1,7 @@
 module Test.Ethereum.Abi;
 
 import Stdlib.Prelude open;
+import Stdlib.Math open;
 import Test.JuvixUnit open;
 import Anoma.Primitives.FixedSize open;
 import Ethereum.Abi open;
