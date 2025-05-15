@@ -1,6 +1,7 @@
 module Ethereum.Abi;
 
 import Stdlib.Prelude open;
+import Stdlib.Math open;
 import Anoma.Builtin.ByteArray open;
 import Stdlib.Debug.Trace open;
 import Stdlib.Debug.Fail open;
@@ -233,10 +234,6 @@ Byte-ToBytes : ToBytes Byte :=
   ToBytes.mk@{
     toBytes (b : Byte) : BytesBuilder Unit := BytesBuilder.byte b;
   };
-
-pow {A} {{FromNatural A}} {{Natural A}} : A -> Nat -> A
-  | a zero := 1
-  | a (suc b) := a * pow a b;
 
 type UInt256 := privateMk Nat
 with
