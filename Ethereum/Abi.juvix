@@ -1,0 +1,672 @@
+module Ethereum.Abi;
+
+import Stdlib.Prelude open;
+import Stdlib.Math open;
+import Anoma.Builtin.ByteArray open;
+import Stdlib.Debug.Trace open;
+import Stdlib.Debug.Fail open;
+import BaseLayer.AnomaAtom open;
+import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
+import Anoma.Data.Json open;
+import Mtl open;
+import Anoma.Primitives.FixedSize open;
+
+--- The byte length of all encodings must be a multiple of 32
+evmAlign : Nat := 32;
+
+type BytesBuilder (A : Type) :=
+  mk@{
+    unwrap : StateT BytesBuilder.Builder Identity A;
+  }
+with
+  type Builder : Type :=
+    mk@{
+      bytes : List Byte;
+      size : Nat;
+    }
+  with
+    cons (b : Byte) (s : BytesBuilder.Builder) : BytesBuilder.Builder :=
+      s@BytesBuilder.Builder{
+        bytes := b :: bytes s;
+        size := 1 + size s;
+      };
+
+    replicate
+      (n : Nat) (b : Byte) (s : BytesBuilder.Builder) : BytesBuilder.Builder :=
+      s@BytesBuilder.Builder{
+        bytes := Stdlib.Prelude.replicate n b ++ bytes s;
+        size := n + size s;
+      };
+
+    -- TODO efficient concatenation
+    append (b1 b2 : BytesBuilder.Builder) : BytesBuilder.Builder :=
+      BytesBuilder.Builder.mk@{
+        bytes := bytes b2 ++ bytes b1;
+        size := size b1 + size b2;
+      };
+
+    toByteArray (s : BytesBuilder.Builder) : ByteArray :=
+      ByteArray.mk (reverse (bytes s));
+
+    empty : Builder :=
+      BytesBuilder.Builder.mk@{
+        bytes := [];
+        size := 0;
+      };
+  end;
+
+  run {A} : BytesBuilder A -> ByteArray := runBuilder >> Builder.toByteArray;
+
+  runWith {A} (ini : Builder) : BytesBuilder A -> Builder
+    | (mk st) := Identity.run (execState ini st);
+
+  runBuilder {A} : BytesBuilder A -> Builder := runWith Builder.empty;
+
+  --- append a byte
+  byte (b : Byte) : BytesBuilder Unit := mk (modify (Builder.cons b));
+
+  pad (n : Nat) : BytesBuilder Unit := replicate n 0;
+
+  replicate (n : Nat) (b : Byte) : BytesBuilder Unit :=
+    mk (modify (Builder.replicate n b));
+
+  builder (b : BytesBuilder.Builder) : BytesBuilder Unit :=
+    mk (modify \{acc := Builder.append acc b});
+
+  --- get the current size
+  size : BytesBuilder Nat := mk (BytesBuilder.Builder.size <$> get);
+
+  instance
+  BytesBuilder-Functor : Functor BytesBuilder :=
+    Functor.mk@{
+      map {A} {B} (f : A -> B) : BytesBuilder A -> BytesBuilder B
+        | (mk p) := mk (Functor.map f p);
+    };
+
+  instance
+  BytesBuilder-Applicative : Applicative BytesBuilder :=
+    Applicative.mk@{
+      pure {A} (a : A) : BytesBuilder A := mk (Applicative.pure a);
+      ap {A} {B} : BytesBuilder (A -> B) -> BytesBuilder A -> BytesBuilder B
+        | (mk f) (mk p) := mk (Applicative.ap f p);
+    };
+
+  instance
+  BytesBuilder-Monad : Monad BytesBuilder :=
+    Monad.mk@{
+      bind {A} {B} : BytesBuilder A -> (A -> BytesBuilder B) -> BytesBuilder B
+        | (mk x) m :=
+          mk
+            do {
+              a <- x;
+              BytesBuilder.unwrap (m a);
+            };
+    };
+end;
+
+type BytesConsumer A :=
+  mk@{
+    unwrap : StateT (List Byte) (ErrorT BytesConsumer.ConsumerError Identity) A;
+  }
+with
+  type ConsumerError := mk String
+  with
+    instance
+    ConsumerError-Show : Show ConsumerError :=
+      Show.mk \{(ConsumerError.mk err) := err};
+  end;
+
+  run {A} : BytesConsumer A -> ByteArray -> Result ConsumerError A
+    | (mk p) str :=
+      Identity.run (runError (evalState (ByteArray.toList str) p));
+
+  local {A} : BytesConsumer A -> List Byte -> BytesConsumer A
+    | (mk m) bytes :=
+      mk
+        do {
+          old <- get {List Byte};
+          put bytes;
+          res <- m;
+          put old;
+          pure res;
+        };
+
+  instance
+  BytesConsumer-Functor : Functor BytesConsumer :=
+    Functor.mk@{
+      map {A} {B} (f : A -> B) : BytesConsumer A -> BytesConsumer B
+        | (mk p) := mk (Functor.map f p);
+    };
+
+  instance
+  BytesConsumer-Applicative : Applicative BytesConsumer :=
+    Applicative.mk@{
+      pure {A} (a : A) : BytesConsumer A := mk (Applicative.pure a);
+      ap {A} {B} : BytesConsumer (A -> B) -> BytesConsumer A -> BytesConsumer B
+        | (mk f) (mk p) := mk (Applicative.ap f p);
+    };
+
+  instance
+  BytesConsumer-Monad : Monad BytesConsumer :=
+    Monad.mk@{
+      bind
+        {A} {B} : BytesConsumer A -> (A -> BytesConsumer B) -> BytesConsumer B
+        | (mk x) m :=
+          mk
+            do {
+              a <- x;
+              BytesConsumer.unwrap (m a);
+            };
+    };
+
+  byte : BytesConsumer Byte :=
+    mk
+      do {
+        l <- get;
+        case l of {
+          | [] := throw (ConsumerError.mk "end of input")
+          | x :: xs :=
+            do {
+              put xs;
+              pure x;
+            }
+        };
+      };
+end;
+
+trait
+type FromBytes (T : Type) :=
+  mk@{
+    fromBytes : BytesConsumer T;
+  }
+with
+  -- Big endian
+  UIntN {A} {{FromNatural A}} : FromBytes A :=
+    let
+      go (acc : Nat) : (numByte : Nat) -> BytesConsumer A
+        | zero := pure (fromNat acc)
+        | (suc ibyte) :=
+          do {
+            bi <- Byte.toNat <$> BytesConsumer.byte;
+            go (acc + bi * pow 256 ibyte) ibyte;
+          };
+    in FromBytes.mk (go 0 evmAlign);
+end;
+
+open FromBytes using {fromBytes} public;
+
+trait
+type ToBytes (T : Type) :=
+  mk@{
+    toBytes : T -> BytesBuilder Unit;
+  }
+with
+  -- Big endian
+  UIntN {A} (toNat : A -> Nat) : ToBytes A :=
+    let
+      go (n : Nat) : (numByte : Nat) -> BytesBuilder Unit
+        | zero := pure unit
+        | (suc ibyte) :=
+          do {
+            BytesBuilder.byte (FromNatural.fromNat (div n (pow 256 ibyte)));
+            go n ibyte;
+          };
+    in ToBytes.mk \{n := go (toNat n) evmAlign};
+end;
+
+open ToBytes using {toBytes} public;
+
+toByteArray {A} {{ToBytes A}} (a : A) : ByteArray :=
+  BytesBuilder.run (toBytes a);
+
+fromByteArray
+  {A} {{FromBytes A}} (a : ByteArray) : Result BytesConsumer.ConsumerError A :=
+  BytesConsumer.run fromBytes a;
+
+instance
+Byte-FromBytes : FromBytes Byte :=
+  FromBytes.mk@{
+    fromBytes := BytesConsumer.byte;
+  };
+
+instance
+Byte-ToBytes : ToBytes Byte :=
+  ToBytes.mk@{
+    toBytes (b : Byte) : BytesBuilder Unit := BytesBuilder.byte b;
+  };
+
+type UInt256 := privateMk Nat
+with
+  fromNat (n : Nat) : UInt256 := privateMk n;
+
+  toNat : UInt256 -> Nat
+    | (privateMk n) := mod n (pow 256 size);
+
+  instance
+  Eq-UInt256 : Eq UInt256 :=
+    Eq.mk@{
+      isEqual (a b : UInt256) : Bool := toNat a == toNat b;
+    };
+
+  instance
+  FromNat-UInt256 : FromNatural UInt256 := FromNatural.mkFromNatural fromNat;
+
+  size : Nat := 32;
+
+  instance
+  FixedSize-UInt256 : FixedSize UInt256 := FixedSize.mk size;
+
+  instance
+  Show-UInt256 : Show UInt256 :=
+    Show.mk@{
+      show : UInt256 -> String := toNat >> Show.show;
+    };
+
+  instance
+  FromBytes-UInt256 : FromBytes UInt256 := FromBytes.UIntN;
+
+  instance
+  ToBytes-UInt256 : ToBytes UInt256 := ToBytes.UIntN toNat;
+end;
+
+--- 8 byte word
+type UInt32 := privateMk Nat
+with
+  fromNat (n : Nat) : UInt32 := privateMk n;
+
+  toNat : UInt32 -> Nat
+    | (privateMk n) := mod n (pow 256 size);
+
+  instance
+  Eq-UInt32 : Eq UInt32 :=
+    Eq.mk@{
+      isEqual (a b : UInt32) : Bool := toNat a == toNat b;
+    };
+
+  instance
+  FromNat-UInt32 : FromNatural UInt32 := FromNatural.mkFromNatural fromNat;
+
+  size : Nat := 4;
+
+  instance
+  FixedSize-UInt32 : FixedSize UInt32 := FixedSize.mk size;
+
+  instance
+  Show-UInt32 : Show UInt32 :=
+    Show.mk@{
+      show : UInt32 -> String := toNat >> Show.show;
+    };
+
+  instance
+  FromBytes-UInt32 : FromBytes UInt32 := FromBytes.UIntN;
+
+  instance
+  ToBytes-UInt32 : ToBytes UInt32 := ToBytes.UIntN toNat;
+end;
+
+alignN (align n : Nat) : Nat :=
+  if
+    | mod n align == 0 := n
+    | else := align * (div n align + 1);
+
+alignEvm (n : Nat) : Nat := alignN evmAlign n;
+
+padEvm (n : Nat) : Nat := sub (alignEvm n) n;
+
+instance
+ByteArray-ToBytes : ToBytes ByteArray :=
+  ToBytes.mk@{
+    toBytes (b : ByteArray) : BytesBuilder Unit :=
+      do {
+        let
+          pad := padEvm (ByteArray.size b);
+        in
+        ToBytes.toBytes (UInt256.fromNat (ByteArray.size b));
+        mapA_ ToBytes.toBytes (ByteArray.toList b);
+        BytesBuilder.pad pad;
+      };
+  };
+
+instance
+ByteArray-FromBytes : FromBytes ByteArray :=
+  FromBytes.mk@{
+    fromBytes :=
+      do {
+        numBytes <- fromBytes {UInt256};
+        bytes <- replicateA (UInt256.toNat numBytes) BytesConsumer.byte;
+        pure (ByteArray.fromList bytes);
+      };
+  };
+
+instance
+ToBytes-Bool : ToBytes Bool :=
+  ToBytes.mk
+    \{
+      | false := BytesBuilder.byte 0
+      | true := BytesBuilder.byte 1
+    };
+
+instance
+FromBytes-Bool : FromBytes Bool :=
+  FromBytes.mk
+    do {
+      b <- Byte.toNat <$> BytesConsumer.byte;
+      pure (b /= 0);
+    };
+
+instance
+ToBytes-List {A} {{ToBytes A}} : ToBytes (List A) :=
+  ToBytes.mk
+    \{l :=
+      do {
+        let
+          len : UInt256 := fromNat (length l);
+        in
+        toBytes len;
+        mapA_ toBytes l;
+      }};
+
+instance
+FromBytes-List {A} {{FromBytes A}} : FromBytes (List A) :=
+  FromBytes.mk
+    do {
+      len <- fromBytes {UInt256};
+      replicateA (UInt256.toNat len) fromBytes;
+    };
+
+--- 32 byte integer
+type Int256 := privateMk Int
+with
+  fromInt (n : Int) : Int256 := privateMk n;
+
+  size : Nat := 32;
+
+  numBits : Nat := size * 8;
+
+  threshold : Nat := pow 2 (sub numBits 1);
+
+  toInt : Int256 -> Int
+    | (privateMk n) :=
+      case n of
+        | Int.ofNat pos := Int.ofNat (mod pos threshold)
+        | Int.negSuc neg := Int.negSuc (mod neg threshold);
+
+  instance
+  Eq-Int256 : Eq Int256 :=
+    Eq.mk@{
+      isEqual (a b : Int256) : Bool := toInt a == toInt b;
+    };
+
+  instance
+  FromNat-Int256 : FromNatural Int256 := FromNatural.mkFromNatural fromNat;
+
+  instance
+  FixedSize-Int256 : FixedSize Int256 := FixedSize.mk size;
+
+  instance
+  Show-Int256 : Show Int256 :=
+    Show.mk@{
+      show : Int256 -> String := toInt >> Show.show;
+    };
+
+  twosComplement (n : UInt256) : Int256 :=
+    let
+      w := UInt256.toNat n;
+    in if
+      | w < threshold := privateMk (Int.fromNat w)
+      | else :=
+        let
+          subs : Nat := mod w threshold + 1;
+        in privateMk (Int.negSuc (Nat.sub threshold subs));
+
+  instance
+  FromBytes-Int256 : FromBytes Int256 :=
+    FromBytes.mk
+      do {
+        w <- fromBytes;
+        pure (twosComplement w);
+      };
+
+  instance
+  ToBytes-Int256 : ToBytes Int256 :=
+    ToBytes.mk
+      \{i :=
+        case toInt i of
+          | Int.ofNat n := toBytes {UInt256} (fromNat n)
+          | Int.negSuc n :=
+            toBytes {UInt256} (fromNat (sub (pow 2 numBits) (n + 1)))};
+
+  instance
+  HasEvmSize-Int256 : HasEvmSize Int256 := HasEvmSize.evmUInt;
+end;
+
+--- 8 byte integer
+type Int32 := privateMk Int
+with
+  fromInt (n : Int) : Int32 := privateMk n;
+
+  size : Nat := 4;
+
+  numBits : Nat := size * 8;
+
+  threshold : Nat := pow 2 (sub numBits 1);
+
+  toInt : Int32 -> Int
+    | (privateMk n) :=
+      case n of
+        | Int.ofNat pos := Int.ofNat (mod pos threshold)
+        | Int.negSuc neg := Int.negSuc (mod neg threshold);
+
+  instance
+  Eq-Int32 : Eq Int32 :=
+    Eq.mk@{
+      isEqual (a b : Int32) : Bool := toInt a == toInt b;
+    };
+
+  instance
+  FromNat-Int32 : FromNatural Int32 := FromNatural.mkFromNatural fromNat;
+
+  instance
+  FixedSize-Int32 : FixedSize Int32 := FixedSize.mk size;
+
+  instance
+  Show-Int32 : Show Int32 :=
+    Show.mk@{
+      show : Int32 -> String := toInt >> Show.show;
+    };
+
+  instance
+  FromBytes-Int32 : FromBytes Int32 :=
+    FromBytes.mk
+      do {
+        w <- fromBytes;
+        pure (privateMk (Int256.toInt (Int256.twosComplement w)));
+      };
+
+  instance
+  ToBytes-Int32 : ToBytes Int32 :=
+    ToBytes.mk \{(privateMk i) := ToBytes.toBytes {Int256} (Int256.fromInt i)};
+
+  instance
+  HasEvmSize-Int32 : HasEvmSize Int32 := HasEvmSize.evmUInt;
+end;
+
+type EvmSize :=
+  | static@{
+      numBytes : Nat;
+    }
+  | dynamic
+with
+  empty : EvmSize := static 0;
+
+  append : EvmSize -> EvmSize -> EvmSize
+    | (static s1) (static s2) := static (s1 + s2)
+    | _ _ := dynamic;
+end;
+
+trait
+type HasEvmSize (T : Type) :=
+  mk@{
+    evmSizeI : EvmSize;
+  }
+with
+  evmUInt {T} : HasEvmSize T := mk (EvmSize.static evmAlign);
+
+  dynamic {T} : HasEvmSize T := mk EvmSize.dynamic;
+
+  evmSize (T : Type) {{HasEvmSize T}} : EvmSize := evmSizeI {T};
+end;
+
+open HasEvmSize using {evmSize; evmSizeI} public;
+
+instance
+HasEvmSize-ByteArray : HasEvmSize ByteArray := HasEvmSize.dynamic;
+
+instance
+HasEvmSize-UInt32 : HasEvmSize UInt32 := HasEvmSize.evmUInt;
+
+--- ByteArray of exactly 32 bytes
+type StaticByteArray32 := privateMk ByteArray
+with
+  size : Nat := 32;
+
+  fromList : List Byte -> StaticByteArray32 :=
+    ByteArray.fromList >> fromByteArray;
+
+  fromByteArray : ByteArray -> StaticByteArray32 := privateMk;
+
+  --- forall a. ByteArray.size (toByteArray a) = 32
+  toByteArray : StaticByteArray32 -> ByteArray := toList >> ByteArray.fromList;
+
+  --- forall a. length (toList a) = 32
+  toList : StaticByteArray32 -> List Byte
+    | (privateMk b) :=
+      let
+        b' := take size (ByteArray.toList b);
+        pad := padEvm (length b');
+      in if
+        | pad == 0 := b'
+        | else := b' ++ replicate pad 0;
+
+  instance
+  FixedSize-StaticByteArray32 : FixedSize StaticByteArray32 :=
+    FixedSize.mk size;
+
+  instance
+  Show-StaticByteArray32 : Show StaticByteArray32 :=
+    Show.mk@{
+      show : StaticByteArray32 -> String := toList >> Show.show;
+    };
+
+  instance
+  Eq-StaticByteArray32 : Eq StaticByteArray32 :=
+    Eq.mk@{
+      isEqual (a b : StaticByteArray32) : Bool := toList a == toList b;
+    };
+
+  instance
+  StaticByteArray32-ToBytes : ToBytes StaticByteArray32 :=
+    ToBytes.mk@{
+      toBytes (b : StaticByteArray32) : BytesBuilder Unit :=
+        do {
+          let
+            pad := padEvm size;
+          in
+          mapA_ ToBytes.toBytes (toList b);
+          BytesBuilder.pad pad;
+        };
+    };
+
+  instance
+  StaticByteArray32-FromBytes : FromBytes StaticByteArray32 :=
+    FromBytes.mk@{
+      fromBytes : BytesConsumer StaticByteArray32 :=
+        fromList <$> replicateA size BytesConsumer.byte;
+    };
+end;
+
+type EvmTuple :=
+  | nil : EvmTuple
+  | cons
+      : {A : Type}
+        -> {{HasEvmSize A}}
+        -> {{ToBytes A}}
+        -> A
+        -> EvmTuple
+        -> EvmTuple
+with
+  syntax operator ::: cons;
+  ::: {A} {{HasEvmSize A}} {{ToBytes A}} : A -> EvmTuple -> EvmTuple :=
+    EvmTuple.cons;
+
+  sizeList : EvmTuple -> List EvmSize :=
+    let
+      go : List EvmSize -> EvmTuple -> List EvmSize
+        | acc EvmTuple.nil := reverse acc
+        | acc (cons {_} {{sizeI}} {{_}} x xs) :=
+          go (evmSizeI {{sizeI}} :: acc) xs;
+    in go [];
+end;
+
+open EvmTuple using {:::} public;
+
+headSize : EvmSize -> Nat
+  | (EvmSize.static n) := n
+  | EvmSize.dynamic := evmAlign;
+
+totalHeadSize : List EvmSize -> Nat := map headSize >> foldl (+) 0;
+
+instance
+ToBytes-EvmTuple : ToBytes EvmTuple := ToBytes.mk tupleToBytes;
+
+tupleEvmSize (t : EvmTuple) : EvmSize :=
+  let
+    go : EvmSize -> EvmTuple -> EvmSize
+      | acc EvmTuple.nil := acc
+      | acc (EvmTuple.cons {ty} {{_}} {{_}} x xs) :=
+        go (EvmSize.append acc (evmSize ty)) xs;
+  in go EvmSize.empty t;
+
+tupleToBytes (l : EvmTuple) : BytesBuilder Unit :=
+  let
+    sizeOfHeads : Nat := totalHeadSize (EvmTuple.sizeList l);
+    go (tailBuilder : BytesBuilder.Builder) : EvmTuple -> BytesBuilder Unit
+      | EvmTuple.nil := BytesBuilder.builder tailBuilder
+      | (EvmTuple.cons {_} {{szI}} {{toBytesI}} x xs) :=
+        case evmSizeI {{szI}} of
+          | EvmSize.dynamic :=
+            let
+              offset : UInt256 :=
+                UInt256.fromNat
+                  -- headSize EvmSize.dynamic
+                    (sizeOfHeads
+                    + BytesBuilder.Builder.size tailBuilder);
+              tailBuilder' : BytesBuilder.Builder :=
+                BytesBuilder.runWith tailBuilder (toBytes x);
+            in do {
+              toBytes offset;
+              go tailBuilder' xs;
+            }
+          | EvmSize.static _ :=
+            do {
+              toBytes x;
+              go tailBuilder xs;
+            };
+  in go BytesBuilder.Builder.empty l;
+
+--- splits static objects. Dynamic objects must be parsed after
+tupleSplit (l : List EvmSize) : BytesConsumer (List (List Byte)) :=
+  let
+    go
+      (static : List (List Byte))
+      : List EvmSize -> BytesConsumer (List (List Byte))
+      | [] := pure (reverse static)
+      | (x :: xs) :=
+        do {
+          bs <- replicateA (headSize x) BytesConsumer.byte;
+          case x of {
+            | EvmSize.static@{} := go (bs :: static) xs
+            | EvmSize.dynamic := go static xs
+          };
+        };
+  in go [] l;

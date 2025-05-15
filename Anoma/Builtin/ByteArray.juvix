@@ -4,6 +4,7 @@ import Stdlib.Prelude open;
 import BaseLayer.AnomaAtom open;
 import Stdlib.Trait.Ord.Eq open using {fromOrdToEq};
 import Anoma.Data.Json open;
+import Mtl open;
 
 module ByteArray;
   builtin bytearray
@@ -11,6 +12,18 @@ module ByteArray;
 
   builtin bytearray-from-list-byte
   axiom mk : List Byte -> ByteArray;
+
+  fromList : List Byte -> ByteArray := mk;
+
+  empty : ByteArray := fromList [];
+
+  toList (b : ByteArray) : List Byte :=
+    let
+      go (acc : List Byte) (payload : Nat) : (len : Nat) -> List Byte
+        | zero := reverse acc
+        -- Note `fromNat` takes the modulo
+        | (suc ibyte) := go (fromNat payload :: acc) (div payload 256) ibyte;
+    in go [] (rawToAnomaContents b) (size b);
 
   zero (length : Nat) : ByteArray := mk (replicate length 0x0);
 
@@ -31,6 +44,12 @@ module ByteArray;
     rawFromAnomaContents@{
       size;
       contents := AnomaAtom.toNat contents;
+    };
+
+  instance
+  ByteArray-Show : Show ByteArray :=
+    Show.mk@{
+      show : ByteArray -> String := toList >> Show.show;
     };
 
   instance

@@ -1,0 +1,7 @@
+module Main;
+
+import Stdlib.Prelude open;
+import Test.JuvixUnit open;
+import Test.Ethereum.Abi as Ethereum;
+
+main : IO := runTestSuite (TestSuite.group "Applib Tests" [Ethereum.test]);
