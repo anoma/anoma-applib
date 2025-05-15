@@ -273,7 +273,7 @@ type Resource :=
     quantity : Nat;
     ephemeral : Bool;
     nonce : Nonce;
-    nullifierKeyCommitment : AnomaAtom;
+    nullifierKeyCommitment : NullifierKeyCommitment;
     --- Currently unused. It is safe to set it to 0
     unusedRandSeed : Nat;
   }
