@@ -16,7 +16,7 @@ module ExternalIdentity;
     (externalIdentity : ExternalIdentity) : NullifierKeyCommitment :=
     externalIdentity
       |> ExternalIdentity.toByteArray
-      |> NullifierKeyCommitment.mk;
+      |> NullifierKeyCommitment.fromByteArray;
 end;
 
 toNullifierKey (identity : Identity) : NullifierKey :=
@@ -88,7 +88,7 @@ module Universal;
   nullifierKeyCommitment : NullifierKeyCommitment :=
     externalIdentity
       |> ExternalIdentity.toByteArray
-      |> NullifierKeyCommitment.mk;
+      |> NullifierKeyCommitment.fromByteArray;
 end;
 
 module Alice;
