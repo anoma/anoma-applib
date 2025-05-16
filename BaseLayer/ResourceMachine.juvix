@@ -207,9 +207,14 @@ with
 
   size : Nat := 32;
 
-  fromAnomaAtom : AnomaAtom -> Nonce := fromAnomaContents size >> privateMk;
+  fromAnomaAtom : AnomaAtom -> Nonce := fromAnomaContents size >> fromByteArray;
 
-  from32SizedByteArray : ByteArray -> Nonce := privateMk;
+  fromByteArray (b : ByteArray) : Nonce :=
+    if
+      | ByteArray.size b == size := privateMk b
+      | else := failwith "Nonce.fromByteArray incorrect size";
+
+  from32SizedByteArray : ByteArray -> Nonce := fromByteArray;
 
   toAnomaAtom : Nonce -> AnomaAtom
     | (privateMk nonce) := toAnomaContents nonce;
