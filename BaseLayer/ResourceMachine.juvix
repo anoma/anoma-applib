@@ -2,7 +2,7 @@ module BaseLayer.ResourceMachine;
 
 import BaseLayer.AnomaAtom open public;
 import Anoma.Encode open;
-import Stdlib.Debug.Fail open;
+import Stdlib.Debug open;
 import Anoma.Builtin.System open;
 import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
@@ -212,7 +212,10 @@ with
   fromByteArray (b : ByteArray) : Nonce :=
     if
       | ByteArray.size b == size := privateMk b
-      | else := failwith "Nonce.fromByteArray incorrect size";
+      | else :=
+        trace "bytearraysize: "
+          >-> trace (ByteArray.size b)
+          >-> failwith "Nonce.fromByteArray incorrect size";
 
   from32SizedByteArray : ByteArray -> Nonce := fromByteArray;
 
