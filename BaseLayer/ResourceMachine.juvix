@@ -1,6 +1,7 @@
 module BaseLayer.ResourceMachine;
 
 import BaseLayer.AnomaAtom open public;
+import Applib.Show open;
 import Anoma.Encode open;
 import Stdlib.Debug open;
 import Anoma.Builtin.System open;
@@ -215,7 +216,10 @@ with
       | else :=
         trace "bytearraysize: "
           >-> trace (ByteArray.size b)
-          >-> failwith "Nonce.fromByteArray incorrect size";
+          >-> failwith
+            ("Nonce.fromByteArray incorrect size. Was passed a bytearray with size "
+              ++ recursiveNatToString (ByteArray.size b)
+              ++ ".");
 
   from32SizedByteArray : ByteArray -> Nonce := fromByteArray;
 
