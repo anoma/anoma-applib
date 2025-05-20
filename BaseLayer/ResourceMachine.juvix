@@ -258,7 +258,7 @@ with
             (ByteArray.toList b ++ replicate (sub size numBytes) 0))
       | else :=
         failwith
-          "NullifierKeyCommitment.fromByteArray expects a ByteArray of at most 32 bytes";
+          ("NullifierKeyCommitment.fromByteArray expects a ByteArray of at most 32 bytes. Was given a ByteArray of length " ++ recursiveNatToString numBytes);
 
   toAnomaAtom : NullifierKeyCommitment -> AnomaAtom :=
     toByteArray >> toAnomaContents;

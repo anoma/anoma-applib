@@ -1,6 +1,7 @@
 module Applib.Show;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
 import Stdlib.Math open;
 
 --- non-builtin equivalent of ;natToString;
@@ -19,7 +20,7 @@ recursiveNatToString (n : Nat) : String :=
         | d == 7 := "7"
         | d == 8 := "8"
         | d == 9 := "9"
-        | else := "impossible";
+        | else := failwith "impossible";
   in if
     | n < 10 := showDigit n
     | else := recursiveNatToString (div n 10) ++ showDigit (mod n 10);
