@@ -3,10 +3,10 @@ module BaseLayer.ResourceMachine;
 import BaseLayer.AnomaAtom open public;
 import Applib.Show open;
 import Anoma.Encode open;
-import Stdlib.Debug open;
 import Anoma.Builtin.System open;
 import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
 import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
 import Anoma.Data.Json open;
@@ -214,9 +214,7 @@ with
     if
       | ByteArray.size b == size := privateMk b
       | else :=
-        trace "bytearraysize: "
-          >-> trace (ByteArray.size b)
-          >-> failwith
+          failwith
             ("Nonce.fromByteArray incorrect size. Was passed a bytearray with size "
               ++ recursiveNatToString (ByteArray.size b)
               ++ ".");
