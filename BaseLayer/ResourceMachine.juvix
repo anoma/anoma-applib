@@ -262,14 +262,6 @@ with
         failwith
           "NullifierKeyCommitment.fromByteArray expects a ByteArray of at most 32 bytes";
 
-  -- TODO support Show in Nock so that we can show the actual size
-  -- failwith
-  --   ("NullifierKeyCommitment.fromByteArray expects a ByteArray of at most "
-  --     ++ show size
-  --     ++ " bytes. It was given one with "
-  --     ++ show numBytes
-  --     ++ " bytes");
-
   toAnomaAtom : NullifierKeyCommitment -> AnomaAtom :=
     toByteArray >> toAnomaContents;
 
