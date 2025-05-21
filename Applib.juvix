@@ -12,7 +12,7 @@ import Anoma.Builtin.System open using {
 } public;
 
 import BaseLayer open public;
-
+import Applib.Show open public;
 import Applib.Helpers open public;
 import Applib.Identities open public;
 import Applib.Authorization as Authorization public;

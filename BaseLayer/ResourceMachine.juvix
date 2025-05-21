@@ -1,11 +1,12 @@
 module BaseLayer.ResourceMachine;
 
 import BaseLayer.AnomaAtom open public;
+import Applib.Show open;
 import Anoma.Encode open;
-import Stdlib.Debug.Fail open;
 import Anoma.Builtin.System open;
 import Anoma.Builtin.ByteArray open;
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
 import Stdlib.Data.Map as Map open;
 import Anoma.Primitives.FixedSize open;
 import Anoma.Data.Json open;
@@ -207,9 +208,18 @@ with
 
   size : Nat := 32;
 
-  fromAnomaAtom : AnomaAtom -> Nonce := fromAnomaContents size >> privateMk;
+  fromAnomaAtom : AnomaAtom -> Nonce := fromAnomaContents size >> fromByteArray;
 
-  from32SizedByteArray : ByteArray -> Nonce := privateMk;
+  fromByteArray (b : ByteArray) : Nonce :=
+    if
+      | ByteArray.size b == size := privateMk b
+      | else :=
+          failwith
+            ("Nonce.fromByteArray incorrect size. Was passed a bytearray with size "
+              ++ recursiveNatToString (ByteArray.size b)
+              ++ ".");
+
+  from32SizedByteArray : ByteArray -> Nonce := fromByteArray;
 
   toAnomaAtom : Nonce -> AnomaAtom
     | (privateMk nonce) := toAnomaContents nonce;
@@ -230,19 +240,32 @@ end;
 
 --- The nullifier key type describing a secret required to compute the ;Nullifier; of a resource
 -- dev: if this has to interact with anoma, replace ByteArray with AnomaAtom
-type NullifierKeyCommitment := mk ByteArray
+type NullifierKeyCommitment := privateMk ByteArray
 with
   -- TODO use universal instead of zero
-  zero : NullifierKeyCommitment :=
-    NullifierKeyCommitment.mk (ByteArray.zero size);
+  zero : NullifierKeyCommitment := privateMk (ByteArray.zero size);
 
-  fromByteArray : ByteArray -> NullifierKeyCommitment := mk;
+  --- 𝒪(1) Converts a ;ByteArray; into a ;NullifierKeyCommitment;.
+  --- It will crash if the ;ByteArray; has more than 32 (;NullifierKeyCommitment.size;) bytes.
+  fromByteArray (b : ByteArray) : NullifierKeyCommitment :=
+    let
+      numBytes := ByteArray.size b;
+    in if
+      | numBytes == size := privateMk b
+      | numBytes < size :=
+        privateMk
+          (ByteArray.fromList
+            (ByteArray.toList b ++ replicate (sub size numBytes) 0))
+      | else :=
+        failwith
+          ("NullifierKeyCommitment.fromByteArray expects a ByteArray of at most 32 bytes. Was given a ByteArray of length " ++ recursiveNatToString numBytes);
 
   toAnomaAtom : NullifierKeyCommitment -> AnomaAtom :=
     toByteArray >> toAnomaContents;
 
+  --- 𝒪(1) The returned ;ByteArray; has always 32 (;NullifierKeyCommitment.size;) bytes
   toByteArray : NullifierKeyCommitment -> ByteArray
-    | (mk b) := b;
+    | (privateMk b) := b;
 
   size : Nat := 32;
 
@@ -260,7 +283,7 @@ with
   NullifierKeyCommitment-ToJson : ToJson NullifierKeyCommitment :=
     ToJson.mk@{
       toJson : NullifierKeyCommitment -> Json
-        | (mk b) := ToJson.toJson b;
+        | (privateMk b) := ToJson.toJson b;
     };
 end;
 
@@ -273,7 +296,7 @@ type Resource :=
     quantity : Nat;
     ephemeral : Bool;
     nonce : Nonce;
-    nullifierKeyCommitment : AnomaAtom;
+    nullifierKeyCommitment : NullifierKeyCommitment;
     --- Currently unused. It is safe to set it to 0
     unusedRandSeed : Nat;
   }
@@ -283,7 +306,8 @@ with
 
   module Transparent;
     nullifier : Resource -> Nullifier :=
-      NullifiableResource.Transparent.mk >> NullifiableResource.nullifier NullifierKey.Transparent.mk;
+      NullifiableResource.Transparent.mk
+        >> NullifiableResource.nullifier NullifierKey.Transparent.mk;
   end;
 end;
 
