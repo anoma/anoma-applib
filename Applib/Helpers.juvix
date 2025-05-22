@@ -108,8 +108,7 @@ fromResult
     | error err := failwith (Show.show err);
 
 modulesAppData (modules : List Nat) : AppData :=
-  Map.fromList [RawTag.fromNat 0, map (AnomaAtom.fromNat) modules]
-    |> AppData.fromMap;
+  map AnomaAtom.fromNat modules |> AppData.fromList;
 
 moduleSubmissionTransaction
   {M : Type -> Type}

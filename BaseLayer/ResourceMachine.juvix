@@ -214,10 +214,10 @@ with
     if
       | ByteArray.size b == size := privateMk b
       | else :=
-          failwith
-            ("Nonce.fromByteArray incorrect size. Was passed a bytearray with size "
-              ++ recursiveNatToString (ByteArray.size b)
-              ++ ".");
+        failwith
+          ("Nonce.fromByteArray incorrect size. Was passed a bytearray with size "
+            ++ recursiveNatToString (ByteArray.size b)
+            ++ ".");
 
   from32SizedByteArray : ByteArray -> Nonce := fromByteArray;
 
@@ -258,7 +258,8 @@ with
             (ByteArray.toList b ++ replicate (sub size numBytes) 0))
       | else :=
         failwith
-          ("NullifierKeyCommitment.fromByteArray expects a ByteArray of at most 32 bytes. Was given a ByteArray of length " ++ recursiveNatToString numBytes);
+          ("NullifierKeyCommitment.fromByteArray expects a ByteArray of at most 32 bytes. Was given a ByteArray of length "
+            ++ recursiveNatToString numBytes);
 
   toAnomaAtom : NullifierKeyCommitment -> AnomaAtom :=
     toByteArray >> toAnomaContents;
@@ -376,7 +377,7 @@ with
   fromNat : Nat -> RawTag := privateMk;
 end;
 
-type AppData := privateMk (AnomaMap RawTag (List AppData.Value))
+type AppData := privateMk (List AppData.Value)
 with
   type Value :=
     mk@{
@@ -391,32 +392,20 @@ with
       };
   end;
 
-  empty : AppData := privateMk AnomaMap.empty;
+  empty : AppData := privateMk [];
 
-  toMap1 : AppData -> Map RawTag AnomaAtom
-    | (privateMk m) :=
-      AnomaMap.toList m
-        |> map
-          \{(k, vs) :=
-            k
-              , case vs of {
-                  | [v] := Value.atom v
-                  | _ :=
-                    failwith "expected exaclty one value in the AppData item"
-                }}
-        |> Map.fromList;
+  toAtom : AppData -> AnomaAtom
+    | (privateMk vs) :=
+      case vs of
+        | [v] := Value.atom v
+        | _ := failwith "expected exaclty one value in the AppData item";
 
-  toMap : AppData -> Map RawTag (List AnomaAtom)
-    | (privateMk m) :=
-      AnomaMap.toList m |> map \{(k, v) := k, map Value.atom v} |> Map.fromList;
+  toList : AppData -> List AnomaAtom
+    | (privateMk vs) := map Value.atom vs;
 
-  fromMap1 : Map RawTag AnomaAtom -> AppData := map \{x := [x]} >> fromMap;
+  fromAtom (a : AnomaAtom) : AppData := fromList [a];
 
-  fromMap : Map RawTag (List AnomaAtom) -> AppData :=
-    Map.toList
-      >> map \{(k, v) := k, map Value.fromAnomaAtom v}
-      >> AnomaMap.fromList
-      >> privateMk;
+  fromList : List AnomaAtom -> AppData := map Value.fromAnomaAtom >> privateMk;
 end;
 
 builtin anoma-delta
