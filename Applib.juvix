@@ -17,3 +17,5 @@ import Applib.Helpers open public;
 import Applib.Identities open public;
 import Applib.Authorization as Authorization public;
 import Applib.Trait.Tx open public;
+import Applib.Keccak256 open public;
+import Applib.Secp256k1 open public;

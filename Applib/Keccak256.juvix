@@ -1,0 +1,17 @@
+module Applib.Keccak256;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.ByteArray open;
+import BaseLayer.AnomaAtom open;
+
+module Keccak;
+  hash : Nat -> ByteArray :=
+    Private.primKeccak >> AnomaAtom.fromNat >> ByteArray.fromAnomaContents size;
+
+  size : Nat := 32;
+
+  module Private;
+    builtin keccak256
+    axiom primKeccak : Nat -> Nat;
+  end;
+end;

@@ -34,6 +34,8 @@ module ByteArray;
   builtin anoma-bytearray-to-anoma-contents
   axiom rawToAnomaContents : ByteArray -> Nat;
 
+  toNat : ByteArray -> Nat := toAnomaContents >> AnomaAtom.toNat;
+
   toAnomaContents : ByteArray -> AnomaAtom :=
     rawToAnomaContents >> AnomaAtom.fromNat;
 

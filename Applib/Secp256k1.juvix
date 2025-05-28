@@ -1,0 +1,115 @@
+module Applib.Secp256k1;
+
+import Stdlib.Prelude open;
+import Anoma.Builtin.ByteArray open;
+import BaseLayer.AnomaAtom open;
+import Anoma.Primitives.FixedSize open;
+import Anoma.Identity.Internal open;
+
+--- Module for the Secp256k1 elliptic curve.
+---
+--- 1. To obtain a private key:
+--- priv := ;Secp256k1.PrivateKey.fromInternalIdentity; someIdentity
+--- 2. To obtain a public key:
+--- pub := ;Secp256k1.PublicKey.mk; priv
+--- 3. To sign a message:
+--- signature := ;sign; myMessage priv
+--- 4. To verify a message
+--- ;verify; myMessage signature pub
+module Secp256k1;
+  type PrivateKey := privateMk ByteArray
+  with
+    --- Create a ;PrivateKey; from an ;InternalIdentity;
+    mk : InternalIdentity -> PrivateKey := fromInternalIdentity;
+
+    fromInternalIdentity : InternalIdentity -> PrivateKey :=
+      InternalIdentity.toByteArray >> fromByteArray;
+
+    toNat : PrivateKey -> Nat :=
+      toByteArray >> ByteArray.toAnomaContents >> AnomaAtom.toNat;
+
+    fromByteArray : ByteArray -> PrivateKey := privateMk;
+
+    toByteArray : PrivateKey -> ByteArray
+      | (privateMk b) := b;
+
+    size : Nat := 32;
+
+    instance
+    PrivateKey-FixedSize : FixedSize PrivateKey := FixedSize.mk size;
+  end;
+
+  type PublicKey := privateMk ByteArray
+  with
+    --- This is the main way to generate public keys.
+    mk : PrivateKey -> PublicKey := fromPrivateKey;
+
+    --- Generate a ;PublicKey; from a ;PrivateKey;
+    fromPrivateKey : PrivateKey -> PublicKey :=
+      PrivateKey.toNat >> Private.pubKey >> fromNat;
+
+    toByteArray : PublicKey -> ByteArray
+      | (privateMk b) := b;
+
+    fromNat : Nat -> PublicKey := AnomaAtom.fromNat >> fromAnomaAtom;
+
+    toNat : PublicKey -> Nat := toByteArray >> ByteArray.toNat;
+
+    instance
+    PublicteKey-FixedSize : FixedSize PublicKey := FixedSize.mk size;
+
+    fromAnomaAtom : AnomaAtom -> PublicKey :=
+      ByteArray.fromAnomaContents size >> privateMk;
+
+    --- The size of the produced public keys is always sixty-five bytes
+    size : Nat := 65;
+  end;
+
+  --- See ;sign; and ;verify;
+  type Signature := privateMk ByteArray
+  with
+    instance
+    PublicteKey-FixedSize : FixedSize Signature := FixedSize.mk size;
+
+    fromAnomaAtom : AnomaAtom -> Signature :=
+      ByteArray.fromAnomaContents size >> privateMk;
+
+    fromNat : Nat -> Signature := AnomaAtom.fromNat >> fromAnomaAtom;
+
+    toByeArray : Signature -> ByteArray
+      | (privateMk b) := b;
+
+    toNat : Signature -> Nat := toByeArray >> ByteArray.toNat;
+
+    size : Nat := 64;
+  end;
+
+  sign (msg : AnomaAtom) (priv : PrivateKey) : Signature :=
+    Private.sign (AnomaAtom.toNat msg) (PrivateKey.toNat priv)
+      |> Private.PrimitiveSignature.bin
+      |> Signature.fromNat;
+
+  verify (msg : AnomaAtom) (sig : Signature) (pub : PublicKey) : Bool :=
+    Private.verify
+      (AnomaAtom.toNat msg)
+      (Signature.toNat sig)
+      (PublicKey.toNat pub);
+
+  module Private;
+    builtin secp256k1-public-key
+    axiom pubKey (privKey : Nat) : Nat;
+
+    type PrimitiveSignature :=
+      mk@{
+        bin : Nat;
+        --- currently never used
+        recoveryId : Nat;
+      };
+
+    builtin secp256k1-sign-compact
+    axiom sign (msg privKey : Nat) : PrimitiveSignature;
+
+    builtin secp256k1-verify
+    axiom verify (msg signature pubKey : Nat) : Bool;
+  end;
+end;
